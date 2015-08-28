@@ -65,7 +65,25 @@
   ;;
   ;;     http://www.lispworks.com/documentation/HyperSpec/Body/03_dg.htm
   ;;
-  (error "The long form of defsetf is not implemented"))
+  (let ((g!new-values (mapcar (lambda (s)
+                                (declare (ignore s))
+                                (gensym "NEW-VALUE"))
+                              store-variables))
+
+        (g!args (mapcar (lambda (s)
+                          (declare (ignore s))
+                          (gensym "ARG"))
+                        args)))
+
+    `(define-setf-expander ,access-fn (,@args)
+       (values ',g!args
+               (list ,@args)
+               ',g!new-values
+               `(let (,@(mapcar #'list ',store-variables ',g!new-values)
+                      ,@(mapcar #'list ',args ',g!args))
+                  ,@',body)
+               `(,',access-fn ,',@g!args)))))
+
 
 (defmacro defsetf (&whole args first second &rest others)
   (declare (ignore others))
@@ -121,8 +139,8 @@
     (let ((d (gensym)))
       `(let* (,@(mapcar #'list dummies vals)
               (,d ,delta)
-                (,(car newval) (- ,getter ,d))
-                ,@(cdr newval))
+              (,(car newval) (- ,getter ,d))
+              ,@(cdr newval))
          ,setter))))
 
 (defmacro push (x place)
@@ -137,12 +155,12 @@
 
 (defmacro pop (place)
   (multiple-value-bind (dummies vals newval setter getter)
-      (!get-setf-expansion place)
+    (!get-setf-expansion place)
     (let ((head (gensym)))
       `(let* (,@(mapcar #'list dummies vals)
               (,head ,getter)
-                (,(car newval) (cdr ,head))
-                ,@(cdr newval))
+              (,(car newval) (cdr ,head))
+              ,@(cdr newval))
          ,setter
          (car ,head)))))
 
