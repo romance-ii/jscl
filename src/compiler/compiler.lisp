@@ -368,8 +368,8 @@
 
 (defun compile-lambda-rest (ll)
   (let ((n-required-arguments (length (ll-required-arguments ll)))
-        (n-optional-arguments (length (ll-optional-arguments ll)))
-        (rest-argument (ll-rest-argument ll)))
+	(n-optional-arguments (length (ll-optional-arguments ll)))
+	(rest-argument (ll-rest-argument ll)))
     (when rest-argument
       (let ((js!rest (translate-variable rest-argument)))
         `(progn
@@ -588,7 +588,8 @@
       ;; code with JSCL as the current package. We will compile the
       ;; JSCL package as CL in the target.
       #-jscl
-      ((eq package (find-package "JSCL"))
+      ((or (eq package (find-package "JSCL"))
+           (eq package (find-package "CL")))
        `(call-internal |intern| ,(symbol-name symbol)))
       ;; Interned symbol
       (t
