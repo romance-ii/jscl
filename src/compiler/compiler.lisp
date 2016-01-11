@@ -1134,16 +1134,40 @@
   `(call-internal |make_lisp_string| (method-call ,x |toString|)))
 
 (define-builtin cons (x y)
-  `(new (call-internal |Cons| ,x ,y)))
+  `(object "car" ,x "cdr" ,y))
 
 (define-builtin consp (x)
-  (convert-to-bool `(instanceof ,x (internal |Cons|))))
+  `(selfcall
+    (var (tmp ,x))
+    (return ,(convert-to-bool
+              `(and (== (typeof tmp) "object")
+                    (in "car" tmp))))))
 
 (define-builtin car (x)
-  `(call-internal |car| ,x))
+  (let ((tmp (target-var))
+        (out (target-var)))
+    (emit x tmp)
+    (emit `(var ,out))
+    (emit `(if (=== ,tmp ,(convert nil))
+               (= ,out ,(convert nil))
+               (if (and (== (typeof ,tmp) "object")
+                        (in "car" ,tmp))
+                   (= ,out (get ,tmp "car"))
+                   (throw "CAR called on non-list argument"))))
+    out))
 
 (define-builtin cdr (x)
-  `(call-internal |cdr| ,x))
+  (let ((tmp (target-var))
+        (out (target-var)))
+    (emit x tmp)
+    (emit `(var ,out))
+    (emit `(if (=== ,tmp ,(convert nil))
+               (= ,out ,(convert nil))
+               (if (and (== (typeof ,tmp) "object")
+                        (in "cdr" ,tmp))
+                   (= ,out (get ,tmp "cdr"))
+                   (throw "CDR called on non-list argument"))))
+    out))
 
 (define-builtin rplaca (x new)
   `(selfcall
