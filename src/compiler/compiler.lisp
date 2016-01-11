@@ -44,10 +44,46 @@
   `(if ,expr ,(convert t) ,(convert nil)))
 
 
+<<<<<<< e9b29e4e2b969c959ede9b4cdf85d90abd7b1d7d
 ;;; A Form can return a multiple values object calling VALUES, like values(arg1, arg2, ...). It will
 ;;; work in any context, as well as returning an individual object. However, if the special variable
 ;;; `*multiple-value-p*' is  NIL, is granted  that only the  primary value will  be used, so  we can
 ;;; optimize to avoid the VALUES function call.
+=======
+
+
+;;;; Target
+;;;
+;;; Targets allow us to accumulate Javascript statements
+
+(def!struct target
+    code
+    variable-counter)
+
+(defvar *target*)
+
+(defun push-to-target (js &optional (target *target*))
+  (push js (target-code target)))
+
+(defun target-statements (&optional (target *target*))
+  (reverse (target-code target)))
+
+(defun target-var (&optional (target *target*))
+  (incf (target-variable-counter target))
+  (make-symbol (concat "v" (integer-to-string (target-variable-counter target)))))
+
+(defun emit (expr &optional var (target *target*))
+  (let ((stmt (if var `(var (,var ,expr)) expr)))
+    (push-to-target stmt target)))
+
+
+;;; A Form can return a multiple values object calling VALUES, like
+;;; values(arg1, arg2, ...). It will work in any context, as well as
+;;; returning an individual object. However, if the special variable
+;;; `*multiple-value-p*' is NIL, is granted that only the primary
+;;; value will be used, so we can optimize to avoid the VALUES
+;;; function call.
+>>>>>>> Define target-var to get a unique variable in the current target
 (defvar *multiple-value-p* nil)
 
 ;;; It is bound dinamically  to the number of nested calls to `convert'.  Therefore, a form is being
