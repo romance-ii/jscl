@@ -1144,8 +1144,8 @@
                     (in "car" tmp))))))
 
 (define-builtin car (x)
-  (let ((tmp (target-var))
-        (out (target-var)))
+  (let ((tmp (gvarname "XAR"))
+        (out (gvarname "CAR")))
     (emit x tmp)
     (emit `(var ,out))
     (emit `(if (=== ,tmp ,(convert nil))
@@ -1157,8 +1157,8 @@
     out))
 
 (define-builtin cdr (x)
-  (let ((tmp (target-var))
-        (out (target-var)))
+  (let ((tmp (gvarname "XDR"))
+        (out (gvarname "CDR")))
     (emit x tmp)
     (emit `(var ,out))
     (emit `(if (=== ,tmp ,(convert nil))
@@ -1203,7 +1203,12 @@
   (convert-to-bool `(!== (get ,x "fvalue") undefined)))
 
 (define-builtin symbol-value (x)
-  `(call-internal |symbolValue| ,x))
+  `(selfcall
+    (var (symbol ,x)
+         (value (get symbol "value")))
+    (if (=== value undefined)
+        (throw (+ "Variable `" (get symbol "name") "' is unbound.")))
+    (return value)))
 
 (define-builtin symbol-function (x)
   `(call-internal |symbolFunction| ,x))
