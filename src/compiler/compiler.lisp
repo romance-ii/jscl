@@ -1029,11 +1029,11 @@
 
 (defmacro define-builtin (name args &body body)
   (let ((g!out (gensym)))
-    `(define-raw-builtin ,name ,args
+  `(define-raw-builtin ,name ,args
        (let ((,g!out (gvarname))
-             ,@(mapcar (lambda (arg)
+           ,@(mapcar (lambda (arg)
                          `(,arg (convert* ,arg)))
-                       args))
+                     args))
          (emit `(var ,,g!out))
          (emit `(= ,,g!out ,(progn ,@body)))
          ,g!out))))
@@ -1168,10 +1168,10 @@
 (define-builtin car (x)
   (let ((out (gvarname "CAR")))
     (emit `(var ,out))
-    (emit `(if (=== ,x ,(convert nil))
+  (emit `(if (=== ,x ,(convert nil))
                (= ,out ,(convert nil))
-               (if (and (== (typeof ,x) "object")
-                        (in "car" ,x))
+             (if (and (== (typeof ,x) "object")
+                      (in "car" ,x))
                    (= ,out (get ,x "car"))
                    (throw "CAR called on non-list argument"))))
     out))
@@ -1179,10 +1179,10 @@
 (define-builtin cdr (x)
   (let ((out (gvarname "CDR")))
     (emit `(var ,out))
-    (emit `(if (=== ,x ,(convert nil))
+  (emit `(if (=== ,x ,(convert nil))
                (= ,out ,(convert nil))
-               (if (and (== (typeof ,x) "object")
-                        (in "cdr" ,x))
+             (if (and (== (typeof ,x) "object")
+                      (in "cdr" ,x))
                    (= ,out (get ,x "cdr"))
                    (throw "CDR called on non-list argument"))))
     out))
@@ -1654,11 +1654,12 @@
 
 ;;; Like `convert', but returns a symbol and emit the result of the
 ;;; compilation.
-(defun convert* (sexp &optional multiple-value-p)
-  (let ((out (gvarname))
-        (res (convert sexp multiple-value-p)))
-    (emit `(var (,out ,res)))
-    out))
+(defun convert* (sexp &optional out multiple-value-p)
+  (when (eq out t)
+    (setq out (gvarname))
+    (emit `(var ,out)))
+  (let ((res (convert sexp multiple-value-p)))
+    (emit res out)))
 
 
 
