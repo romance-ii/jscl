@@ -1,23 +1,29 @@
 ;;; compiler.lisp ---
 
-;; JSCL is  free software:  you can  redistribute it  and/or modify it  under the  terms of  the GNU
-;; General Public  License as published  by the  Free Software Foundation,  either version 3  of the
+;; Copyright (C) 2012, 2013 David Vazquez
+;; Copyright (C) 2012 Raimon Grau
+
+;; JSCL is free software: you can redistribute it and/or
+;; modify it under the terms of the GNU General Public License as
+;; published by the Free Software Foundation, either version 3 of the
 ;; License, or (at your option) any later version.
 ;;
-;; JSCL is distributed  in the hope that it  will be useful, but WITHOUT ANY  WARRANTY; without even
-;; the implied warranty of MERCHANTABILITY or FITNESS  FOR A PARTICULAR PURPOSE. See the GNU General
-;; Public License for more details.
+;; JSCL is distributed in the hope that it will be useful, but
+;; WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+;; General Public License for more details.
 ;;
-;; You should have  received a copy of the GNU  General Public License along with JSCL.  If not, see
-;; <http://www.gnu.org/licenses/>.
+;; You should have received a copy of the GNU General Public License
+;; along with JSCL.  If not, see <http://www.gnu.org/licenses/>.
 
 ;;;; Compiler
 
 (/debug "loading compiler.lisp!")
 
-;;; Translate  the Lisp  code to  Javascript.  It will  compile  the special  forms. Some  primitive
-;;; functions are compiled  as special forms too.  The respective real functions are  defined in the
-;;; target (see the beginning of this file) as well as some primitive functions.
+;;; Translate the Lisp code to Javascript. It will compile the special
+;;; forms. Some primitive functions are compiled as special forms
+;;; too. The respective real functions are defined in the target (see
+;;; the beginning of this file) as well as some primitive functions.
 
 (define-js-macro selfcall (&body body)
   `(call (function () ,@body)))
@@ -51,8 +57,7 @@
 ;;; Targets allow us to accumulate Javascript statements
 
 (def!struct target
-    code
-    variable-counter)
+    code)
 
 (defvar *target*)
 
@@ -77,14 +82,17 @@
     var))
 
 
-;;; A Form can return a multiple values object calling VALUES, like values(arg1, arg2, ...). It will
-;;; work in any context, as well as returning an individual object. However, if the special variable
-;;; `*multiple-value-p*' is  NIL, is granted  that only the  primary value will  be used, so  we can
-;;; optimize to avoid the VALUES function call.
+;;; A Form can return a multiple values object calling VALUES, like
+;;; values(arg1, arg2, ...). It will work in any context, as well as
+;;; returning an individual object. However, if the special variable
+;;; `*multiple-value-p*' is NIL, is granted that only the primary
+;;; value will be used, so we can optimize to avoid the VALUES
+;;; function call.
 (defvar *multiple-value-p* nil)
 
-;;; It is bound dinamically  to the number of nested calls to `convert'.  Therefore, a form is being
-;;; compiled as toplevel if it is zero.
+;;; It is bound dinamically to the number of nested calls to
+;;; `convert'. Therefore, a form is being compiled as toplevel if it
+;;; is zero.
 (defvar *convert-level* -1)
 
 
@@ -126,9 +134,10 @@
 (defvar *environment*)
 (defvar *variable-counter*)
 
-(defun gvarname (symbol)
+(defun gvarname (&optional symbol)
+  (declare (ignore symbol))
   (incf *variable-counter*)
-  (safe-js-var-name (limit-string-length symbol 32) (integer-to-string *variable-counter*)))
+  (make-symbol (concat "v" (integer-to-string *variable-counter*))))
 
 (defun translate-variable (symbol)
   (awhen (lookup-in-lexenv symbol *environment* 'variable)
@@ -274,8 +283,8 @@
 
 (defun ll-keyword-arguments-canonical (ll)
   (flet ((canonicalize (keyarg)
-           ;; Build a canonical keyword argument descriptor, filling the
-           ;; optional  fields.  The  result  is  a  list  of  the  form
+	   ;; Build a canonical keyword argument descriptor, filling
+	   ;; the optional fields. The result is a list of the form
 	   ;; ((keyword-name var) init-form svar).
            (let ((arg (ensure-list keyarg)))
              (cons (if (listp (car arg))
@@ -295,36 +304,14 @@
           (ll-optional-arguments-canonical lambda-list))))
     (remove nil (mapcar #'third args))))
 
-(defun js-identifier-char-p (char)
-  (or (char= #\_ char)
-      (char= #\$ char)
-      (alphanumericp char)))
-
-(defun js-name-part (name)
-  (substitute-if #\$ (complement #'js-identifier-char-p)
-                 (substitute #\_ #\- (string name))))
-
-(defun safe-js-name (&rest name-parts)
-  (intern (join (mapcar #'js-name-part name-parts) "_")))
-
-(defun safe-js-fun-name (&rest name-parts)
-  (apply #'safe-js-name "fun" name-parts))
-
-(defun safe-js-var-name (&rest name-parts)
-  (apply #'safe-js-name "var" name-parts))
-
-(defun safe-js-lit-name (&rest name-parts)
-  (apply #'safe-js-name "lit" name-parts))
-
 (defun lambda-name/docstring-wrapper (name docstring code)
-  (let ((func (safe-js-fun-name name)))
   (if (or name docstring)
       `(selfcall
-          (var (,func ,code))
-          ,(when name `(= (get ,func "fname") ,name))
-          ,(when docstring `(= (get ,func "docstring") ,docstring))
-          (return ,func))
-        code)))
+        (var (func ,code))
+        ,(when name `(= (get func "fname") ,name))
+        ,(when docstring `(= (get func "docstring") ,docstring))
+        (return func))
+      code))
 
 (defun lambda-check-argument-count
     (n-required-arguments n-optional-arguments rest-p)
@@ -344,17 +331,9 @@
 (defun compile-lambda-optional (ll)
   (let* ((optional-arguments (ll-optional-arguments-canonical ll))
 	 (n-required-arguments (length (ll-required-arguments ll)))
-         (n-optional-arguments (length optional-arguments))
-         (svars (remove nil (mapcar #'third optional-arguments))))
-
+	 (n-optional-arguments (length optional-arguments)))
     (when optional-arguments
-      `(progn
-         ,(when svars
-                `(var ,@(mapcar (lambda (svar)
-                                  (list (translate-variable svar)
-                                        (convert t)))
-                                svars)))
-         (switch (nargs)
+      `(switch (nargs)
                ,@(with-collect
                   (dotimes (idx n-optional-arguments)
                     (let ((arg (nth idx optional-arguments)))
@@ -365,7 +344,7 @@
                                  `(= ,(translate-variable (third arg))
                                      ,(convert nil))))))
                   (collect 'default)
-              (collect '(break))))))))
+                  (collect '(break)))))))
 
 (defun compile-lambda-rest (ll)
   (let ((n-required-arguments (length (ll-required-arguments ll)))
@@ -379,7 +358,8 @@
            (for ((= i (- (nargs) 1))
                  (>= i ,(+ n-required-arguments n-optional-arguments))
                  (post-- i))
-                (= ,js!rest (new (call-internal |Cons| (arg i) ,js!rest)))))))))
+                (= ,js!rest (object "car" (arg i)
+                                    "cdr" ,js!rest))))))))
 
 (defun compile-lambda-parse-keywords (ll)
   (let ((n-required-arguments
@@ -465,18 +445,11 @@
       (setq body (cdr body)))
     (values body value-declarations value-docstring)))
 
-
-(defun bind-this ()
-  (let* ((gvar (gvarname 'this))
-         (binding (make-binding :name 'this :type 'variable :value gvar)))
-    (push-to-lexenv binding *environment* 'variable)
-    `(var (,gvar |this|))))
-
 ;;; Compile a lambda function with lambda list LL and body BODY. If
 ;;; NAME is given, it should be a constant string and it will become
 ;;; the name of the function. If BLOCK is non-NIL, a named block is
 ;;; created around the body. NOTE: No block (even anonymous) is
-;;; created if BLOCK is NIL.
+;;; created if BLOCk is NIL.
 (defun compile-lambda (ll body &key name block)
   (multiple-value-bind (required-arguments
                         optional-arguments
@@ -494,9 +467,9 @@
                                     optional-arguments
                                     keyword-arguments
                                     (ll-svars ll)))))
-        (lambda-name/docstring-wrapper
-         name documentation
-         `(function (|values| ,@(mapcar #'translate-variable
+        (lambda-name/docstring-wrapper name documentation
+         `(function (|values| ,@(mapcar (lambda (x)
+					  (translate-variable x))
 					(append required-arguments optional-arguments)))
                      ;; Check number of arguments
                     ,(lambda-check-argument-count n-required-arguments
@@ -505,7 +478,7 @@
                     ,(compile-lambda-optional ll)
                     ,(compile-lambda-rest ll)
                     ,(compile-lambda-parse-keywords ll)
-                    ,(bind-this)
+
                     ,(let ((*multiple-value-p* t))
                           (if block
                               (convert-block `((block ,block ,@body)) t)
@@ -567,17 +540,9 @@
 (defvar *literal-table*)
 (defvar *literal-counter*)
 
-(defun limit-string-length (string length)
-  (and string
-       (let ((string (princ-to-string string)))
-         (if (> (length string) length)
-             (subseq string 0 length)
-             string))))
-
-(defun genlit (&optional name)
+(defun genlit ()
   (incf *literal-counter*)
-  (safe-js-lit-name (or (limit-string-length name 32) "")
-                    (integer-to-string *literal-counter*)))
+  (make-symbol (concat "l" (integer-to-string *literal-counter*))))
 
 (defun dump-symbol (symbol)
   (let ((package (symbol-package symbol)))
@@ -589,7 +554,8 @@
       ;; code with JSCL as the current package. We will compile the
       ;; JSCL package as CL in the target.
       #-jscl
-      ((eq package (find-package "JSCL"))
+      ((or (eq package (find-package "JSCL"))
+           (eq package (find-package "CL")))
        `(call-internal |intern| ,(symbol-name symbol)))
       ;; Interned symbol
       (t
@@ -631,10 +597,7 @@
                          (array (dump-array sexp)))))
            (if (and recursive (not (symbolp sexp)))
                dumped
-               (let ((jsvar (genlit (typecase sexp
-                                      (cons "expr")
-                                      (array "array")
-                                      (t (string sexp))))))
+               (let ((jsvar (genlit)))
                  (push (cons sexp jsvar) *literal-table*)
                  (toplevel-compilation `(var (,jsvar ,dumped)))
                  (when (keywordp sexp)
@@ -862,7 +825,7 @@
   ;; transfer. Exceptions has dynamic scoping, so we use a uniquely
   ;; generated object to identify the block. The instance of a empty
   ;; array is used to distinguish between nested dynamic Javascript
-  ;; exceptions. See https://github.com/jscl-project/jscl/issues/64 for
+  ;; exceptions. See https://github.com/davazp/jscl/issues/64 for
   ;; futher details.
   (let* ((idvar (gvarname name))
          (b (make-binding :name name :type 'block :value idvar)))
@@ -1029,16 +992,23 @@
          (lambda ,args
            (block ,name ,@body))))
 
-(defmacro define-builtin (name args &body body)
-  (let ((g!out (gensym)))
+(defvar *out*)
+
+
+(defmacro define-builtin* (name args &body body)
   `(define-raw-builtin ,name ,args
-       (let ((,g!out (gvarname))
+     (let ((*out* (gvarname))
            ,@(mapcar (lambda (arg)
-                         `(,arg (convert* ,arg)))
+                       `(,arg (convert* ,arg t)))
                      args))
-         (emit `(var ,,g!out))
-         (emit `(= ,,g!out ,(progn ,@body)))
-         ,g!out))))
+       (emit `(var ,*out*))
+       (progn ,@body)
+       *out*)))
+
+(defmacro define-builtin (name args &body body)
+  `(define-builtin* ,name ,args
+     (emit (progn ,@body) *out*)))
+
 
 ;;; VARIABLE-ARITY compiles variable arity operations. ARGS stands for
 ;;; a variable which holds a list of forms. It will compile them and
@@ -1048,22 +1018,14 @@
 (defun variable-arity-call (args function)
   (unless (consp args)
     (error "ARGS must be a non-empty list"))
-  (let ((counter 0))
-    ;; XXX: Add macro with-collectors
-    (with-collector (fargs)
-      (with-collector (prelude)
+  (let ((fargs '()))
+
     (dolist (x args)
       (let ((v (gvarname)))
         (push v fargs)
         (emit `(var (,v ,(convert x))))
         (emit `(if (!= (typeof ,v) "number")
-                   (throw (new (call |Error| (+ "" (typeof ,v)
-                                                                   " is not a number: " ,v " "
-                                                                   ,(princ-to-string (convert x)) " in "
-                                                                   ,(princ-to-string function)
-                                                                   ,@(mapcar (lambda (s)
-                                                                               (concatenate 'string " "
-                                                                                            (princ-to-string s))) args)))))))))
+                   (throw "Not a number!")))))
     
     (emit (funcall function (reverse fargs)) t)))
 
@@ -1071,7 +1033,7 @@
 (defmacro variable-arity (args &body body)
   (unless (symbolp args)
     (error "`~S' is not a symbol." args))
-  `(variable-arity-call ,args (lambda (,args) `(return  ,,@body))))
+  `(variable-arity-call ,args (lambda (,args) ,@body)))
 
 (define-raw-builtin + (&rest numbers)
   (if (null numbers)
@@ -1090,13 +1052,10 @@
 (define-raw-builtin / (x &rest others)
   (let ((args (cons x others)))
     (variable-arity args
-                   (if (null others)
-                       `(call-internal |handled_division| 1 ,(car args))
-                       (reduce (lambda (x y) `(call-internal |handled_division| ,x ,y))
-                               args)))))
-    
-    (emit `(var (,out ,result)))
-    out))
+      (if (null others)
+          `(call-internal |handled_division| 1 ,(car args))
+          (reduce (lambda (x y) `(call-internal |handled_division| ,x ,y))
+                  args)))))
 
 (define-builtin mod (x y)
   (emit `(if (== ,y 0) (throw "Division by zero")))
@@ -1115,7 +1074,7 @@
 
 (defmacro define-builtin-comparison (op sym)
   `(define-raw-builtin ,op (x &rest args)
-     (let ((out (gvarname "COMPARE))
+     (let ((out (gvarname))
            (args (cons x args)))
        (emit `(var (,out ,(variable-arity args
                                           (convert-to-bool (comparison-conjuntion args ',sym))))))
@@ -1154,27 +1113,21 @@
    `(and (== (typeof ,x) "object")
          (in "car" ,x))))
 
-(define-builtin car (x)
-  (let ((out (gvarname "CAR")))
-    (emit `(var ,out))
+(define-builtin* car (x)
   (emit `(if (=== ,x ,(convert nil))
-               (= ,out ,(convert nil))
+             (= ,*out* ,(convert nil))
              (if (and (== (typeof ,x) "object")
                       (in "car" ,x))
-                   (= ,out (get ,x "car"))
-                   (throw "CAR called on non-list argument"))))
-    out))
+                 (= ,*out* (get ,x "car"))
+                 (throw "CAR called on non-list argument")))))
 
-(define-builtin cdr (x)
-  (let ((out (gvarname "CDR")))
-    (emit `(var ,out))
+(define-builtin* cdr (x)
   (emit `(if (=== ,x ,(convert nil))
-               (= ,out ,(convert nil))
+             (= ,*out* ,(convert nil))
              (if (and (== (typeof ,x) "object")
                       (in "cdr" ,x))
-                   (= ,out (get ,x "cdr"))
-                   (throw "CDR called on non-list argument"))))
-    out))
+                 (= ,*out* (get ,x "cdr"))
+                 (throw "CDR called on non-list argument")))))
 
 (define-builtin rplaca (x new)
   (emit `(= (get ,x "car") ,new))
@@ -1302,11 +1255,9 @@
    `(and (=== (typeof ,x) "object")
          (in "length" ,x))))
 
-(define-builtin make-storage-vector (n)
-  `(selfcall
-    (var (r #()))
-    (= (get r "length") ,n)
-    (return r)))
+(define-builtin* make-storage-vector (n)
+  (emit #() *out*)
+  (emit `(= (get ,*out* "length") ,n)))
 
 (define-builtin storage-vector-size (x)
   `(get ,x "length"))
@@ -1314,27 +1265,20 @@
 (define-builtin resize-storage-vector (vector new-size)
   `(= (get ,vector "length") ,new-size))
 
-(define-builtin storage-vector-ref (vector n)
-  `(selfcall
-    (var (x (property ,vector ,n)))
-    (if (=== x undefined) (throw (new (call |Error| ,(concatenate 'string "AREF out of range for vector " (string vector))))))
-    (return x)))
+(define-builtin* storage-vector-ref (vector n)
+  (emit `(property ,vector ,n) *out*)
+  (emit `(if (=== ,*out* undefined)
+             (throw "Out of range."))))
 
 (define-builtin storage-vector-set (vector n value)
-  `(selfcall
-    (var (x ,vector))
-    (var (i ,n))
-    (if (or (< i 0) (>= i (get x "length")))
-        (throw (new (call |Error| ,(concatenate 'string "SETF AREF out of range for vector " (string vector))))))
-    (return (= (property x i) ,value))))
+  (emit `(if (or (< ,n 0) (>= ,n (get ,vector "length")))
+             (throw "Out of range.")))
+  `(= (property ,vector ,n) ,value))
 
-(define-builtin concatenate-storage-vector (sv1 sv2)
-  `(selfcall
-     (var (sv1 ,sv1))
-     (var (r (method-call sv1 "concat" ,sv2)))
-     (= (get r "type") (get sv1 "type"))
-     (= (get r "stringp") (get sv1 "stringp"))
-     (return r)))
+(define-builtin* concatenate-storage-vector (sv1 sv2)
+  (let ((r (emit `(method-call ,sv1 "concat" ,sv2) *out*)))
+    (emit `(= (get ,r "type") (get ,sv1 "type")))
+    (emit `(= (get ,r "stringp") (get ,sv1 "stringp")))))
 
 (define-builtin get-internal-real-time ()
   `(method-call (new (call |Date|)) "getTime"))
@@ -1442,9 +1386,6 @@
 (define-compilation %js-typeof (x)
   `(call-internal |js_to_lisp| (typeof ,x)))
 
-;;; Access a function defined in the internals runtime object.
-(define-compilation %js-internal (name)
-  `(internal ,name))
 
 
 ;; Catch any Javascript exception. Note that because all non-local
@@ -1567,7 +1508,7 @@
                                 `(call-internal |lisp_to_js| ,(convert s)))
                               args))))
       (t
-       (error "Bad function designator `~S'" function)))))
+       (error "Bad function descriptor")))))
 
 (defun convert-block (sexps &optional return-last-p decls-allowed-p)
   (multiple-value-bind (sexps decls)
