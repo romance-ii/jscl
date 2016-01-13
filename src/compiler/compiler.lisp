@@ -66,7 +66,8 @@
 
 (defun emit (expr &optional var (target *target*))
   (let ((stmt (if var `(var (,var ,expr)) expr)))
-    (push-to-target stmt target)))
+    (push-to-target stmt target)
+    var))
 
 
 ;;; A Form can return a multiple values object calling VALUES, like values(arg1, arg2, ...). It will
