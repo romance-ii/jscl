@@ -44,7 +44,7 @@
 
 
 (defun convert-to-bool (expr)
-  `(if ,expr ,(convert t) ,(convert nil)))
+  `(if ,expr ,(convert* t) ,(convert* nil)))
 
 
 
@@ -247,7 +247,7 @@
 (define-compilation if (condition true &optional false)
   (let* ((result-var (gvarname)))
     (emit `(var ,result-var))
-    (emit `(if (!== ,(convert* condition t) ,(convert nil))
+    (emit `(if (!== ,(convert* condition) ,(convert* nil))
                ,(convert-to-block true result-var *multiple-value-p*)
                ,(convert-to-block false result-var *multiple-value-p*)))
     result-var))
@@ -996,7 +996,7 @@
   `(define-raw-builtin ,name ,args
      (let ((*out* (gvarname))
            ,@(mapcar (lambda (arg)
-                       `(,arg (convert* ,arg t)))
+                       `(,arg (convert* ,arg)))
                      args))
        (emit `(var ,*out*))
        (progn ,@body)
@@ -1194,7 +1194,7 @@
 
 (define-raw-builtin funcall (func &rest args)
   ;; TODO: Use SYMBOL-FUNCTION and optimize so we don't lookup every time.
-  (let ((f (convert* func t)))
+  (let ((f (convert* func)))
     `(call (if (=== (typeof ,f) "function")
                ,f
                (get ,f "fvalue"))
@@ -1567,7 +1567,7 @@
 
 ;;; Like `convert', but returns a symbol and emit the result of the
 ;;; compilation.
-(defun convert* (sexp &optional out multiple-value-p)
+(defun convert* (sexp &optional (out t) multiple-value-p)
   (let ((res (convert sexp multiple-value-p)))
     (emit res out)))
 
