@@ -1065,7 +1065,7 @@
                                                                                (concatenate 'string " "
                                                                                             (princ-to-string s))) args)))))))))
     
-    (funcall function (reverse fargs))))
+    (emit (funcall function (reverse fargs)) t)))
 
 
 (defmacro variable-arity (args &body body)
@@ -1074,31 +1074,22 @@
   `(variable-arity-call ,args (lambda (,args) `(return  ,,@body))))
 
 (define-raw-builtin + (&rest numbers)
-  (let ((out (gvarname "SUM")))
-    (cond
-      ((null numbers) 0)
-      (t
-       (emit `(var (,out ,(variable-arity numbers `(+ ,@numbers)))))
-       out))))
+  (if (null numbers)
+      0
+      (variable-arity numbers `(+ ,@numbers))))
 
 (define-raw-builtin - (x &rest others)
-  (let ((args (cons x others))
-        (out (gvarname "DIFFERENCE")))
-    (emit `(var (,out ,(variable-arity args `(- ,@args)))))
-    out))
+  (let ((args (cons x others)))
+    (variable-arity args `(- ,@args))))
 
 (define-raw-builtin * (&rest numbers)
   (if (null numbers)
       1
-      (let* ((out (gvarname "PRODUCT"))
-             (result (variable-arity numbers `(* ,@numbers))))
-        (emit `(var (,out ,result)))
-        out)))
+      (variable-arity numbers `(* ,@numbers))))
 
 (define-raw-builtin / (x &rest others)
-  (let* ((out (gvarname "QUOTIENT"))
-         (args (cons x others))
-         (result (variable-arity args
+  (let ((args (cons x others)))
+    (variable-arity args
                    (if (null others)
                        `(call-internal |handled_division| 1 ,(car args))
                        (reduce (lambda (x y) `(call-internal |handled_division| ,x ,y))
@@ -1108,10 +1099,8 @@
     out))
 
 (define-builtin mod (x y)
-  `(selfcall
-    (if (== ,y 0)
-        (throw "Division by zero"))
-    (return (% ,x ,y))))
+  (emit `(if (== ,y 0) (throw "Division by zero")))
+  `(% ,x ,y))
 
 
 (defun comparison-conjuntion (vars op)
