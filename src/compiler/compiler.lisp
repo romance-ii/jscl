@@ -1045,22 +1045,19 @@
     (with-collector (fargs)
       (with-collector (prelude)
         (dolist (x args)
-          (if (or (floatp x) (numberp x))
-              (collect-fargs x)
-              (let ((v (make-symbol (concat "arg" (integer-to-string (incf counter))))))
-                (collect-fargs v)
-                (collect-prelude `(var (,v ,(convert x))))
-                (collect-prelude `(if (!= (typeof ,v) "number")
-                                      (throw (new (call |Error| (+ "" (typeof ,v)
+      (let ((v (gvarname)))
+        (push v fargs)
+        (emit `(var (,v ,(convert x))))
+        (emit `(if (!= (typeof ,v) "number")
+                   (throw (new (call |Error| (+ "" (typeof ,v)
                                                                    " is not a number: " ,v " "
                                                                    ,(princ-to-string (convert x)) " in "
                                                                    ,(princ-to-string function)
                                                                    ,@(mapcar (lambda (s)
                                                                                (concatenate 'string " "
-                                                                                            (princ-to-string s))) args))))))))))
-        `(selfcall
-          (progn ,@prelude)
-          ,(funcall function fargs))))))
+                                                                                            (princ-to-string s))) args)))))))))
+    
+    (funcall function (reverse fargs))))
 
 
 (defmacro variable-arity (args &body body)
@@ -1069,31 +1066,38 @@
   `(variable-arity-call ,args (lambda (,args) `(return  ,,@body))))
 
 (define-raw-builtin + (&rest numbers)
-  (if (null numbers)
-      0
-      (variable-arity numbers
-        `(+ ,@numbers))))
+  (let ((out (gvarname "SUM")))
+    (cond
+      ((null numbers) 0)
+      (t
+       (emit `(var (,out ,(variable-arity numbers `(+ ,@numbers)))))
+       out))))
 
 (define-raw-builtin - (x &rest others)
-  (let ((args (cons x others)))
-    (variable-arity args `(- ,@args))))
+  (let ((args (cons x others))
+        (out (gvarname "DIFFERENCE")))
+    (emit `(var (,out ,(variable-arity args `(- ,@args)))))
+    out))
 
 (define-raw-builtin * (&rest numbers)
   (if (null numbers)
       1
-      (variable-arity numbers `(* ,@numbers))))
-
-(define-builtin logior (x y) (list 'logior x y))
-(define-builtin logand (x y) (list 'logand x y))
-(define-builtin logxor (x y) (list 'logxor x y))
+      (let* ((out (gvarname "PRODUCT"))
+             (result (variable-arity numbers `(* ,@numbers))))
+        (emit `(var (,out ,result)))
+        out)))
 
 (define-raw-builtin / (x &rest others)
-  (let ((args (cons x others)))
-    (variable-arity args
+  (let* ((out (gvarname "QUOTIENT"))
+         (args (cons x others))
+         (result (variable-arity args
       (if (null others)
           `(call-internal |handled_division| 1 ,(car args))
           (reduce (lambda (x y) `(call-internal |handled_division| ,x ,y))
                   args)))))
+
+    (emit `(var (,out ,result)))
+    out))
 
 (define-builtin mod (x y)
   `(selfcall
@@ -1114,9 +1118,11 @@
 
 (defmacro define-builtin-comparison (op sym)
   `(define-raw-builtin ,op (x &rest args)
-     (let ((args (cons x args)))
-       (variable-arity args
+     (let ((out (gvarname "COMPARE))
+           (args (cons x args)))
+       (emit `(var (,out ,(variable-arity args
          (convert-to-bool (comparison-conjuntion args ',sym))))))
+       out)))
 
 (define-builtin-comparison > >)
 (define-builtin-comparison < <)
