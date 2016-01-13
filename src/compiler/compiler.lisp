@@ -1061,7 +1061,7 @@
     ;; XXX: Add macro with-collectors
     (with-collector (fargs)
       (with-collector (prelude)
-        (dolist (x args)
+    (dolist (x args)
       (let ((v (gvarname)))
         (push v fargs)
         (emit `(var (,v ,(convert x))))
@@ -1108,11 +1108,11 @@
   (let* ((out (gvarname "QUOTIENT"))
          (args (cons x others))
          (result (variable-arity args
-      (if (null others)
-          `(call-internal |handled_division| 1 ,(car args))
-          (reduce (lambda (x y) `(call-internal |handled_division| ,x ,y))
-                  args)))))
-
+                   (if (null others)
+                       `(call-internal |handled_division| 1 ,(car args))
+                       (reduce (lambda (x y) `(call-internal |handled_division| ,x ,y))
+                               args)))))
+    
     (emit `(var (,out ,result)))
     out))
 
@@ -1138,7 +1138,7 @@
      (let ((out (gvarname "COMPARE))
            (args (cons x args)))
        (emit `(var (,out ,(variable-arity args
-         (convert-to-bool (comparison-conjuntion args ',sym))))))
+                                          (convert-to-bool (comparison-conjuntion args ',sym))))))
        out)))
 
 (define-builtin-comparison > >)
@@ -1177,28 +1177,24 @@
                     (in "car" tmp))))))
 
 (define-builtin car (x)
-  (let ((tmp (gvarname "XAR"))
-        (out (gvarname "CAR")))
-    (emit `(var (,tmp ,x)))
+  (let ((out (gvarname "CAR")))
     (emit `(var ,out))
-    (emit `(if (=== ,tmp ,(convert nil))
+    (emit `(if (=== ,x ,(convert nil))
                (= ,out ,(convert nil))
-               (if (and (== (typeof ,tmp) "object")
-                        (in "car" ,tmp))
-                   (= ,out (get ,tmp "car"))
+               (if (and (== (typeof ,x) "object")
+                        (in "car" ,x))
+                   (= ,out (get ,x "car"))
                    (throw "CAR called on non-list argument"))))
     out))
 
 (define-builtin cdr (x)
-  (let ((tmp (gvarname "XDR"))
-        (out (gvarname "CDR")))
-    (emit `(var (,tmp ,x)))
+  (let ((out (gvarname "CDR")))
     (emit `(var ,out))
-    (emit `(if (=== ,tmp ,(convert nil))
+    (emit `(if (=== ,x ,(convert nil))
                (= ,out ,(convert nil))
-               (if (and (== (typeof ,tmp) "object")
-                        (in "cdr" ,tmp))
-                   (= ,out (get ,tmp "cdr"))
+               (if (and (== (typeof ,x) "object")
+                        (in "cdr" ,x))
+                   (= ,out (get ,x "cdr"))
                    (throw "CDR called on non-list argument"))))
     out))
 
