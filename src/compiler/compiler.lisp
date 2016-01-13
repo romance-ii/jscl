@@ -57,8 +57,7 @@
 ;;; Targets allow us to accumulate Javascript statements
 
 (def!struct target
-    code
-    variable-counter)
+    code)
 
 (defvar *target*)
 
@@ -68,12 +67,14 @@
 (defun target-statements (&optional (target *target*))
   (reverse (target-code target)))
 
-(defun target-var (&optional (target *target*))
-  (incf (target-variable-counter target))
-  (make-symbol (concat "v" (integer-to-string (target-variable-counter target)))))
-
+;;; Emit an expression or statement into target.
+;;;
+;;; If the optional argument VAR is provideed, EXPR must be an
+;;; expression, the result of the expression will be assigned into
+;;; VAR. VAR is returned.
+;;; 
 (defun emit (expr &optional var (target *target*))
-  (let ((stmt (if var `(var (,var ,expr)) expr)))
+  (let ((stmt (if var `(= ,var ,expr) expr)))
     (push-to-target stmt target)
     var))
 
@@ -254,14 +255,15 @@
          (false-var (let ((*target* false-branch))
                       (convert false *multiple-value-p*))))
 
+    (emit `(var ,result-var))
     (emit `(if (!== ,condition-var ,(convert nil))
                (progn
                  ,@(target-statements true-branch)
                  (= ,result-var ,true-var))
                (progn
                  ,@(target-statements false-branch)
-                 (= ,result-var ,false-var)))
-          result-var)))
+                 (= ,result-var ,false-var))))
+    result-var))
 
 
 (defvar *ll-keywords* '(&optional &rest &key))
@@ -482,12 +484,6 @@
       (setq body (cdr body)))
     (values body value-declarations value-docstring)))
 
-(defun bind-this ()
-  (let* ((gvar (gvarname 'this))
-         (binding (make-binding :name 'this :type 'variable :value gvar)))
-    (push-to-lexenv binding *environment* 'variable)
-    `(var (,gvar |this|))))
-
 ;;; Compile a lambda function with lambda list LL and body BODY. If
 ;;; NAME is given, it should be a constant string and it will become
 ;;; the name of the function. If BLOCK is non-NIL, a named block is
@@ -521,7 +517,7 @@
                     ,(compile-lambda-optional ll)
                     ,(compile-lambda-rest ll)
                     ,(compile-lambda-parse-keywords ll)
-                    ,(bind-this)
+
                     ,(let ((*multiple-value-p* t))
                           (if block
                               (convert-block `((block ,block ,@body)) t)
@@ -1175,7 +1171,7 @@
 (define-builtin car (x)
   (let ((tmp (gvarname))
         (out (gvarname)))
-    (emit x tmp)
+    (emit `(var (,tmp ,x)))
     (emit `(var ,out))
     (emit `(if (=== ,tmp ,(convert nil))
                (= ,out ,(convert nil))
@@ -1188,7 +1184,7 @@
 (define-builtin cdr (x)
   (let ((tmp (gvarname))
         (out (gvarname)))
-    (emit x tmp)
+    (emit `(var (,tmp ,x)))
     (emit `(var ,out))
     (emit `(if (=== ,tmp ,(convert nil))
                (= ,out ,(convert nil))
