@@ -606,10 +606,17 @@
   (literal sexp))
 
 (define-compilation %while (pred &rest body)
-  `(selfcall
-    (while (!== ,(convert pred) ,(convert nil))
-      ,(convert-block body))
-    (return ,(convert nil))))
+  (let* ((v (gvarname))
+         (condition
+          `(selfcall
+            (var ,v)
+            ,(convert-to-block pred v)
+            (return ,v))))
+
+    (emit `(while (!== ,condition  ,(convert* nil))
+             ,(convert-to-block `(progn ,@body))))
+
+    (convert* nil)))
 
 (define-compilation function (x)
   (cond
@@ -623,8 +630,8 @@
     ((symbolp x)
      (let ((b (lookup-in-lexenv x *environment* 'function)))
        (if b
-	   (binding-value b)
-	   (convert `(symbol-function ',x)))))))
+           (binding-value b)
+           (convert* `(symbol-function ',x)))))))
 
 (defun make-function-binding (fname)
   (make-binding :name fname :type 'function :value (gvarname fname)))
@@ -647,13 +654,13 @@
           (extend-lexenv (mapcar #'make-function-binding fnames)
                          *environment*
                          'function)))
-    `(call (function ,(mapcar #'translate-function fnames)
-                ,(convert-block body t))
-           ,@cfuncs)))
+    (emit `(call (function ,(mapcar #'translate-function fnames)
+                           ,(convert-block body t))
+                 ,@cfuncs) t)))
 
 (define-compilation labels (definitions &rest body)
   (let* ((fnames (mapcar #'car definitions))
-	 (*environment*
+         (*environment*
           (extend-lexenv (mapcar #'make-function-binding fnames)
                          *environment*
                          'function)))
@@ -689,16 +696,10 @@
     (t
      (convert nil))))
 
-(defmacro define-transformation (name args form)
-  `(define-compilation ,name ,args
-     (convert ,form)))
-
 (define-compilation progn (&rest body)
-  (if (null (cdr body))
-      (convert (car body) *multiple-value-p*)
-      `(progn
-         ,@(append (mapcar #'convert (butlast body))
-                   (list (convert (car (last body)) t))))))
+  (dolist (expr (butlast body))
+    (convert* expr))
+  (convert* (car (last body)) t *multiple-value-p*))
 
 (define-compilation macrolet (definitions &rest body)
   (let ((*environment* (copy-lexenv *environment*)))
@@ -710,7 +711,8 @@
                                           (destructuring-bind ,lambda-list ,g!form
                                             ,@body))))))
           (push-to-lexenv binding  *environment* 'function))))
-    (convert `(progn ,@body) *multiple-value-p*)))
+
+    (convert* `(progn ,@body) t *multiple-value-p*)))
 
 
 (defun special-variable-p (x)
@@ -972,8 +974,8 @@
     (progn ,@(mapcar #'convert forms))
     (return args)))
 
-(define-transformation backquote (form)
-  (bq-completely-process form))
+(define-compilation backquote (form)
+  (convert* (bq-completely-process form) t))
 
 
 ;;; Primitives
