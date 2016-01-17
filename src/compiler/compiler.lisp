@@ -959,7 +959,7 @@
   ;; because 1) it is easy and 2) many built-in forms expand to a
   ;; implicit tagbody, so we save some space.
   (unless (some #'go-tag-p body)
-    (return-from tagbody (convert `(progn ,@body nil))))
+    (return-from tagbody (convert* `(progn ,@body nil))))
   ;; The translation assumes the first form in BODY is a label
   (unless (go-tag-p (car body))
     (push (gensym "START") body))
@@ -984,14 +984,14 @@
                                (if (go-tag-p form)
                                    (let ((b (lookup-in-lexenv form *environment* 'gotag)))
                                      (collect `(case ,(second (binding-value b)))))
-                                   (collect (convert form)))))
+                                   (collect (convert-to-block form)))))
                           default
                           (break tbloop)))
                  (catch (jump)
                    (if (and (instanceof jump (internal |TagNLX|)) (== (get jump "id") ,tbidx))
                        (= ,branch (get jump "label"))
                        (throw jump)))))
-        (return ,(convert nil))))))
+        (return ,(convert* nil))))))
 
 (define-compilation go (label)
   (let ((b (lookup-in-lexenv label *environment* 'gotag)))
@@ -1003,13 +1003,13 @@
                                  ,(second (binding-value b))))))))
 
 (define-compilation unwind-protect (form &rest clean-up)
-  `(selfcall
-    (var (ret ,(convert nil)))
-    (try
-     (= ret ,(convert form)))
-    (finally
-     ,(convert-block clean-up))
-    (return ret)))
+  (let ((ret (gvarname)))
+    (emit `(var (,ret ,(convert* nil))))
+    (emit `(try
+            ,(convert-to-block form ret)))
+    (emit `(finally
+            ,(convert-block clean-up)))
+    ret))
 
 (define-compilation multiple-value-call (func-form &rest forms)
   `(selfcall
