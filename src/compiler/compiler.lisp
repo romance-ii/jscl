@@ -1608,9 +1608,9 @@
               (binding-value b))
              ((or (keywordp sexp)
                   (and b (member 'constant (binding-declarations b))))
-              `(get ,(convert `',sexp) "value"))
+              (emit `(get ,(convert* `',sexp) "value") t))
              (t
-              (convert `(symbol-value ',sexp))))))
+              (convert* `(symbol-value ',sexp))))))
         ((or (integerp sexp) (floatp sexp) (characterp sexp) (stringp sexp) (arrayp sexp))
          (literal sexp))
         ((listp sexp)
