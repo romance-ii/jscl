@@ -73,7 +73,7 @@
 ;;; If the optional argument VAR is provideed, EXPR must be an
 ;;; expression, the result of the expression will be assigned into
 ;;; VAR. VAR is returned.
-;;; 
+;;;
 (defun emit (expr &optional var (target *target*))
   (when (eq var t)
     (setq var (gvarname))
@@ -108,6 +108,11 @@
 ;;; `convert'. Therefore, a form is being compiled as toplevel if it
 ;;; is zero.
 (defvar *convert-level* -1)
+
+;;; Contain a symbol describin the Javascript variable to which the
+;;; current form being compiled should assign the result of the that
+;;; form.
+(defvar *out*)
 
 
 ;;; Environment
