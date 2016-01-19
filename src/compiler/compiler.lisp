@@ -1058,8 +1058,6 @@
          (lambda ,args
            (block ,name ,@body))))
 
-(defvar *out*)
-
 
 (defmacro define-builtin* (name args &body body)
   `(define-raw-builtin ,name ,args
