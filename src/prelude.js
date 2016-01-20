@@ -46,7 +46,7 @@ internals.globalEval = function(code){
 };
 
 internals.pv = function(x) {
-  return x==undefined? nil: x;
+  return x===undefined? nil: x;
 };
 
 internals.mv = function(){
