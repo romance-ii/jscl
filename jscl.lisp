@@ -137,8 +137,7 @@
 
 (defun !compile-file (filename out &key print)
   (let ((*compiling-file* t)
-        (*compile-print-toplevels* print)
-        (*package* *package*))
+        (*compile-print-toplevels* print))
     (let* ((source (read-whole-file filename))
            (in (make-string-stream source)))
       (format t "Compiling ~a...~%" (enough-namestring filename))
@@ -213,7 +212,7 @@
      `(,(source-pathname "tests.lisp" :directory nil)
         ,@(directory (source-pathname "*" :directory '(:relative "tests") :type "lisp"))
         ,(source-pathname "tests-report.lisp" :directory nil))
-     (merge-pathnames "tests.js" *base-directory*))
+                         (merge-pathnames "tests.js" *base-directory*))
 
     ;; Web REPL
     (compile-application (list (source-pathname "repl.lisp" :directory '(:relative "repl-web")))
