@@ -20,7 +20,7 @@
 
 (defun list-all-packages ()
   (let ((packages nil))
-    (map-for-in (lambda (name) (push name packages))
+    (map-for-in (lambda (name) (pushnew name packages))
                 *package-table*)
     packages))
 
@@ -97,10 +97,14 @@
   (let (use)
     (dolist (option options)
       (ecase (car option)
-       (:use
-        (setf use (append use (cdr option))))))
-    `(eval-when (:compile-toplevel :load-toplevel :execute)
-       (%defpackage ',(string package) ',use))))
+        (:use
+         (setf use (append use (cdr option))))))
+    `(progn
+       (eval-when (:load-toplevel :execute)
+         (%defpackage ',(string package) ',use))
+       (eval-when (:compile-toplevel)
+         (make-package ',(string package) :use ',use)))))
+
 
 (defun redefine-package (package use)
   (setf (oget package "use") use)
@@ -111,7 +115,8 @@
         (use (resolve-package-list use)))
     (if package
         (redefine-package package use)
-        (%make-package name use))))
+        (make-package name :use use))))
+
 
 (defun find-symbol (name &optional (package *package*))
   (let* ((package (find-package-or-fail package))
