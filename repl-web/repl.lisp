@@ -34,7 +34,7 @@
         (stringp nil)
         (s (length string))
         (depth 0))
-
+    
     (while (< i s)
       (cond
         (stringp
