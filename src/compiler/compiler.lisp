@@ -291,7 +291,7 @@
 
 (defun compile-lambda-optional (ll)
   (let* ((optional-arguments (ll-optional-arguments-canonical ll))
-         (n-required-arguments (length (ll-required-arguments ll)))
+	 (n-required-arguments (length (ll-required-arguments ll)))
          (n-optional-arguments (length optional-arguments))
          (svars (remove nil (mapcar #'third optional-arguments))))
 
@@ -303,16 +303,16 @@
                                         (convert t)))
                                 svars)))
          (switch (nargs)
-                 ,@(with-collect
-                    (dotimes (idx n-optional-arguments)
-                      (let ((arg (nth idx optional-arguments)))
-                        (collect `(case ,(+ idx n-required-arguments)))
-                        (collect `(= ,(translate-variable (car arg))
-                                     ,(convert (cadr arg))))
-                        (collect (when (third arg)
-                                   `(= ,(translate-variable (third arg))
-                                       ,(convert nil))))))
-                    (collect 'default)
+               ,@(with-collect
+                  (dotimes (idx n-optional-arguments)
+                    (let ((arg (nth idx optional-arguments)))
+                      (collect `(case ,(+ idx n-required-arguments)))
+                      (collect `(= ,(translate-variable (car arg))
+                                   ,(convert (cadr arg))))
+                      (collect (when (third arg)
+                                 `(= ,(translate-variable (third arg))
+                                     ,(convert nil))))))
+                  (collect 'default)
                     (collect '(break))))))))
 
 (defun compile-lambda-rest (ll)
@@ -457,20 +457,20 @@
         (lambda-name/docstring-wrapper name documentation
          `(named-function ,(jsize-symbol name 'jscl_user_)
                           (|values| ,@(mapcar (lambda (x)
-                                                (translate-variable x))
-                                              (append required-arguments optional-arguments)))
-                          ;; Check number of arguments
-                          ,(lambda-check-argument-count n-required-arguments
-                                                        n-optional-arguments
-                                                        (or rest-argument keyword-arguments))
-                          ,(compile-lambda-optional ll)
-                          ,(compile-lambda-rest ll)
-                          ,(compile-lambda-parse-keywords ll)
-                          ,(bind-this)
-                          ,(let ((*multiple-value-p* t))
-                             (if block
-                                 (convert-block `((block ,block ,@body)) t)
-                                 (convert-block body t)))))))))
+					  (translate-variable x))
+					(append required-arguments optional-arguments)))
+                     ;; Check number of arguments
+                    ,(lambda-check-argument-count n-required-arguments
+                                                  n-optional-arguments
+                                                  (or rest-argument keyword-arguments))
+                    ,(compile-lambda-optional ll)
+                    ,(compile-lambda-rest ll)
+                    ,(compile-lambda-parse-keywords ll)
+                    ,(bind-this)
+                    ,(let ((*multiple-value-p* t))
+                          (if block
+                              (convert-block `((block ,block ,@body)) t)
+                              (convert-block body t)))))))))
 
 
 (defun setq-pair (var val)
@@ -845,9 +845,9 @@
           postlude-target)
 
     (let ((body
-           `(progn
+    `(progn
               ,@(reverse prelude-target)
-              ,(convert-block body t t))))
+                   ,(convert-block body t t))))
       
       (if (find-if #'special-variable-p bindings :key #'first)
           `(selfcall
@@ -1349,6 +1349,10 @@
 (define-builtin new ()
   '(object))
 
+(define-raw-builtin make-new (constructor-function &rest constructor-args)
+  `(selfcall 
+    (return (new (call ,constructor-function  ,@(mapcar #'convert constructor-args))))))
+
 (define-raw-builtin oget* (object key &rest keys)
   `(selfcall
     (progn
@@ -1524,18 +1528,18 @@
 
 (defun !macroexpand-1 (form &optional env)
   (let ((*environment* (or env *environment*)))
-    (cond
-      ((symbolp form)
-       (let ((b (lookup-in-lexenv form *environment* 'variable)))
-         (if (and b (eq (binding-type b) 'macro))
-             (values (binding-value b) t)
-             (values form nil))))
-      ((and (consp form) (symbolp (car form)))
-       (let ((macrofun (!macro-function (car form))))
-         (if macrofun
-             (values (funcall macrofun (cdr form)) t)
-             (values form nil))))
-      (t
+  (cond
+    ((symbolp form)
+     (let ((b (lookup-in-lexenv form *environment* 'variable)))
+       (if (and b (eq (binding-type b) 'macro))
+           (values (binding-value b) t)
+           (values form nil))))
+    ((and (consp form) (symbolp (car form)))
+     (let ((macrofun (!macro-function (car form))))
+       (if macrofun
+           (values (funcall macrofun (cdr form)) t)
+           (values form nil))))
+    (t
        (values form nil)))))
 
 #+jscl
