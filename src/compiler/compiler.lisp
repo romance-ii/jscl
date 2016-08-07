@@ -1214,6 +1214,9 @@
   (convert-to-bool `(!== (get ,x "fvalue") undefined)))
 
 (define-builtin* symbol-value (x)
+  (assert *out* (*out*)
+          "Trying to find the Symbol-Value of ~s without an output context *OUT*"
+          x)
   (emit `(get ,x "value") *out*)
   (emit `(if (=== ,*out* undefined)
              (throw (+ "Variable `" (get ,x "name") "' is unbound.")))))
@@ -1723,7 +1726,8 @@
 
 (defun compile-toplevel (sexp &optional multiple-value-p return-p)
   (with-output-to-string (*js-output*)
-    (js (process-toplevel sexp multiple-value-p return-p))))
+    (unless (eql sexp '||)
+      (js (process-toplevel sexp multiple-value-p return-p)))))
 
 
 (defmacro with-compilation-environment (&body body)
