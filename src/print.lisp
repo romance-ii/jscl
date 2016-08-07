@@ -54,8 +54,9 @@
           (return-from escape-symbol-name-p t))))
     dots-only))
 
-;;; Return T if the  specified string can be read as  a number In case such a string  is the name of
-;;; a symbol then escaping is required when printing to ensure correct reading.
+;;; Return T if the specified string can be read as a number
+;;; In case such a string is the name of a symbol then escaping
+;;; is required when printing to ensure correct reading.
 (defun potential-number-p (string)
   ;; The four rules for being a potential number are described in 2.3.1.1 Potential Numbers as Token
   ;;
@@ -63,9 +64,10 @@
   (dotimes (i (length string))
     (let ((char (char string i)))
       (cond
-        ;; DIGIT-CHAR-P should work with  the current radix (*READ-BASE*) here. If  the radix is not
-        ;; decimal, then we have to make sure there is not a decimal-point in the string.
-        ((digit-char-p char *read-base*))
+        ;; Digits TODO: DIGIT-CHAR-P should work with the current
+        ;; radix here. If the radix is not decimal, then we have to
+        ;; make sure there is not a decimal-point in the string.
+        ((digit-char-p char))
         ;; Signs, ratios, decimal point and extension mark
         ((find char "+-/_^"))
         ((and (= 10 *read-base*)
@@ -74,8 +76,8 @@
         ((alpha-char-p char)
          (when (and (< i (1- (length string)))
                     (alpha-char-p (char string (1+ i))))
-           ;; fail:  adjacent  letters are  not  number  marker, or  there  is  a decimal  point  in
-           ;; the string.
+           ;; fail: adjacent letters are not number marker, or
+           ;; there is a decimal point in the string.
            (return-from potential-number-p)))
         (t
          ;; fail: there is a non-allowed character
@@ -336,12 +338,12 @@ to streams."
   (defun terpri ()
     (write-char #\newline)
     (values))
-
+  
   (defun write-line (x)
     (write-string x)
     (terpri)
     x)
-
+  
   (defun print (x)
     (prog1 (prin1 x)
       (terpri))))
@@ -509,8 +511,8 @@ to streams."
               (tagbody
                read-control
                  (assert (and (< (1+ i) len) "~ at end of format"))
-                 (let ((next (char fmt (incf i))))
-                   (cond
+            (let ((next (char fmt (incf i))))
+              (cond
                      ((digit-char-p next)
                       (multiple-value-bind (param ending)
                           (parse-integer (subseq fmt i) :junk-allowed t)
@@ -558,7 +560,7 @@ to streams."
                           (if atp "ies" "s"))))
 
                      ((char= #\~ next)
-                      (concatf res "~"))
+                 (concatf res "~"))
 
                      ((char= #\| next) (concatf res (string #\|)))
                      ((char= #\% next) (concatf res (apply #'format-terpri (reverse params))))

@@ -1,4 +1,4 @@
-;;; defstruct.lisp ---
+;;; defstruct.lisp --- 
 
 ;; JSCL is  free software:  you can  redistribute it  and/or modify it  under the  terms of  the GNU
 ;; General Public  License as published  by the  Free Software Foundation,  either version 3  of the
@@ -61,7 +61,7 @@
                                  (list x)
                                  (list new-value)
                                  `(progn
-                                    (rplaca (nthcdr ,',index ,object) ,new-value)
+                                    (rplaca (nthcdr ,',index ,object) ,new-value) 
                                     ,new-value)
                                  `(,',accessor-name ,object)))))
                 (incf index)))))

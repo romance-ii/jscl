@@ -60,7 +60,7 @@
 
 ;; It is a known bug. Javascript does not  distinguish between floats and integers, and we represent
 ;; both numbers in the same way. So 1 == 1.0 and integer and float types are not disjoint.
-(expected-failure (floatp 1.0))
+(expected-failure (floatp 1.0)) 
 
 (test             (floatp    1.1))
 (test             (floatp    pi))

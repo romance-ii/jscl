@@ -1,6 +1,7 @@
 ;;; boot.lisp --- First forms to be cross compiled
 
-;; Copyright (C) 2012, 2013 David Vazquez Copyright (C) 2012 Raimon Grau
+;; Copyright (C) 2012, 2013 David Vazquez
+;; Copyright (C) 2012 Raimon Grau
 
 ;; JSCL is  free software:  you can  redistribute it  and/or modify it  under the  terms of  the GNU
 ;; General Public  License as published  by the  Free Software Foundation,  either version 3  of the
@@ -36,12 +37,12 @@
                   ;; macroexpander will need to be dumped in the final environment somehow.
                   (when (find :jscl-xc *features*)
                     (setq expander `(quote ,expander)))
-
+                  
                   `(eval-when (:compile-toplevel :execute)
                      (%compile-defmacro ',name ,expander))
 
                   )))))
-
+    
     (%compile-defmacro 'defmacro defmacro-macroexpander)))
 
 (defmacro declaim (&rest decls)
@@ -245,7 +246,7 @@
   `(block nil
      (let ,(mapcar (lambda (x) (if (symbolp x)
                                    (list x nil)
-                                   (list (first x) (second x)))) varlist)
+                                 (list (first x) (second x)))) varlist)
        (while t
          (when ,(car endlist)
            (return (progn ,@(cdr endlist))))
@@ -262,7 +263,7 @@
   `(block nil
      (let* ,(mapcar (lambda (x1) (if (symbolp x1)
                                      (list x1 nil)
-                                     (list (first x1) (second x1)))) varlist)
+                                   (list (first x1) (second x1)))) varlist)
        (while t
          (when ,(car endlist)
            (return (progn ,@(cdr endlist))))

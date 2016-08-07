@@ -65,12 +65,12 @@
 
 (defun aref (array index)
   (unless (arrayp array)
-    (error "~S is not an array." array))
+    (error "~S is not an array." array))  
   (storage-vector-ref array index))
 
 (defun aset (array index value)
   (unless (arrayp array)
-    (error "~S is not an array." array))
+    (error "~S is not an array." array))  
   (storage-vector-set array index value))
 
 (define-setf-expander aref (array index)
@@ -96,7 +96,7 @@
 ;;; FIXME: should use fill-pointer instead of the absolute end of array
 (defun vector-push-extend (new vector)
   (unless (vectorp vector)
-    (error "~S is not a vector." vector))
+    (error "~S is not a vector." vector))  
   (let ((size (storage-vector-size vector)))
     (resize-storage-vector vector (1+ size))
     (aset vector size new)

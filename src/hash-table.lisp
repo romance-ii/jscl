@@ -94,7 +94,7 @@
             (list g!new-value)                              ; store variables
             `(progn
                (sethash ,g!new-value ,g!key ,g!hash-table)  ; storing form
-               ,g!new-value)
+               ,g!new-value)              
             `(gethash ,g!new-value ,g!key ,g!hash-table)    ; accessing form
             )))
 
@@ -117,6 +117,6 @@
 
 (defun maphash (function hash-table)
   (map-for-in (lambda (x)
-                (funcall function (car x) (cdr x)))
-              (caddr hash-table))
+		(funcall function (car x) (cdr x)))
+	      (caddr hash-table))
   nil)

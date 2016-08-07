@@ -1,4 +1,4 @@
-;;; read.lisp ---
+;;; read.lisp --- 
 
 ;; Copyright (C) 2012, 2013 David Vazquez Copyright (C) 2012 Raimon Grau
 
@@ -241,7 +241,7 @@
             (dotimes (i index)
               (aset result (decf index) (pop elements)))
             result)
-         (let* ((ix index)      ; Can't just use index: the same var would be captured in all fixups
+         (let* ((ix index) ; Can't just use index: the same var would be captured in all fixups
                 (*make-fixup-function* (lambda ()
                                          (lambda (obj)
                                            (aset result ix obj))))
@@ -261,15 +261,15 @@
               (let ((*read-base* 16))
                 (code-char (read-integer-from-stream stream))))
              (t (let ((cname
-                       (concat (string (%read-char stream))
-                               (read-until stream #'terminalp))))
+              (concat (string (%read-char stream))
+                      (read-until stream #'terminalp))))
                   (let ((ch (name-char cname)))
                     (or ch (char cname 0)))))))
       ((#\+ #\-)
        (let* ((expression
                (let ((*package* (find-package :keyword)))
                  (ls-read stream eof-error-p eof-value t))))
-
+         
          (if (eql (char= ch #\+) (eval-feature-expression expression))
              (ls-read stream eof-error-p eof-value t)
              (prog2 (let ((*read-skip-p* t))
@@ -361,7 +361,7 @@
     (dotimes (i (length s))
       (let ((ch (char s i)))
         (if last-escape
-            (progn
+           (progn
               (setf last-escape nil)
               (setf result (concat result (string ch))))
             (if (char= ch #\\)
@@ -500,39 +500,39 @@
 
 (defun !parse-integer (string junk-allow &optional (radix *read-base*))
   (let ((radix (or radix 10)))
-    (block nil
-      (let ((value 0)
-            (index 0)
-            (size (length string))
-            (sign 1))
-        ;; Leading whitespace
-        (while (and (< index size)
-                    (whitespacep (char string index)))
-          (incf index))
-        (unless (< index size) (return (values nil 0)))
-        ;; Optional sign
-        (case (char string 0)
-          (#\+ (incf index))
-          (#\- (setq sign -1)
-               (incf index)))
-        ;; First digit
-        (unless (and (< index size)
+  (block nil
+    (let ((value 0)
+          (index 0)
+          (size (length string))
+          (sign 1))
+      ;; Leading whitespace
+      (while (and (< index size)
+                  (whitespacep (char string index)))
+        (incf index))
+      (unless (< index size) (return (values nil 0)))
+      ;; Optional sign
+      (case (char string 0)
+        (#\+ (incf index))
+        (#\- (setq sign -1)
+             (incf index)))
+      ;; First digit
+      (unless (and (< index size)
                      (setq value (digit-char-p (char string index) radix)))
-          (return (values nil index)))
-        (incf index)
-        ;; Other digits
-        (while (< index size)
+        (return (values nil index)))
+      (incf index)
+      ;; Other digits
+      (while (< index size)
           (let ((digit (digit-char-p (char string index) radix)))
-            (unless digit (return))
+          (unless digit (return))
             (setq value (+ (* value radix) digit))
-            (incf index)))
-        ;; Trailing whitespace
-        (do ((i index (1+ i)))
-            ((or (= i size) (not (whitespacep (char string i))))
-             (and (= i size) (setq index i))))
-        (if (or junk-allow
-                (= index size))
-            (values (* sign value) index)
+          (incf index)))
+      ;; Trailing whitespace
+      (do ((i index (1+ i)))
+          ((or (= i size) (not (whitespacep (char string i))))
+           (and (= i size) (setq index i))))
+      (if (or junk-allow
+              (= index size))
+          (values (* sign value) index)
             (values nil index))))))
 
 #+jscl

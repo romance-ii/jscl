@@ -35,6 +35,6 @@
   (declare (ignorable subchar arg))
   (assert (char= #\: (read-char stream nil :eof)) nil "FFI descriptor must start with a semicolon.")
   (loop :for ch := (read-char stream nil #\Space)
-     :until (terminalp ch)))
+        :until (terminalp ch)))
 
 (set-dispatch-macro-character #\# #\J #'j-reader)

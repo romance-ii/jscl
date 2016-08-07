@@ -79,9 +79,9 @@
             (c2 (char s2 (+ start2 i))))
         (when (not (funcall char-eq c1 c2))  ;; found a difference
           (return-from compare-strings
-            (if (not (funcall char-lt c1 c2))
-                (+ start1 i)
-                nil)))))))
+                       (if (not (funcall char-lt c1 c2))
+                           (+ start1 i)
+                         nil)))))))
 
 (defun string< (s1 s2 &key (start1 0) end1 (start2 0) end2)
   (compare-strings s1 s2 start1 end1 start2 end2
@@ -94,7 +94,7 @@
 (defun string<= (s1 s2 &key (start1 0) end1 (start2 0) end2)
   (compare-strings s1 s2 start1 end1 start2 end2
                    #'char= #'char> t t nil))
-
+  
 (defun string>= (s1 s2 &key (start1 0) end1 (start2 0) end2)
   (compare-strings s1 s2 start1 end1 start2 end2
                    #'char= #'char< t nil t))
@@ -146,7 +146,7 @@
             (if (and (or (null start) (>= i start))
                      (or (null end) (< i end)))
                 (char-upcase (char string i))
-                (char string i))))))
+              (char string i))))))
 
 (defun nstring-upcase (string &key (start 0) end)
   (let ((end (or end (length string))))
@@ -162,7 +162,7 @@
             (if (and (or (null start) (>= i start))
                      (or (null end) (< i end)))
                 (char-downcase (char string i))
-                (char string i))))))
+              (char string i))))))
 
 (defun nstring-downcase (string &key (start 0) end)
   (let ((end (or end (length string))))
@@ -194,7 +194,7 @@
             (if (or (zerop i)
                     (not just-saw-alphanum-p))
                 (char-upcase (char string (+ start i)))
-                (char-downcase (char string (+ start i)))))
+              (char-downcase (char string (+ start i)))))
       (setq just-saw-alphanum-p (alphanumericp (char string (+ start i)))))))
 
 (defun string-equal (s1 s2 &key start1 end1 start2 end2)

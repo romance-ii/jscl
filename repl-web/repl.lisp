@@ -31,7 +31,7 @@
         (stringp nil)
         (s (length string))
         (depth 0))
-
+    
     (while (< i s)
       (cond
         (stringp
@@ -79,12 +79,12 @@
                 (#j:jqconsole:Write "ERROR: " "jqconsole-error")
                 (#j:jqconsole:Write (apply #'format nil (!condition-args err)) "jqconsole-error")
                 (#j:jqconsole:Write (string #\newline) "jqconsole-error")))
-
+            
             (catch (err)
               (#j:console:log err)
               (let ((message (or (oget err "message") err)))
                 (#j:jqconsole:Write (format nil "ERROR[!]: ~a~%" message) "jqconsole-error"))))
-
+           
            (save-history)
            (toplevel)))
     (#j:jqconsole:Prompt t #'process-input #'indent-level)))
