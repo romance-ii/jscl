@@ -274,6 +274,15 @@ packages.CL = {
 
 packages['COMMON-LISP'] = packages.CL;
 
+packages.CL_USER = {
+  packageName: 'CL-USER',
+  symbols: {},
+  exports: {},
+  use: nil
+};
+
+packages['COMMON-LISP-USER'] = packages.CL_USER;
+
 packages.KEYWORD = {
   packageName: 'KEYWORD',
   symbols: {},
