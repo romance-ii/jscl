@@ -1,5 +1,4 @@
-;;; Tests for conditional forms
-;;; Boolean operators
+;;; Tests for conditional forms Boolean operators
 (test (eql (and nil 1) nil))
 (test (=   (and 1   2)   2))
 

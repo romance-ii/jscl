@@ -13,18 +13,18 @@
 ;; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
 ;; for more details.
 ;;
-;; You should have received a copy of the GNU General Public License
-;; along with JSCL.  If not, see <http://www.gnu.org/licenses/>.
+;; You should  have received a  copy of  the GNU General  Public License
+;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
 
 (/debug "loading read.lisp!")
 
 ;;;; Reader
 
-;;; If it is not NIL, we do not want to read the expression but just
+;;; If it  is not NIL, we  do not want  to read the expression  but just
 ;;; ignore it. For example, it is used in conditional reads #+.
 (defvar *read-skip-p* nil)
 
-;;; The Lisp reader, parse strings and return Lisp objects. The main
+;;; The Lisp  reader, parse  strings and return  Lisp objects.  The main
 ;;; entry points are `ls-read' and `ls-read-from-string'.
 
 ;;; #= / ## implementation
@@ -268,14 +268,14 @@
               (let ((*read-base* 16))
                 (code-char (read-integer-from-stream stream))))
              (t (let ((cname
-                       (concat (string (%read-char stream))
-                               (read-until stream #'terminalp))))
+                        (concat (string (%read-char stream))
+                                (read-until stream #'terminalp))))
                   (let ((ch (name-char cname)))
                     (or ch (char cname 0)))))))
       ((#\+ #\-)
        (let* ((expression
-               (let ((*package* (find-package :keyword)))
-                 (ls-read stream eof-error-p eof-value t))))
+                (let ((*package* (find-package :keyword)))
+                  (ls-read stream eof-error-p eof-value t))))
 
          (if (eql (char= ch #\+) (eval-feature-expression expression))
              (ls-read stream eof-error-p eof-value t)
@@ -329,7 +329,7 @@
                      (add-labelled-object id *future-value*)
                      (let ((obj (ls-read stream eof-error-p eof-value t)))
                        ;; FIXME: somehow the more natural
-                       ;;;    (setf (cdr (find-labelled-object id)) obj)
+ ;;;    (setf (cdr (find-labelled-object id)) obj)
                        ;;    doesn't work
                        (rplacd (find-labelled-object id) obj)
                        obj))))
@@ -454,7 +454,7 @@
       (case (char string index)
         (#\+ (incf index))
         (#\- (setq sign -1)
-             (incf index)))
+         (incf index)))
       (unless (< index size) (return))
       ;; Optional integer part
       (awhen (digit-char-p (char string index))
@@ -492,7 +492,7 @@
         (case (char string index)
           (#\+ (incf index))
           (#\- (setq exponent-sign -1)
-               (incf index)))
+           (incf index)))
         (unless (< index size) (return))
         ;; Exponent digits
         (let ((value (digit-char-p (char string index))))
@@ -522,7 +522,7 @@
         (case (char string 0)
           (#\+ (incf index))
           (#\- (setq sign -1)
-               (incf index)))
+           (incf index)))
         ;; First digit
         (unless (and (< index size)
                      (setq value (digit-char-p (char string index) radix)))

@@ -13,8 +13,8 @@
 ;; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
 ;; for more details.
 ;;
-;; You should have received a copy of the GNU General Public License
-;; along with JSCL.  If not, see <http://www.gnu.org/licenses/>.
+;; You should  have received a  copy of  the GNU General  Public License
+;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
 
 (defpackage :jscl
   (:use :cl)
@@ -36,22 +36,25 @@
   ;; and we are not using ASDF yet.
   (with-open-file (in (merge-pathnames "package.json" *base-directory*))
     (loop
-       for line = (read-line in nil)
-       while line
-       when (search "\"version\":" line)
-       do (let ((colon (position #\: line))
-                (comma (position #\, line)))
-            (return (string-trim '(#\newline #\" #\tab #\space)
-                                 (subseq line (1+ colon) comma)))))))
+      for line = (read-line in nil)
+      while line
+      when (search "\"version\":" line)
+        do (let ((colon (position #\: line))
+                 (comma (position #\, line)))
+             (return (string-trim '(#\newline #\" #\tab #\space)
+                                  (subseq line (1+ colon) comma)))))))
 
 
 
-;;; List of all the source files that need to  be compiled, and whether they are to be compiled just
-;;; by the  host, by  the target  JSCL, or  by both.  All files  have a  `.lisp' extension,  and are
-;;; relative to src/ Subdirectories are indicated by the presence of a list rather than a keyword in
-;;; the second element  of the list. For  example, this list: (("foo" :target)  ("bar" ("baz" :host)
-;;; ("quux"  :both))) Means  that src/foo.lisp  and  src/bar/quux.lisp need  to be  compiled in  the
-;;; target, and that src/bar/baz.lisp and src/bar/quux.lisp need to be compiled in the host
+;;; List of all  the source files that need to  be compiled, and whether
+;;; they are to be compiled just by  the host, by the target JSCL, or by
+;;; both. All files  have a `.lisp' extension, and are  relative to src/
+;;; Subdirectories are indicated  by the presence of a  list rather than
+;;; a keyword in the second element of the list. For example, this list:
+;;; (("foo" :target)  ("bar" ("baz"  :host) ("quux" :both)))  Means that
+;;; src/foo.lisp  and  src/bar/quux.lisp  need  to be  compiled  in  the
+;;; target, and  that src/bar/baz.lisp and src/bar/quux.lisp  need to be
+;;; compiled in the host
 (defvar *source*
   '(("boot"          :target)
     ("early-char"    :target)
@@ -91,15 +94,15 @@
 
 (defun get-files (file-list type dir)
   "Traverse FILE-LIST and retrieve a list of the files within which match
-   either TYPE or :BOTH, processing subdirectories."
+ either TYPE or :BOTH, processing subdirectories."
   (let ((file (car file-list)))
     (cond
       ((null file-list)
        ())
       ((listp (cadr file))
        (append
-         (get-files (cdr file)      type (append dir (list (car file))))
-         (get-files (cdr file-list) type dir)))
+        (get-files (cdr file)      type (append dir (list (car file))))
+        (get-files (cdr file-list) type dir)))
       ((member (cadr file) (list type :both))
        (cons (source-pathname (car file) :directory dir :type "lisp")
              (get-files (cdr file-list) type dir)))
@@ -108,7 +111,7 @@
 
 (defmacro do-source (name type &body body)
   "Iterate over all the source files that need to be compiled in the host or
-   the target, depending on the TYPE argument."
+ the target, depending on the TYPE argument."
   (unless (member type '(:host :target))
     (error "TYPE must be one of :HOST or :TARGET, not ~S" type))
   `(dolist (,name (get-files *source* ,type '(:relative "src")))
@@ -153,26 +156,26 @@
     (let ((in (make-string-stream (read-whole-file filename))))
       (format t "Compiling ~a...~%" (enough-namestring filename))
       (loop
-         with eof-mark = (gensym)
-         for form = (ls-read in nil eof-mark)
-         until (eq form eof-mark)
-         do (let ((compilation (compile-toplevel form)))
-              (if (possibly-valid-js-p compilation)
-              (when (plusp (length compilation))
-                    (write-string compilation out))
-                  (complain-about-illegal-chars form in compilation)))))))
+        with eof-mark = (gensym)
+        for form = (ls-read in nil eof-mark)
+        until (eq form eof-mark)
+        do (let ((compilation (compile-toplevel form)))
+             (if (possibly-valid-js-p compilation)
+                 (when (plusp (length compilation))
+                   (write-string compilation out))
+                 (complain-about-illegal-chars form in compilation)))))))
 
 (defun dump-global-environment (stream)
   (flet ((late-compile (form)
            (let ((*standard-output* stream))
              (write-string (compile-toplevel form)))))
-    ;; We assume that environments have a friendly list representation
+    ;; We assume  that environments have a  friendly list representation
     ;; for the compiler and it can be dumped.
     (dolist (b (lexenv-function *environment*))
       (when (eq (binding-type b) 'macro)
         (setf (binding-value b) `(,*magic-unquote-marker* ,(binding-value b)))))
     (late-compile `(setq *environment* ',*environment*))
-    ;; Set some counter variable properly, so user compiled code will
+    ;; Set some  counter variable properly,  so user compiled  code will
     ;; not collide with the compiler itself.
     (late-compile
      `(progn
@@ -197,15 +200,15 @@
           (write-string "#!/usr/bin/env node" out)
           (terpri out))
         (with-scoping-function (out)
-        (dolist (input files)
+          (dolist (input files)
             (terpri out)
             (!compile-file input out))))))
 
 (defun compile-test-suite ()
   (compile-application
    `(,(source-pathname "tests.lisp" :directory nil)
-      ,@(directory (source-pathname "*" :directory '(:relative "tests") :type "lisp"))
-      ,(source-pathname "tests-report.lisp" :directory nil))
+     ,@(directory (source-pathname "*" :directory '(:relative "tests") :type "lisp"))
+     ,(source-pathname "tests-report.lisp" :directory nil))
    (merge-pathnames "tests.js" *base-directory*)))
 
 (defun compile-web-repl ()
@@ -220,14 +223,14 @@
    :shebang t))
 
 (defun compile-jscl.js (verbosep)
-    (with-compilation-environment
+  (with-compilation-environment
       (with-open-file (out (merge-pathnames "jscl.js" *base-directory*)
                            :direction :output
                            :if-exists :supersede)
         (format out "(function(){~%'use strict';~%")
         (write-string (read-whole-file (source-pathname "prelude.js")) out)
         (do-source input :target
-                   (!compile-file input out :print verbosep))
+          (!compile-file input out :print verbosep))
         (dump-global-environment out)
         (format out "})();~%"))))
 

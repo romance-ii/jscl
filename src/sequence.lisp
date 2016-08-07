@@ -10,8 +10,8 @@
 ;; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
 ;; for more details.
 ;;
-;; You should have received a copy of the GNU General Public License
-;; along with JSCL.  If not, see <http://www.gnu.org/licenses/>.
+;; You should  have received a  copy of  the GNU General  Public License
+;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
 
 (/debug "loading sequence.lisp!")
 
@@ -127,12 +127,12 @@
 
 (defun count-if-not (predicate sequence &key from-end (start 0) end key)
   (count-if (complement predicate) sequence :from-end from-end
-            :start start :end end :key key))
+                                            :start start :end end :key key))
 
 (defun find (item seq &key key (test #'eql testp) (test-not #'eql test-not-p))
   (do-sequence (x seq)
     (when (satisfies-test-p item x :key key :test test :testp testp
-                            :test-not test-not :test-not-p test-not-p)
+                                   :test-not test-not :test-not-p test-not-p)
       (return x))))
 
 (defun find-if (predicate sequence &key key)
@@ -253,7 +253,7 @@
             (tail head))
        (do-sequence (elt seq)
          (unless (satisfies-test-p x elt :key key :test test :testp testp
-                                   :test-not test-not :test-not-p test-not-p)
+                                         :test-not test-not :test-not-p test-not-p)
            (let ((new (list elt)))
              (rplacd tail new)
              (setq tail new))))
@@ -262,7 +262,7 @@
      (let (vector)
        (do-sequence (elt seq index)
          (if (satisfies-test-p x elt :key key :test test :testp testp
-                               :test-not test-not :test-not-p test-not-p)
+                                     :test-not test-not :test-not-p test-not-p)
              ;; Copy the beginning of the vector only when we find an element
              ;; that does not match.
              (unless vector
@@ -509,4 +509,3 @@
       (if result-type
           (funcall result-collector (apply function args))
           (apply function args)))))
-

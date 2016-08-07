@@ -10,8 +10,8 @@
 ;; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
 ;; for more details.
 ;;
-;; You should have received a copy of the GNU General Public License
-;; along with JSCL.  If not, see <http://www.gnu.org/licenses/>.
+;; You should  have received a  copy of  the GNU General  Public License
+;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
 
 (/debug "loading package.lisp!")
 
@@ -30,7 +30,7 @@
       (oget *package-table* (string package-designator))))
 
 (defun delete-package (package-designator)
-  ;; TODO: Signal  a correctable  error in case  the package-designator
+  ;; TODO:  Signal a  correctable error  in case  the package-designator
   ;; does not name  a package. TODO: Implement  unuse-package and remove
   ;; the deleted package from packages that use it.
   (delete-property (package-name (find-package-or-fail package-designator))

@@ -10,8 +10,8 @@
 ;; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
 ;; for more details.
 ;;
-;; You should have received a copy of the GNU General Public License
-;; along with JSCL.  If not, see <http://www.gnu.org/licenses/>.
+;; You should  have received a  copy of  the GNU General  Public License
+;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
 
 (/debug "loading setf!")
 
@@ -113,8 +113,8 @@
     (let ((d (gensym)))
       `(let* (,@(mapcar #'list dummies vals)
               (,d ,delta)
-                (,(car newval) (+ ,getter ,d))
-                ,@(cdr newval))
+              (,(car newval) (+ ,getter ,d))
+              ,@(cdr newval))
          ,setter))))
 
 (defmacro decf (place &optional (delta 1))
@@ -139,7 +139,7 @@
 
 (defmacro pop (place)
   (multiple-value-bind (dummies vals newval setter getter)
-    (!get-setf-expansion place)
+      (!get-setf-expansion place)
     (let ((head (gensym)))
       `(let* (,@(mapcar #'list dummies vals)
               (,head ,getter)

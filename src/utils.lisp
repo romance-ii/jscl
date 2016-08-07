@@ -83,8 +83,8 @@ accumulated, in the order."
 (defun vector-to-list (vector)
   (let ((size (length vector)))
     (with-collect
-        (dotimes (i size)
-          (collect (aref vector i))))))
+      (dotimes (i size)
+        (collect (aref vector i))))))
 
 (defun list-to-vector (list)
   (let ((v (make-array (length list)))
@@ -99,10 +99,10 @@ accumulated, in the order."
 
 (defun integer-to-string (x &optional (radix (or *print-base* 10)) plusp)
   (let ((radix (or radix *print-base* 10))) ; some callers screw up and pass literal NIL
-  (cond
-    ((zerop x)
+    (cond
+      ((zerop x)
        (if plusp "+0" "0"))
-    ((minusp x)
+      ((minusp x)
        (concat "-" (integer-to-string (- x) radix)))
       ((and plusp (plusp x))
        (concat "+" (integer-to-string x radix)))
@@ -115,9 +115,9 @@ accumulated, in the order."
            (16 (concat "#x" (integer-to-string x radix)))
            (otherwise (concat "#" (integer-to-string radix 10 nil)
                               "r" (integer-to-string x radix))))))
-    (t
-     (let ((digits nil))
-       (while (not (zerop x))
+      (t
+       (let ((digits nil))
+         (while (not (zerop x))
            (push (mod x radix) digits)
            (setq x (truncate x radix)))
          (mapconcat (lambda (x) (string (digit-char x radix)))
@@ -138,7 +138,7 @@ accumulated, in the order."
 (defun interleave (list element &optional after-last-p)
   (unless (null list)
     (with-collect
-        (collect (car list))
+      (collect (car list))
       (dolist (x (cdr list))
         (collect element)
         (collect x))

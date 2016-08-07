@@ -157,7 +157,7 @@
 (test (equal (reduce #'cons '(a b c d e f) :start 1 :end 4 :from-end t)
              '(b c . d)))
 (test (equal (reduce #'cons '(a b c d e f) :start 1 :end 4 :from-end t
-                     :initial-value nil)
+                                           :initial-value nil)
              '(b c d)))
 
                                         ; MISMATCH
@@ -286,4 +286,3 @@
         (result (null (map nil (lambda (x) (push x acc)) '(1 2 3)))))
    (list acc result))
  '((3 2 1) t))
- 
