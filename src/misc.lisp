@@ -79,8 +79,8 @@
 
 ;;;; TRACE
 
-;;; This trace implementation works on symbols, replacing the function
-;;; with a wrapper. So it will not trace calls to the function if they
+;;; This trace  implementation works on symbols,  replacing the function
+;;; with a wrapper. So  it will not trace calls to  the function if they
 ;;; got the function object before it was traced.
 
 ;;; An alist of the form (NAME FUNCTION), where NAME is the name of a
