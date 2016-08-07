@@ -464,7 +464,6 @@
       (setq body (cdr body)))
     (values body value-declarations value-docstring)))
 
-
 (defun bind-this ()
   (let* ((gvar (gvarname 'this))
          (binding (make-binding :name 'this :type 'variable :value gvar)))
