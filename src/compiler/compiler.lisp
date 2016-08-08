@@ -15,7 +15,9 @@
 
 ;;;; Compiler
 
-(/debug "loading compiler.lisp!")
+#+jscl (/debug "loading compiler.lisp!")
+(in-package :jscl)
+
 
 ;;; Translate the Lisp  code to Javascript. It will  compile the special
 ;;; forms. Some primitive  functions are compiled as  special forms too.
@@ -58,12 +60,12 @@
 (defun target-statements (&optional (target *target*))
   (reverse (target-code target)))
 
-;;; Emit an expression or statement into target.
-;;;
-;;; If  the  optional  argument  VAR  is  provideed,  EXPR  must  be  an
-;;; expression, the result of the  expression will be assigned into VAR.
-;;; VAR is returned.
 (defun emit (expr &optional var (target *target*))
+  "Emit an expression or statement into target.
+
+If the optional  argument VAR is provideed, EXPR must  be an expression,
+the result of the expression will be assigned into VAR. VAR is returned.
+"
   (when (eq var t)
     (setq var (gvarname))
     (emit `(var ,var)))
@@ -72,11 +74,13 @@
     var))
 
 
-;;; Create a set of new targets  and initialize them. Then execute BODY.
-;;; Bindings is a list of the form (TARGET-NAME FORM). FORM is evaluated
-;;; with TARGET-NAME bound  to the newly created target, and  set as the
-;;; current target (*TARGET*).
 (defmacro let-target ((name) form &body body)
+  "Create a set of new targets  and initialize them. Then execute BODY. 
+
+Bindings is  a list of  the form  (TARGET-NAME FORM). FORM  is evaluated
+with  TARGET-NAME bound  to the  newly created  target, and  set as  the
+current target (*TARGET*).
+"
   `(let ((,name
           (let ((*target* (make-target)))
             ,form
@@ -85,18 +89,19 @@
 
 
 
-;;; A  Form can  return a  multiple values  object calling  VALUES, like
-;;; values(arg1, arg2,  ...). It will  work in  any context, as  well as
-;;; returning  an individual  object. However,  if the  special variable
-;;; `*multiple-value-p*' is NIL, is granted  that only the primary value
-;;; will be used, so we can optimize to avoid the VALUES function call.
-(defvar *multiple-value-p* nil)
+(defvar *multiple-value-p* nil
+  " A  Form can  return a  multiple values  object calling  VALUES, like values(arg1, arg2,  ...).
+ It will work in any context, as well as returning an individual object.
+ However,  if  the  special  variable `*multiple-value-p*'  is  NIL,  is
+ granted that only the primary value will be used, so we can optimize to
+ avoid the VALUES function call.")
 
-;;; It is bound dinamically to the  number of nested calls to `convert'.
-;;; Therefore, a form is being compiled as toplevel if it is zero.
-(defvar *convert-level* -1)
+(defvar *convert-level* -1
+  "It is bound dynamically to the  number of nested calls to `convert'.
 
-;;; Contain  a symbol  describin the  Javascript variable  to which  the
+Therefore, a form is being compiled as toplevel if it is zero.")
+
+;;; Contain  a symbol  describing the  Javascript variable  to which  the
 ;;; current  form  being  compiled  should  assign  the  result  of  the
 ;;; that form.
 (defvar *out*)
@@ -140,10 +145,13 @@
 (defvar *environment*)
 (defvar *variable-counter*)
 
-(defun gvarname (&optional symbol)
-  (declare (ignore symbol))
+(defun gvarname (&optional symbol) 
   (incf *variable-counter*)
-  (make-symbol (concat "v" (integer-to-string *variable-counter*))))
+  (let ((name (if symbol
+                  (concat (sanitize-name symbol) "-")
+                  "var-")))
+    (make-symbol (substitute #\_ #\- 
+                             (concat name (integer-to-string *variable-counter*))))))
 
 (defun translate-variable (symbol)
   (awhen (lookup-in-lexenv symbol *environment* 'variable)
@@ -529,9 +537,44 @@
 (defvar *literal-table*)
 (defvar *literal-counter*)
 
-(defun genlit ()
+(defun first-symbol (sexp)
+  (cond
+    ((consp sexp) (first-symbol (car sexp)))
+    ((symbolp sexp) sexp)
+    ((numberp sexp) (concat "Num-" (princ-to-string sexp)))
+    ((stringp sexp) sexp)
+    (t (princ-to-string sexp))))
+
+(defun sanitize-name (name)
+  (cond
+    ((consp name) (sanitize-name (princ-to-string name)))
+    ((stringp name) (let ((s (substitute-if-not #\$
+                                                (lambda (ch)
+                                                  (or (char<= #\A ch #\Z)
+                                                      (char<= #\a ch #\z)
+                                                      (char<= #\0 ch #\9)
+                                                      (char= #\- ch)))
+                                                (substitute #\- #\Space name))))
+                      
+                      (let ((first-letter-position (position-if #'alpha-char-p s)))
+                        (if first-letter-position
+                            (let ((trunc (subseq s first-letter-position
+                                                 (min (length s)
+                                                      (+ first-letter-position 32)))))
+                              (if (< 2 (length trunc))
+                                  trunc
+                                  (concat "N-" trunc)))
+                            (sanitize-name (concat "Xv-" s))))))
+    ((symbolp name) (sanitize-name (symbol-name name)))
+    ((numberp name) (sanitize-name (concat "Num-" (princ-to-string name))))))
+
+(defun genlit (&optional symbol)
   (incf *literal-counter*)
-  (make-symbol (concat "l" (integer-to-string *literal-counter*))))
+  (let ((name (if symbol
+                  (concat "l-" (sanitize-name symbol) "-")
+                  "lit")))
+    (make-symbol (substitute #\_ #\- 
+                             (concat name (integer-to-string *variable-counter*))))))
 
 (defun dump-symbol (symbol)
   (let ((package (symbol-package symbol)))
@@ -587,7 +630,7 @@
                          (array (dump-array sexp)))))
            (if (and recursive (not (symbolp sexp)))
                dumped
-               (let ((jsvar (genlit)))
+               (let ((jsvar (genlit sexp)))
                  (push (cons sexp jsvar) *literal-table*)
 
                  (emit `(var (,jsvar ,dumped)) nil *toplevel-compilations*)
@@ -601,7 +644,7 @@
   (literal sexp))
 
 (define-compilation %while (pred &rest body)
-  (let* ((v (gvarname))
+  (let* ((v (gvarname pred))
          (condition
           `(selfcall
             (var ,v)
@@ -820,7 +863,7 @@
 (define-compilation let* (bindings &rest body)
   (let ((bindings (mapcar #'ensure-list bindings))
         (*environment* (copy-lexenv *environment*))
-        (sbindings (gvarname))
+        (sbindings (gvarname bindings))
         (prelude-target (make-target))
         (postlude-target (make-target)))
 
@@ -1071,7 +1114,7 @@
   (let ((fargs '()))
 
     (dolist (x args)
-      (let ((v (gvarname)))
+      (let ((v (gvarname x)))
         (push v fargs)
         (emit `(var (,v ,(convert x))))
         (emit `(if (!= (typeof ,v) "number")
@@ -1214,9 +1257,6 @@
   (convert-to-bool `(!== (get ,x "fvalue") undefined)))
 
 (define-builtin* symbol-value (x)
-  (assert *out* (*out*)
-          "Trying to find the Symbol-Value of ~s without an output context *OUT*"
-          x)
   (emit `(get ,x "value") *out*)
   (emit `(if (=== ,*out* undefined)
              (throw (+ "Variable `" (get ,x "name") "' is unbound.")))))
@@ -1663,7 +1703,7 @@
     (let ((*multiple-value-p* multiple-value-p)
           (*convert-level* (1+ *convert-level*))
           (*out* (if (eq out t)
-                     (let ((v (gvarname)))
+                     (let ((v (gvarname sexp)))
                        (emit `(var ,v))
                        v)
                      out)))
@@ -1726,7 +1766,10 @@
 
 (defun compile-toplevel (sexp &optional multiple-value-p return-p)
   (with-output-to-string (*js-output*)
-    (unless (eql sexp '||)
+    (unless (and (symbolp sexp)
+                 (or (equal sexp '||)
+                     (every (lambda (char) (char= char #\Null))
+                            (symbol-name sexp))))
       (js (process-toplevel sexp multiple-value-p return-p)))))
 
 
