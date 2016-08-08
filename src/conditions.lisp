@@ -136,6 +136,15 @@
     nil))
 
 #+jscl
+(defmacro assert (expr &optional (&rest args) format-string &rest format-args)
+  (let ((eval (gensym)))
+    `(let ((,eval ,expr))
+       (cond
+         (,eval t)
+         (format-string (apply #'format t format-string format-args))
+         (t (format t "~&Assertion failed: ~s" ',expr))))))
+
+#+jscl
 (progn
 
   (defmacro handler-bind (&rest body)
