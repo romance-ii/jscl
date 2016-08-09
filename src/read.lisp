@@ -280,6 +280,9 @@
              (prog2 (let ((*read-skip-p* t))
                       (ls-read stream))
                  (ls-read stream eof-error-p eof-value t)))))
+      ((#\B #\b)
+       (let ((*read-base* 2))
+         (read-integer stream)))
       ((#\J #\j)
        (unless (char= (%peek-char stream) #\:)
          (error "FFI descriptor must start with a colon."))
@@ -292,6 +295,12 @@
                (push (subseq descriptor start) subdescriptors)
                `(oget *root* ,@(reverse subdescriptors)))
            (push (subseq descriptor start end) subdescriptors))))
+      ((#\O #\o)
+       (let ((*read-base* 8))
+         (read-integer stream)))
+      ((#\X #\x)
+       (let ((*read-base* 16))
+         (read-integer stream)))
       (#\|
        (labels ((read-til-bar-sharpsign ()
                   (do ((ch (%read-char stream) (%read-char stream)))
@@ -410,7 +419,7 @@
       (let ((elt (char string i)))
         (cond
           ((digit-char-p elt)
-           (setq number (+ (* (or number 0) 10) (digit-char-p elt))))
+           (setq number (+ (* (or number 0) *read-base*) (digit-char-p elt *read-base*))))
           ((zerop i)
            (case elt
              (#\+ nil)
@@ -488,7 +497,7 @@
       ;; XXX: Use FLOAT when implemented.
       (/ (* sign (expt 10.0 (* exponent-sign exponent)) number) divisor 1.0))))
 
-(defun !parse-integer (string junk-allow)
+(defun !parse-integer (string junk-allow &optional (radix *read-base*))
   (block nil
     (let ((value 0)
           (index 0)
@@ -506,14 +515,14 @@
              (incf index)))
       ;; First digit
       (unless (and (< index size)
-                   (setq value (digit-char-p (char string index))))
+                   (setq value (digit-char-p (char string index) radix)))
         (return (values nil index)))
       (incf index)
       ;; Other digits
       (while (< index size)
-        (let ((digit (digit-char-p (char string index))))
+        (let ((digit (digit-char-p (char string index) radix)))
           (unless digit (return))
-          (setq value (+ (* value 10) digit))
+          (setq value (+ (* value radix) digit))
           (incf index)))
       ;; Trailing whitespace
       (do ((i index (1+ i)))
@@ -525,9 +534,9 @@
           (values nil index)))))
 
 #+jscl
-(defun parse-integer (string &key junk-allowed)
+(defun parse-integer (string &key junk-allowed radix)
   (multiple-value-bind (num index)
-      (!parse-integer string junk-allowed)
+      (!parse-integer string junk-allowed radix)
     (if num
         (values num index)
         (error "Junk detected."))))
