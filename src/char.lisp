@@ -278,10 +278,20 @@ character exists."
       nil)))
 
 (defun graphic-char-p (char)
-  ;; from SBCL/CMUCL:
+  ;; from Wikipedia's Unicode article
   (let ((n (char-code char)))
-    (or (< 31 n 127)
-        (< 159 n))))
+    (or
+     ;; C0 control codes
+     (< 31 n 127)
+     ;; C1 control codes
+     (< 159 n #xd800)
+     ;; high and low surrogates
+     (< #xe000 n #xfdd0)
+     ;; the following bit-patterns are never allowed
+     (/= (logior n #xffff) #xfffe)
+     (/= (logior n #xffff) #xffff)
+     ;; upper range of allowable characters
+     (< #xfdef n #x10ffff))))
 
 (defun standard-char-p (char)
   ;; from SBCL/CMUCL:
