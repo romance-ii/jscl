@@ -151,7 +151,7 @@
 (test (char= #\    #\Space))
 (test
  (let ((x (char-name #\a)))
-   (or (not x) (eql (name-char x) #\a))))
+  (or (not x) (eql (name-char x) #\a))))
 
 ;; Unicode chars without explicit names
 (test (char= #\u+2010 (name-char "U+2010")))
