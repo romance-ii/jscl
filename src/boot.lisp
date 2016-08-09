@@ -324,12 +324,31 @@
 (defun equal (x y)
   (cond
     ((eql x y) t)
+    ((numberp x) (and (numberp y) (= x y)))
     ((consp x)
      (and (consp y)
           (equal (car x) (car y))
           (equal (cdr x) (cdr y))))
     ((stringp x)
      (and (stringp y) (string= x y)))
+    (t nil)))
+
+(defun equalp (x y)
+  "This is a marginally correct implementation of EQUALP"
+  (cond
+    ((eql x y) t)
+    ((numberp x) (and (numberp y) (= x y)))
+    ((consp x)
+     (and (consp y)
+          (equalp (car x) (car y))
+          (equalp (cdr x) (cdr y))))
+    ((characterp x)
+     (and (characterp y)
+          (char-equal x y)))
+    ((vectorp x)
+     (and (vectorp y)
+          (= (length x) (length y))
+          (every #'equalp x y)))
     (t nil)))
 
 (defun fdefinition (x)

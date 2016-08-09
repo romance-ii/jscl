@@ -35,9 +35,8 @@
 (test (not (find 1 (remove 1 '(1 2 3 1)))))
 (test (not (find 2 (remove 1 #(1 2 3 1) :key halve))))
 (test (not (find 2 (remove 1 '(1 2 3 1) :key halve))))
-;; TODO: Rewrite this test when EQUALP exists and works on vectors
-(test (equal (length (remove '(1 2) #((1 2) (1 2)) :test #'equal)) 0))
-(test (null          (remove '(1 2) '((1 2) (1 2)) :test #'equal)))
+(test (equalp (length (remove '(1 2) #((1 2) (1 2)) :test #'equal)) 0))
+(test (null           (remove '(1 2) '((1 2) (1 2)) :test #'equal)))
 (test (find 2 (remove 2 #(1 2 3) :test-not #'=)))
 (test (find 2 (remove 2 '(1 2 3) :test-not #'=)))
 
@@ -46,7 +45,7 @@
 (test (equal (substitute 4 5 '(1 2 3 4)) '(1 2 3 4)))
 (test (equal (substitute 99 3 '(1 2 3 4)) '(1 2 99 4)))
 (test (equal (substitute 99 3 '(1 2 3 4) :test #'<=) '(1 2 99 99)))
-(test (equal (substitute 99 3 #(1 2 3 4) :test #'<=) #(1 2 99 99)))
+(test (equalp (substitute 99 3 #(1 2 3 4) :test #'<=) #(1 2 99 99)))
 
 ;; SUBSTITUTE-IF, SUBSTITUTE-IF-NOT
 (test (equal (substitute-if 99 (lambda (elt) (<= elt 2)) '(1 2 3 4)) '(99 99 3 4)))
