@@ -266,8 +266,8 @@
                                                  (not (digit-char-p ch 16))))))
                 (code-char (parse-integer hex-id :radix 16))))
              (t (let ((cname
-                       (concat (string (%read-char stream))
-                               (read-until stream #'terminalp))))
+              (concat (string (%read-char stream))
+                      (read-until stream #'terminalp))))
                   (let ((ch (name-char cname)))
                     (or ch (char cname 0)))))))
       ((#\+ #\-)
@@ -367,7 +367,7 @@
     (dotimes (i (length s))
       (let ((ch (char s i)))
         (if last-escape
-            (progn
+           (progn
               (setf last-escape nil)
               (setf result (concat result (string ch))))
             (if (char= ch #\\)
