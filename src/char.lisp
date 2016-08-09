@@ -253,29 +253,8 @@
 a digit of the given weight in the specified radix. Returns NIL if no such
 character exists."
   (and ;; (typep weight 'fixnum)
-       (>= weight 0) (< weight radix) (< weight 36)
-       (code-char (if (< weight 10) (+ 48 weight) (+ 55 weight)))))
-
-;; From comment #4 on <https://bugs.launchpad.net/sbcl/+bug/1177986>:
-(defun digit-char-p (char &optional (radix 10))
-  "Includes ASCII 0-9 a-z A-Z, plus Unicode HexDigit characters (fullwidth variants of 0-9 and A-F)."
-  (let* ((number (unicode-digit-value char))
-         (code (char-code char))
-         (upper (char-upcase char))
-         (code-upper (char-code upper))
-         (potential (cond (number number)
-                          ((char<= #\0 char #\9)
-                           (- code (char-code #\0)))
-                          ((<= 65296 code 65305)  ;; FULLWIDTH_DIGIT_ZERO, FULLWIDTH_DIGIT_NINE
-                           (- code 65296))
-                          ((char<= #\A upper #\Z)
-                           (+ 10 (- code-upper (char-code #\A))))
-                          ((<= 65313 (char-code upper) 65318)  ;; FULLWIDTH_LATIN_CAPITAL_LETTER_A, FULLWIDTH_LATIN_CAPITAL_LETTER_F
-                           (+ 10 (- code-upper 65313)))
-                          (t nil))))
-    (if (and potential (< potential radix))
-        potential
-      nil)))
+   (>= weight 0) (< weight radix) (< weight 36)
+   (code-char (if (< weight 10) (+ 48 weight) (+ 55 weight)))))
 
 (defun graphic-char-p (char)
   ;; from Wikipedia's Unicode article
