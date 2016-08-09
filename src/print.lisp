@@ -118,20 +118,18 @@
 #+jscl (defvar *print-radix* nil)
 #+jscl (defvar *print-base* 10)
 
-;; To support *print-circle* some objects must be tracked for sharing:
-;; conses, arrays and apparently-uninterned symbols.  These objects
-;; are placed in an array and a parallel array is used to mark if
-;; they're found multiple times by assining them an id starting from
-;; 1.
+#+jscl (defvar *read-base* 10) ; NB. This file is loaded before read.lisp
+
+;; To  support  *print-circle*  some  objects  must  be tracked  for  sharing:  conses,  arrays  and
+;; apparently-uninterned symbols. These objects are placed in  an array and a parallel array is used
+;; to mark if they're found multiple times by assining them an id starting from 1.
 ;;
-;; After the tracking has been completed the printing phase can begin:
-;; if an object has an id > 0 then #<n>= is prefixed and the id is
-;; changed to negative. If an object has an id < 0 then #<-n># is
-;; printed instead of the object.
+;; After the  tracking has been completed  the printing phase  can begin: if  an object has an  id >
+;; 0 then  #<n>= is prefixed  and the id is  changed to negative.  If an object  has an id <  0 then
+;; #<-n># is printed instead of the object.
 ;;
-;; The processing is O(n^2) with n = number of tracked
-;; objects. Hopefully it will become good enough when the new compiler
-;; is available.
+;; The processing is O(n^2) with n = number of tracked objects. Hopefully it will become good enough
+;; when the new compiler is available.
 (defun scan-multiple-referenced-objects (form)
   (let ((known-objects (make-array 0 :adjustable t :fill-pointer 0))
         (object-ids    (make-array 0 :adjustable t :fill-pointer 0)))
