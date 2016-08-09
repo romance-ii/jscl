@@ -1005,6 +1005,10 @@
       1
       (variable-arity numbers `(* ,@numbers))))
 
+(define-builtin logior (x y) (list 'logior x y))
+(define-builtin logand (x y) (list 'logand x y))
+(define-builtin logxor (x y) (list 'logxor x y))
+
 (define-raw-builtin / (x &rest others)
   (let ((args (cons x others)))
     (variable-arity args
