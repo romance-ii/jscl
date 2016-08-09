@@ -36,7 +36,7 @@
 (test (not (find 2 (remove 1 #(1 2 3 1) :key halve))))
 (test (not (find 2 (remove 1 '(1 2 3 1) :key halve))))
 (test (equalp (length (remove '(1 2) #((1 2) (1 2)) :test #'equal)) 0))
-(test (null           (remove '(1 2) '((1 2) (1 2)) :test #'equal)))
+(test (null          (remove '(1 2) '((1 2) (1 2)) :test #'equal)))
 (test (find 2 (remove 2 #(1 2 3) :test-not #'=)))
 (test (find 2 (remove 2 '(1 2 3) :test-not #'=)))
 
