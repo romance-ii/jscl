@@ -260,7 +260,7 @@
       (#\\
        (cond ((and (char-equal #\U (%peek-char stream))
                    (char-equal #\+ (%peek-char stream 1)))
-              (%read-char stream) ; U
+              (%read-char stream) ; U (or u)
               (%read-char stream) ; +
               (let ((hex-id (read-until stream (lambda (ch)
                                                  (not (digit-char-p ch 16))))))
@@ -331,6 +331,14 @@
                        ;; doesn't work
                        (rplacd (find-labelled-object id) obj)
                        obj))))
+              ((#\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9)
+               (let ((param (parse-integer (read-until (complement #'digit-char-p) stream))))
+                 (ecase (%peek-char stream)
+                   ((#\R #\r)
+                    (assert (<= 2 param 36) (param) "#nR radix must be 2-36; got ~d" param)
+                    (parse-integer (read-until (lambda (ch) (not (digit-char-p ch param))) stream)
+                                   :radix param))
+                   (#\( (error "READer cannot read multi-dimension arrays yet")))))
               (#\#
                (%read-char stream)
                (let ((cell (find-labelled-object id)))
