@@ -338,15 +338,13 @@ For the first 32 characters ('C0 controls'), the first
 ;; I'll figure out a good way to add the other 21701 names later.
 
 (defun char-name (char)
-  ;; For consistency, I'm using the SBCL convention of the Unicode
-  ;; name, with spaces as underscores.  It would be nice to use
-  ;; their "Uxxxx" convention for names I don't know, but there's
-  ;; not much in FORMAT yet.  I'm only implementing ASCII names right
-  ;; now, since Unicode is kind of big.
+  "For consistency, I'm  using the SBCL convention of  the Unicode name,
+  with spaces as underscores, for  ASCII; or their \"U+xxxx\" convention
+  for names I don't know."
   (let ((code (char-code char)))
     (if (<= code 127)
         (aref +ascii-names+ code)
-      nil)))  ;; for now, no name
+        (format nil "U+~4,'0x" code))))
 
 (defun name-char (name)
   (let ((name-upcase (string-upcase (string name))))

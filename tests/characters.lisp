@@ -151,4 +151,13 @@
 (test (char= #\    #\Space))
 (test
  (let ((x (char-name #\a)))
-  (or (not x) (eql (name-char x) #\a))))
+   (or (not x) (eql (name-char x) #\a))))
+
+;; Unicode chars without explicit names
+(test (char= #\u+2010 (name-char "U+2010")))
+(test (char= #\u+210 (name-char "U+210")))
+(test (or (equal (char-name #\u+210) "U+0210")
+          (equal (char-name #\u+210) "LATIN_CAPITAL_LETTER_R_WITH_DOUBLE_GRAVE"))) ; for SBCL
+(test (or (equal (char-name #\u+2010) "U+2010")
+          (equal (char-name #\u+2010) "HYPHEN")))
+
