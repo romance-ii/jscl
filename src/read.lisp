@@ -77,9 +77,9 @@
 (defun make-string-stream (string)
   (cons string 0))
 
-(defun %peek-char (stream)
-  (and (< (cdr stream) (length (car stream)))
-       (char (car stream) (cdr stream))))
+(defun %peek-char (stream &optional (look-ahead 0))
+  (and (< (+ look-ahead (cdr stream)) (length (car stream)))
+       (char (car stream) (+ look-ahead (cdr stream)))))
 
 (defun %read-char (stream)
   (and (< (cdr stream) (length (car stream)))
@@ -228,7 +228,7 @@
   (%read-char stream)
   (let ((ch (%read-char stream)))
     (case ch
-      (#\'
+      (#\apostrophe
        (list 'function (ls-read stream eof-error-p eof-value t)))
       (#\.
        (eval (ls-read stream)))
@@ -551,10 +551,10 @@
               ((char= ch #\()
                (%read-char stream)
                (%read-list stream eof-error-p eof-value))
-              ((char= ch #\')
+              ((char= ch #\apostrophe) ; Emacs gets mad at #\'
                (%read-char stream)
                (list 'quote (ls-read stream eof-error-p eof-value t)))
-              ((char= ch #\`)
+              ((char= ch #\grave_accent) ; Emacs gets mad at #\`
                (%read-char stream)
                (list 'backquote (ls-read stream eof-error-p eof-value t)))
               ((char= ch #\")

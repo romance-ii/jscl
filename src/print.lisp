@@ -112,7 +112,10 @@
       s))
 
 #+jscl (defvar *print-escape* t)
+#+jscl (defvar *print-readably* t)
 #+jscl (defvar *print-circle* nil)
+#+jscl (defvar *print-radix* nil)
+#+jscl (defvar *print-base* 10)
 
 ;; To support *print-circle* some objects must be tracked for sharing:
 ;; conses, arrays and apparently-uninterned symbols.  These objects
@@ -160,14 +163,13 @@
     (values known-objects object-ids)))
 
 ;;; Write an integer to stream.
-;;; TODO: Support for different basis.
-(defun write-integer (value stream)
-  (write-string (integer-to-string value) stream))
+(defun write-integer (value stream &optional (radix *print-base*))
+  (write-string (integer-to-string value radix) stream))
 
-;;; This version of format supports only ~A for strings and ~D for
-;;; integers. It is used to avoid circularities. Indeed, it just
-;;; ouputs to streams.
 (defun simple-format (stream fmt &rest args)
+  "This  version of  format  supports only  ~A for  strings  and ~D  for
+integers. It  is used  to avoid circularities.  Indeed, it  just outputs
+to streams."
   (do ((i 0 (1+ i)))
       ((= i (length fmt)))
     (let ((char (char fmt i)))
@@ -317,7 +319,7 @@
       (prin1 form output)))
 
   (defun princ (form &optional stream)
-    (let ((*print-escape* nil))
+    (let ((*print-escape* nil) (*print-readably* nil))
       (write form :stream stream)))
 
   (defun princ-to-string (form)
@@ -340,35 +342,120 @@
 
 ;;; Format
 
-(defun format-special (chr arg)
-  (case (char-upcase chr)
-    (#\S (prin1-to-string arg))
-    (#\A (princ-to-string arg))
-    (#\D (princ-to-string arg))
-    (t
-     (warn "~S is not implemented yet, using ~~S instead" chr)
-     (prin1-to-string arg))))
+(defun format-aesthetic (arg &optional (pad-length 1))
+  (let* ((s (princ-to-string arg))
+         (len (length s)))
+    (if (< len pad-length)
+        (concatenate 'string
+                     s
+                     (make-string (- pad-length len) :initial-element #\space))
+        s)))
+
+(defun format-numeric (arg colonp atp &optional (pad-length 1) (pad-char #\space))
+  (declare (ignore colonp))
+  (if (numberp arg)
+      (let* ((s (integer-to-string arg *print-base* atp))
+             (len (length s)))
+        (if (< len pad-length)
+            (concatenate 'string
+                         (make-string (- pad-length len) :initial-element pad-char)
+                         s)
+            s))
+      (princ-to-string arg)))
+
+(defun format-hex (arg colonp atp &optional (pad-length 1) (pad-char #\space)) 
+  (let ((*print-base* 16))
+    (format-numeric arg colonp atp pad-length pad-char)))
+
+(defun format-decimal (arg colonp atp &optional (pad-length 1) (pad-char #\space)) 
+  (let ((*print-base* 10))
+    (format-numeric arg colonp atp pad-length pad-char)))
+
+(defun format-terpri (&optional (count 1))
+  (make-string count :initial-element #\newline))
+
+(defun format-fresh-line (&optional (count 1))
+  (format-terpri (if (< 1 count) 
+                     (1- count)
+                     count)))
+
+(defun format-special (chr arg params &key colonp atp) ; should be generic …
+  (apply (case (char-upcase chr)
+           (#\S (lambda (arg colonp atp params)
+                  (declare (ignore colonp atp params))
+                  (prin1-to-string arg)))
+           (#\A #'format-aesthetic params)
+           (#\D #'format-decimal)
+           (#\X #'format-hex) 
+           
+           (t (lambda (arg colonp atp params)
+                (declare (ignore colonp atp params)) 
+                (warn "~S is not implemented yet, using ~~S instead" chr)
+                (prin1-to-string arg))))
+         arg colonp atp params))
 
 (defun !format (destination fmt &rest args)
   (let ((len (length fmt))
         (i 0)
         (res "")
-        (arguments args))
+        (arguments args)
+        params atp colonp)
     (while (< i len)
       (let ((c (char fmt i)))
         (if (char= c #\~)
-            (let ((next (char fmt (incf i))))
-              (cond
-                ((char= next #\~)
-                 (concatf res "~"))
-                ((or (char= next #\&) 
-                     (char= next #\%))
-                 (concatf res (string #\newline)))
-                ((char= next #\*)
-                 (pop arguments))
-                (t
-                 (concatf res (format-special next (car arguments)))
-                 (pop arguments))))
+            (tagbody
+             read-control
+               (let ((next (char fmt (incf i))))
+                 (cond
+                   ((digit-char-p next)
+                    (let ((param-end (position-if-not #'digit-char-p fmt :start i)))
+                      (push (parse-integer (subseq fmt i param-end)) params)
+                      (setf i (1- param-end))
+                      (when (char= (char fmt param-end) #\,)
+                        (incf i)
+                        (go read-control))))
+                   
+                   ((char= #\apostrophe next)
+                    (push (char fmt (incf i)) params)
+                    (go read-control))
+                   
+                   ((char= #\, next)
+                    (push nil params)
+                    (go read-control))
+                   
+                   ((char= #\v next)
+                    (push (pop arguments) params))
+                   
+                   ((char= #\: next)
+                    (setf colonp t)
+                    (go read-control))
+                   ((char= #\@ next)
+                    (setf atp t)
+                    (go read-control))
+                   
+                   ((char= #\~ next)
+                    (concatf res "~"))
+                   
+                   ((char= #\( next)
+                    (warn "~~(~~) not supported; ignored"))
+                   ((char= #\[ next)
+                    (warn "~~[~~]  not supported; ignored"))
+                   ((char= #\{ next)
+                    (warn "~~{~~}  not supported; ignored"))
+                   
+                   ((char= #\% next) (apply #'format-terpri params))
+                   ((char= #\& next) (apply #'format-fresh-line params))
+                   
+                   ((char= #\* next)
+                    (let ((delta (* (or (and params (first params))
+                                        1)
+                                    (if colonp 1 -1)))) ; sign inverted for - below
+                      (setf arguments (nthcdr (- (length args)
+                                                 (length arguments)
+                                                 delta) args))))
+                   
+                   (t (concatf res (format-special next (pop arguments) params
+                                                   :atp atp :colonp colonp))))))
             (setq res (concat res (string c))))
         (incf i)))
 
