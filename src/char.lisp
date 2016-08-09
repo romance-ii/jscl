@@ -229,48 +229,21 @@
   (or (alpha-char-p char)
       (not (null (digit-char-p char)))))
 
-;; I made this list by running DIGIT-CHAR-P in SBCL on every codepoint up to CHAR-CODE-LIMIT,
-;; filtering on only those with SB-IMPL::UCD-GENERAL-CATEGORY 12 (Nd), and then grouping
-;; consecutive sets.  There's 37 spans of 10, plus 1 extra digit (6618).
-(defconstant +unicode-zeroes+
-  '(48 1632 1776 1984 2406 2534 2662 2790 2918 3046 3174 3302 3430 3664
-       3792 3872 4160 4240 6112 6160 6470 6608 6784 6800 6992 7088 7232 7248
-       42528 43216 43264 43472 43600 44016 65296 66720 120782)
-  "Unicode codepoints which have Digit value 0, followed by 1, 2, ..., 9, as of Unicode 6.2")
-
-;; The "Digit value" of a (Unicode) character, or NIL, if it doesn't have one.
-(defun unicode-digit-value (char)
-  (let ((code (char-code char)))
-    (if (= code 6618)
-        1  ;; it's special!
-      (dolist (z +unicode-zeroes+)
-        (when (<= z code (+ z 9))
-          (return-from unicode-digit-value (- code z)))))))
-
-;; from SBCL/CMUCL:
-(defun digit-char (weight &optional (radix 10))
-  "All arguments must be integers. Returns a character object that represents
-a digit of the given weight in the specified radix. Returns NIL if no such
-character exists."
-  (and ;; (typep weight 'fixnum)
-   (>= weight 0) (< weight radix) (< weight 36)
-   (code-char (if (< weight 10) (+ 48 weight) (+ 55 weight)))))
-
 (defun graphic-char-p (char)
-  ;; from Wikipedia's Unicode article
+  ;; from Wikipedia's Unicode article. Commented hex values because JSCL can't read #x yet.
   (let ((n (char-code char)))
     (or
      ;; C0 control codes
      (< 31 n 127)
      ;; C1 control codes
-     (< 159 n #xd800)
+     (< 159 n 55296 #| xd800 |#)
      ;; high and low surrogates
-     (< #xe000 n #xfdd0)
+     (< 57344 #| xe000 |# n 54976 #| xfdd0 |#)
      ;; the following bit-patterns are never allowed
-     (/= (logior n #xffff) #xfffe)
-     (/= (logior n #xffff) #xffff)
+     (/=  (logior n 65535 #| xffff |#) 65534 #| xfffe |#)
+     (/=  (logior n 65535 #| xffff |#) 65535 #| xffff |#)
      ;; upper range of allowable characters
-     (< #xfdef n #x10ffff))))
+     (< 65007 #| xfdef |# n 1114111 #| x10ffff |#))))
 
 (defun standard-char-p (char)
   ;; from SBCL/CMUCL:
