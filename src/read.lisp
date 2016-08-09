@@ -260,7 +260,7 @@
       (#\\
        (cond ((and (char-equal #\U (%peek-char stream))
                    (char-equal #\+ (%peek-char stream 1)))
-              (%read-char stream)       ; U (or u)
+              (%read-char stream) ; U (or u)
               (%read-char stream) ; +
               (let ((hex-id (read-until stream (lambda (ch)
                                                  (not (digit-char-p ch 16))))))
