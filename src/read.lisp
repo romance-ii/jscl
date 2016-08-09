@@ -257,14 +257,20 @@
          (string-upcase-noescaped
           (read-escaped-until stream #'terminalp)))))
       (#\\
+       (if (and (char-equal #\U (%peek-char stream))
+                (char-equal #\+ (%peek-char stream 1)))
+           (%read-char stream)          ; U
+           (%read-char stream)          ; +
+           (let ((hex-id (read-until stream (lambda (ch)
+                                              (not (digit-char-p ch 16))))))
+             (code-char (parse-integer hex-id 16))))
        (let ((cname
               (concat (string (%read-char stream))
                       (read-until stream #'terminalp))))
-         (cond
-           ((string-equal cname "space") #\space)
-           ((string-equal cname "tab") #\tab)
-           ((string-equal cname "newline") #\newline)
-           (t (char cname 0)))))
+         (if (= 1 (length cname))
+             (char cname 0)
+             (or (name-char cname)
+                 (error "Character name not known: ~a" cname)))))
       ((#\+ #\-)
        (let* ((expression
                (let ((*package* (find-package :keyword)))
