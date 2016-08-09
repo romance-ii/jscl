@@ -475,3 +475,12 @@ character exists."
   `(multiple-value-call (lambda (&rest values)
                           (nth ,n values))
      ,form))
+
+
+
+(defvar *print-escape* t)
+(defvar *print-readably* t)
+(defvar *print-circle* nil)
+(defvar *print-radix* nil)
+(defvar *print-base* 10)
+(defvar *read-base* 10)
