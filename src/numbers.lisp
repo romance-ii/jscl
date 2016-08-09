@@ -45,9 +45,6 @@
 (defun 1+ (x) (+ x 1))
 (defun 1- (x) (- x 1))
 
-(defun logior (x y) (bit-or x y))
-(defun logand (x y) (bit-and x y))
-
 (defun floor (x &optional (y 1))
   (%floor (/ x y)))
 
