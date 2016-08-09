@@ -16,7 +16,8 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with JSCL.  If not, see <http://www.gnu.org/licenses/>.
 
-(/debug "loading read.lisp!")
+#+jscl (/debug "loading read.lisp!")
+#-jscl (in-package :jscl)
 
 ;;;; Reader
 
@@ -228,7 +229,7 @@
   (%read-char stream)
   (let ((ch (%read-char stream)))
     (case ch
-      (#\apostrophe
+      (#\'
        (list 'function (ls-read stream eof-error-p eof-value t)))
       (#\.
        (eval (ls-read stream)))
@@ -557,10 +558,10 @@
               ((char= ch #\()
                (%read-char stream)
                (%read-list stream eof-error-p eof-value))
-              ((char= ch #\apostrophe) ; Emacs gets mad at #\'
+              ((char= ch #\')
                (%read-char stream)
                (list 'quote (ls-read stream eof-error-p eof-value t)))
-              ((char= ch #\grave_accent) ; Emacs gets mad at #\`
+              ((char= ch #\`)
                (%read-char stream)
                (list 'backquote (ls-read stream eof-error-p eof-value t)))
               ((char= ch #\")
