@@ -187,16 +187,16 @@
 
 (defun compile-application (files output &key shebang)
   (with-compilation-environment
-    (with-open-file (out output :direction :output :if-exists :supersede)
+      (with-open-file (out output :direction :output :if-exists :supersede)
         (when shebang
           (format out "#!/usr/bin/env node~%"))
-      (format out "(function(jscl){~%")
-      (format out "'use strict';~%")
-      (format out "(function(values, internals){~%")
-      (dolist (input files)
-        (!compile-file input out))
-      (format out "})(jscl.internals.pv, jscl.internals);~%")
-      (format out "})( typeof require !== 'undefined'? require('./jscl'): window.jscl )~%"))))
+        (format out "(function(jscl){~%")
+        (format out "'use strict';~%")
+        (format out "(function(values, internals){~%")
+        (dolist (input files)
+          (!compile-file input out))
+        (format out "})(jscl.internals.pv, jscl.internals);~%")
+        (format out "})( typeof require !== 'undefined'? require('./jscl'): window.jscl )~%"))))
 
 
 
