@@ -295,9 +295,12 @@ internals.Symbol = function(name, package_name){
 };
 
 internals.symbolValue = function (symbol){
+    if (symbol === undefined) {
+        throw new Error("Trying to take the value of «undefined» as a symbol");
+    }
   var value = symbol.value;
   if (value === undefined){
-    throw new Error("Variable " + symbol.name + " is unbound.");
+      throw new Error("Variable " + ((symbol !== undefined) ? symbol.name || "(unnamed symbol)" : "(undefined symbol)") + " is unbound.");
   } else {
     return value;
   }
