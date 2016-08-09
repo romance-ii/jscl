@@ -412,8 +412,8 @@ to streams."
         (if (char= c #\~)
             (tagbody
              read-control
-               (let ((next (char fmt (incf i))))
-                 (cond
+            (let ((next (char fmt (incf i))))
+              (cond
                    ((digit-char-p next)
                     (let ((param-end (position-if-not #'digit-char-p fmt :start i)))
                       (push (parse-integer (subseq fmt i param-end)) params)
@@ -441,7 +441,7 @@ to streams."
                     (go read-control))
                    
                    ((char= #\~ next)
-                    (concatf res "~"))
+                 (concatf res "~"))
                    
                    ((char= #\( next)
                     (warn "~~(~~) not supported; ignored"))

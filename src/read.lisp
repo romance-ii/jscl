@@ -229,7 +229,7 @@
   (%read-char stream)
   (let ((ch (%read-char stream)))
     (case ch
-      (#\'
+      (#\apostrophe
        (list 'function (ls-read stream eof-error-p eof-value t)))
       (#\.
        (eval (ls-read stream)))
@@ -573,10 +573,10 @@
               ((char= ch #\()
                (%read-char stream)
                (%read-list stream eof-error-p eof-value))
-              ((char= ch #\')
+              ((char= ch #\apostrophe) ; Emacs gets mad at #\'
                (%read-char stream)
                (list 'quote (ls-read stream eof-error-p eof-value t)))
-              ((char= ch #\`)
+              ((char= ch #\grave_accent) ; Emacs gets mad at #\`
                (%read-char stream)
                (list 'backquote (ls-read stream eof-error-p eof-value t)))
               ((char= ch #\")
