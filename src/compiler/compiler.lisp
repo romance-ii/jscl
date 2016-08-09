@@ -975,7 +975,11 @@
                 (collect-fargs v)
                 (collect-prelude `(var (,v ,(convert x))))
                 (collect-prelude `(if (!= (typeof ,v) "number")
-                                      (throw "Not a number!"))))))
+                                      (throw (new (call |Error| (+ "Not a number " ,v " in "
+                                                                   ,(princ-to-string function)
+                                                                   ,@(mapcar (lambda (s)
+                                                                               (concatenate 'string " " 
+                                                                                            (princ-to-string s))) args))))))))))
         `(selfcall
           (progn ,@prelude)
           ,(funcall function fargs))))))
