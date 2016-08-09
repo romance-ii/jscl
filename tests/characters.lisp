@@ -97,7 +97,7 @@
 (test (graphic-char-p #\G))
 (test (graphic-char-p #\#))
 (test (graphic-char-p #\Space))
-(test (not (graphic-char-p #\Newline))
+(test (not (graphic-char-p #\Newline)))
 
 ;; STANDARD-CHAR-P
 (test (standard-char-p #\Space))
