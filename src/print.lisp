@@ -47,41 +47,42 @@
           (return-from escape-symbol-name-p t))))
     dots-only))
 
-;;; Return T if the specified string can be read as a number
-;;; In case such a string is the name of a symbol then escaping
-;;; is required when printing to ensure correct reading.
+;;; Return T if the  specified string can be read as  a number In case such a string  is the name of
+;;; a symbol then escaping is required when printing to ensure correct reading.
 (defun potential-number-p (string)
-  ;; The four rules for being a potential number are described in
-  ;; 2.3.1.1 Potential Numbers as Token
+  ;; The four rules for being a potential number are described in 2.3.1.1 Potential Numbers as Token
   ;;
   ;; First Rule
   (dotimes (i (length string))
     (let ((char (char string i)))
       (cond
-        ;; Digits TODO: DIGIT-CHAR-P should work with the current
-        ;; radix here. If the radix is not decimal, then we have to
-        ;; make sure there is not a decimal-point in the string.
-        ((digit-char-p char))
+        ;; DIGIT-CHAR-P  should work with the  current radix (*READ-BASE*) here. If the  radix is not
+        ;; decimal, then we have to make sure there is not a decimal-point in the string.
+        ((digit-char-p char *read-base*))
         ;; Signs, ratios, decimal point and extension mark
-        ((find char "+-/._^"))
+        ((find char "+-/_^"))
+        ((and (= 10 *read-base*)
+              (char= #\. char)))
         ;; Number marker
         ((alpha-char-p char)
          (when (and (< i (1- (length string)))
                     (alpha-char-p (char string (1+ i))))
-           ;; fail: adjacent letters are not number marker, or
-           ;; there is a decimal point in the string.
+           ;; fail:  adjacent  letters are  not  number  marker, or  there  is  a decimal  point  in
+           ;; the string.
            (return-from potential-number-p)))
         (t
          ;; fail: there is a non-allowed character
          (return-from potential-number-p)))))
   (and
    ;; Second Rule. In particular string is not empty.
-   (find-if #'digit-char-p string)
+   (find-if (lambda (ch) (digit-char-p ch *read-base*)) string)
    ;; Third rule
    (let ((first (char string 0)))
      (and (not (char= first #\:))
           (or (digit-char-p first)
-              (find first "+-._^"))))
+              (and (= 10 *read-base*)
+                   (char= #\. first))
+              (find first "+-_^"))))
    ;; Fourth rule
    (not (find (char string (1- (length string))) "+-)"))))
 
