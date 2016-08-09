@@ -96,11 +96,11 @@
 ;; GRAPHIC-CHAR-P
 (test (graphic-char-p #\G))
 (test (graphic-char-p #\#))
-;; (test (graphic-char-p #\Space))
-;; (test (not (graphic-char-p #\Newline))
+(test (graphic-char-p #\Space))
+(test (not (graphic-char-p #\Newline))
 
 ;; STANDARD-CHAR-P
-;; (test (standard-char-p #\Space))
+(test (standard-char-p #\Space))
 (test (standard-char-p #\~))
 
 ;; CHAR-UPCASE
@@ -139,7 +139,7 @@
 
 ;; CHAR-NAME
 (test (string= "Space" (char-name #\ )))
-;; (test (string= "Space" (char-name #\Space)))
+(test (string= "Space" (char-name #\Space)))
 (test (string= "Page" (char-name (code-char 12))))  ;; #\Page
 (test (string= "LATIN_SMALL_LETTER_A" (char-name #\a)))
 (test (string= "LATIN_CAPITAL_LETTER_A" (char-name #\A)))
@@ -148,6 +148,7 @@
 (test (char= #\  (name-char 'space)))  ;; should be: #\Space
 (test (char= #\  (name-char "space")))  ;; #\Space
 (test (char= #\  (name-char "Space")))  ;; #\Space
+(test (char= #\    #\Space))
 (test
  (let ((x (char-name #\a)))
   (or (not x) (eql (name-char x) #\a))))
