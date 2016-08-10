@@ -39,7 +39,7 @@
   (test (equal (mapcar #'* a b c) '( 1  8)))
   ;; This test will need to be changed when rationals are introduced
   (test (or (equal (mapcar #'/ a b c) '( 1  0.5))
-            (equal (mapcar #'/ a b c) '( 1  1/2)))))
+            #-jscl (equal (mapcar #'/ a b c) '( 1  1/2)))))
 
 ;;; >, >=, =, <, <=, /=
 ;;; As above, we need to make sure the function is called, not the builtin

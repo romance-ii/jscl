@@ -71,7 +71,7 @@
 (test (equal (format nil "~d" -42) "-42"))
 (test (equal (format nil "~36r" 42) "16"))
 (test (equal (format nil "~@d" 0) "+0"))
-(test (equal (format nil "~f" 1/2) "0.5"))
+#-jscl (test (equal (format nil "~f" 1/2) "0.5"))
 (test (equal (format nil "~a" :monkey) "MONKEY"))
 (test (equal (format nil "~a" 'monkey) "MONKEY"))
 (test (equal (format nil "~a" "monkey") "monkey"))
