@@ -15,6 +15,15 @@
 
 (/debug "loading print.lisp!")
 
+;;; HACK HACK — if an error occurs during startup before toplevel binds this correctly, 
+#+jscl
+(setq *standard-output*
+      (vector 'stream
+              (lambda (ch)
+                ((jscl::oget (%js-vref "global") "console" "error") (string ch)))
+              (lambda (string)
+                ((jscl::oget (%js-vref "global") "console" "error") string))))
+
 ;;; Printer
 
 (defun lisp-escape-string (string)
