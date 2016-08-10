@@ -9,13 +9,22 @@
                                                   (- *total-tests*
                                                      *expected-failures*
                                                      *unexpected-passes*))))
-
+ 
  (unless (zerop *expected-failures*)
    (format t "~a test(s) failed expectedly.~%" *expected-failures*))
 
  (unless (zerop *unexpected-passes*)
    (format t "~a test(s) passed unexpectedly.~%" *unexpected-passes*))
-
+ 
+ (let (unbound)
+   (do-external-symbols (symbol :jscl)
+     (unless (or (boundp symbol) (fboundp symbol))
+       (push symbol unbound)))
+   (when unbound 
+     (format t "Unbound, exported symbols in JSCL package:~%")
+     (dolist (symbol unbound)
+       (format t " • ~a~%" symbol))))
+ 
  (terpri)
 
  #+jscl
