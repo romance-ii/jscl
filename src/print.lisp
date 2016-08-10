@@ -477,12 +477,3 @@ to streams."
 
 #+jscl (fset 'format (fdefinition '!format))
 
-#+jscl
-(defmacro assert (test &rest _)
-  "Second-generation  ASSERT.  Now,  we  can print  the  assertion  that
-failed. Still ignores arguments after TEST  so as to not trigger bugs in
-the macroexpander." 
-  `(unless ,test
-     (error ,(concatenate 'string "Assertion failed: NOT " (princ-to-string test)))))
-
-

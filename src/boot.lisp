@@ -286,9 +286,19 @@
   nil)
 
 (defmacro assert (test &rest _)
-  "An early ASSERT that does not trigger bugs in the macroexpander." 
+  "An  early ASSERT  that does  not trigger  bugs in  the macroexpander.
+Note, this will  still signal errors itself if it  actually is triggered
+before  princ-to-string is  available, but  it needs  to be  declared as
+a macro before  anything else gets loaded, and  currently the compiler's
+macro cache is so aggressive that it cannot be redefined."
+  #-jscl (declare (ignore _))
   `(unless ,test
-     (error ,(concatenate 'string "Assertion failed"))))
+     (error ,(concatenate 'string "Assertion failed: NOT " (princ-to-string test)))))
+
+(defmacro check-type (type var &rest _)
+  "Early/minimalist CHECK-TYPE using ETYPECASE"
+  #-jscl (declare (ignore _))
+  `(etypecase ,var (,type nil)))
 
 (defmacro loop (&body body)
   `(while t ,@body))
