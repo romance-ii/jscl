@@ -281,6 +281,15 @@
                                   (list (first v) (third v))))
                            varlist)))))))
 
+(defmacro declare (&rest declarations)
+  "Early DECLARE ignores everything."
+  nil)
+
+(defmacro assert (test &rest _)
+  "An early ASSERT that does not trigger bugs in the macroexpander." 
+  `(unless ,test
+     (error ,(concatenate 'string "Assertion failed"))))
+
 (defmacro loop (&body body)
   `(while t ,@body))
 
