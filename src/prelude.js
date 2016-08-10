@@ -66,11 +66,11 @@ internals.forcemv = function(x) {
 var values = internals.mv;
 
 internals.checkArgsAtLeast = function(args, n){
-  if (args < n) throw 'too few arguments';
+    if (args < n) throw new Error('too few arguments; needed at least ' + n + ' but got only ' + args);
 };
 
 internals.checkArgsAtMost = function(args, n){
-  if (args > n) throw 'too many arguments';
+    if (args > n) throw new Error ('too many arguments; needed at most ' + n + ' but got ' + args);
 };
 
 internals.checkArgs = function(args, n){
@@ -126,7 +126,7 @@ internals.QIList = function(){
 // Arithmetic
 
 internals.handled_division = function (x, y) {
-  if (y == 0) throw "Division by zero";
+    if (y == 0) throw new Error("Division (of " + x + ") by zero");
   return x/y;
 };
 
@@ -333,7 +333,7 @@ internals.intern = function (name, package_name){
   package_name = package_name || "JSCL";
   var lisp_package = packages[package_name];
   if (!lisp_package)
-    throw "No package " + package_name;
+      throw new Error ("No package " + package_name);
 
   var symbol = lisp_package.symbols[name];
   if (!symbol)
