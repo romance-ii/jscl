@@ -140,8 +140,9 @@
 
 ;; From comment #4 on <https://bugs.launchpad.net/sbcl/+bug/1177986>:
 (defun digit-char-p (char &optional (radix 10))
-  "Includes ASCII 0-9 a-z A-Z, plus Unicode Hex Digit characters (fullwidth variants of 0-9 and A-F)."
-  (let* ((number (unicode-digit-value char))
+  "Includes ASCII 0-9 a-z A-Z, plus Unicode Hex Digit characters (fullwidth variants of 0-9 and A-F)." 
+  (let* ((radix (or (and radix (<= 2 radix 36) radix) 10))
+         (number (unicode-digit-value char))
          (code (char-code char))
          (upper (char-upcase char))
          (code-upper (char-code upper))
