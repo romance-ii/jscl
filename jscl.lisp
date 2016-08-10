@@ -58,6 +58,7 @@
 ;;; compiled in the host
 (defvar *source*
   '(("boot"          :target)
+    ("early-char"	:target)
     ("compat"        :host)
     ("setf"          :target)
     ("utils"         :both)

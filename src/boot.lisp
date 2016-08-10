@@ -309,56 +309,6 @@
 (defun atom (x)
   (not (consp x)))
 
-(defun alpha-char-p (x)
-  (or (<= (char-code #\a) (char-code x) (char-code #\z))
-      (<= (char-code #\A) (char-code x) (char-code #\Z))))
-
-;; I made this list by running DIGIT-CHAR-P in SBCL on every codepoint up to CHAR-CODE-LIMIT,
-;; filtering on only those with SB-IMPL::UCD-GENERAL-CATEGORY 12 (Nd), and then grouping
-;; consecutive sets.  There's 37 spans of 10, plus 1 extra digit (6618).
-(defconstant +unicode-zeroes+
-  '(48 1632 1776 1984 2406 2534 2662 2790 2918 3046 3174 3302 3430 3664
-    3792 3872 4160 4240 6112 6160 6470 6608 6784 6800 6992 7088 7232 7248
-    42528 43216 43264 43472 43600 44016 65296 66720 120782)
-  "Unicode codepoints which have Digit value 0, followed by 1, 2, ..., 9, as of Unicode 6.2")
-
-;; The "Digit value" of a (Unicode) character, or NIL, if it doesn't have one.
-(defun unicode-digit-value (char)
-  (let ((code (char-code char)))
-    (if (= code 6618)
-        1  ;; it's special!
-        (dolist (z +unicode-zeroes+)
-          (when (<= z code (+ z 9))
-            (return-from unicode-digit-value (- code z)))))))
-
-;; From comment #4 on <https://bugs.launchpad.net/sbcl/+bug/1177986>:
-(defun digit-char-p (char &optional (radix 10))
-  "Includes ASCII 0-9 a-z A-Z, plus Unicode HexDigit characters (fullwidth variants of 0-9 and A-F)."
-  (let* ((number (unicode-digit-value char))
-         (code (char-code char))
-         (upper (char-upcase char))
-         (code-upper (char-code upper))
-         (potential (cond (number number) 
-                          ((char<= #\A upper #\Z)
-                           (+ 10 (- code-upper (char-code #\A))))
-                          ((<= 65313 (char-code upper) 65318)  ;; FULLWIDTH_LATIN_CAPITAL_LETTER_A, FULLWIDTH_LATIN_CAPITAL_LETTER_F
-                           (+ 10 (- code-upper 65313)))
-                          (t nil))))
-    (if (and potential (< potential radix))
-        potential
-        nil)))
-
-(defun digit-char (weight &optional (radix 10))
-  "All arguments must be integers. Returns a character object that represents
-a digit of the given weight in the specified radix. Returns NIL if no such
-character exists."
-  
-  (and (>= weight 0) (< weight radix) (< weight 36)
-       (or (and (<= 0 weight 9)
-                (code-char (+ (char-code #\0) weight)))
-           (and (<= 10 weight 36)
-                (code-char (+ (char-code #\A) weight))))))
-
 (defun equal (x y)
   (cond
     ((eql x y) t)
