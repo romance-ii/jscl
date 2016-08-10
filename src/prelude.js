@@ -92,8 +92,8 @@ internals.car = function(x){
   else if (x instanceof internals.Cons)
     return x.car;
   else {
-    console.log(x);
-    throw new Error('CAR called on non-list argument');
+      console.log(x);
+      throw new Error('CAR called on non-list argument ' + x);
   }
 };
 
@@ -103,7 +103,7 @@ internals.cdr = function(x){
   else if (x instanceof internals.Cons)
     return x.cdr;
   else
-    throw new Error('CDR called on non-list argument');
+      throw new Error('CDR called on non-list argument ' + x);
 };
 
 // Improper list constructor (like LIST*)
