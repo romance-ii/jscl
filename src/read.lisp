@@ -367,7 +367,7 @@
     (dotimes (i (length s))
       (let ((ch (char s i)))
         (if last-escape
-           (progn
+            (progn
               (setf last-escape nil)
               (setf result (concat result (string ch))))
             (if (char= ch #\\)
@@ -542,9 +542,9 @@
           (values nil index)))))
 
 #+jscl
-(defun parse-integer (string &key junk-allowed radix)
+(defun parse-integer (string &key (start 0) (end (length string)) junk-allowed radix)
   (multiple-value-bind (num index)
-      (!parse-integer string junk-allowed radix)
+      (!parse-integer (subseq string start end) junk-allowed radix)
     (if num
         (values num index)
         (error "Junk detected."))))
