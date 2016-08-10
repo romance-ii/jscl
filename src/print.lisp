@@ -350,7 +350,7 @@ to streams."
 
 ;;; Format
 
-(defun format-aesthetic (arg &optional (pad-length 1))
+(defun format-aesthetic (arg colonp atp &optional (pad-length 1))
   (let* ((s (princ-to-string arg))
          (len (length s)))
     (if (< len pad-length)
