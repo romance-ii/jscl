@@ -292,6 +292,7 @@
 
 (defun constantly (x)
   (lambda (&rest args)
+    (declare (ignore args))
     x))
 
 (defun code-char (x)
