@@ -367,7 +367,7 @@
     (dotimes (i (length s))
       (let ((ch (char s i)))
         (if last-escape
-           (progn
+            (progn
               (setf last-escape nil)
               (setf result (concat result (string ch))))
             (if (char= ch #\\)
