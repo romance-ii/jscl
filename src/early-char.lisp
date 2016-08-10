@@ -132,11 +132,11 @@
 ;; The "Digit value" of a (Unicode) character, or NIL, if it doesn't have one.
 (defun unicode-digit-value (char)
   (let ((code (char-code char)))
-    (if (= code 6618)
-        1  ;; it's special!
-        (dolist (z +unicode-zeroes+)
-          (when (<= z code (+ z 9))
-            (return-from unicode-digit-value (- code z)))))))
+    (dolist (z +unicode-zeroes+)
+      (when (<= z code (+ z 9))
+        (return-from unicode-digit-value (- code z))))
+    (when (= code 6618) ; it's special!
+      1)))
 
 ;; From comment #4 on <https://bugs.launchpad.net/sbcl/+bug/1177986>:
 (defun digit-char-p (char &optional (radix 10))
