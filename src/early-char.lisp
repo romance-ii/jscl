@@ -151,7 +151,7 @@
                           ((<= 65313 code-upper 65338)  ; FULLWIDTH_LATIN_CAPITAL_LETTER_A - _Z
                            (+ 10 (- code-upper 65313)))
                           (t nil))))
-    (and potential (< potential radix))))
+    (and potential (< potential radix) potential)))
 
 (defun digit-char (weight &optional (radix 10))
   "All arguments must be integers. Returns a character object that represents
