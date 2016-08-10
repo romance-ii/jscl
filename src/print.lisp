@@ -387,19 +387,18 @@ to streams."
                      (1- count)
                      count)))
 
+(defun format-syntax (arg colonp atp params)
+  (declare (ignore colonp atp params))
+  (prin1-to-string arg))
+
 (defun format-special (chr arg params &key colonp atp) ; should be generic …
   (apply (case (char-upcase chr)
-           (#\S (lambda (arg colonp atp params)
-                  (declare (ignore colonp atp params))
-                  (prin1-to-string arg)))
-           (#\A #'format-aesthetic params)
+           (#\S #'format-syntax)
+           (#\A #'format-aesthetic)
            (#\D #'format-decimal)
-           (#\X #'format-hex) 
-           
-           (t (lambda (arg colonp atp params)
-                (declare (ignore colonp atp params)) 
-                (warn "~S is not implemented yet, using ~~S instead" chr)
-                (prin1-to-string arg))))
+           (#\X #'format-hex)
+           (t (warn "~S is not implemented yet, using ~~S instead" chr)
+              #'format-syntax))
          arg colonp atp params))
 
 (defun !format (destination fmt &rest args)
