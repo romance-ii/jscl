@@ -251,7 +251,7 @@
   `(block nil
      (let ,(mapcar (lambda (x) (if (symbolp x)
                                    (list x nil)
-                                 (list (first x) (second x)))) varlist)
+                                   (list (first x) (second x)))) varlist)
        (while t
          (when ,(car endlist)
            (return (progn ,@(cdr endlist))))
@@ -268,7 +268,7 @@
   `(block nil
      (let* ,(mapcar (lambda (x1) (if (symbolp x1)
                                      (list x1 nil)
-                                   (list (first x1) (second x1)))) varlist)
+                                     (list (first x1) (second x1)))) varlist)
        (while t
          (when ,(car endlist)
            (return (progn ,@(cdr endlist))))
@@ -293,9 +293,9 @@ a macro before  anything else gets loaded, and  currently the compiler's
 macro cache is so aggressive that it cannot be redefined."
   #-jscl (declare (ignore _))
   `(unless ,test
-     (error ,(concatenate 'string "Assertion failed: NOT " (princ-to-string test)))))
+     (error "Assertion failed: NOT ~s" ',test)))
 
-(defmacro check-type (type var &rest _)
+(defmacro check-type (var type &rest _)
   "Early/minimalist CHECK-TYPE using ETYPECASE"
   #-jscl (declare (ignore _))
   `(etypecase ,var (,type nil)))
@@ -439,7 +439,7 @@ macro cache is so aggressive that it cannot be redefined."
 
 ;;; Early error definition.
 (defun error (fmt &rest args)
-  (%throw (apply #'format nil fmt args)))
+  (%throw (make-new |Error| (apply #'format nil fmt args))))
 
 (defmacro nth-value (n form)
   `(multiple-value-call (lambda (&rest values)
