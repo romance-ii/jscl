@@ -249,10 +249,15 @@
     (when (funcall function elt)
       (return-from some t))))
 
-(defun every (function seq)
-  (do-sequence (elt seq)
-    (unless (funcall function elt)
-      (return-from every nil)))
+(defun every (function seq &rest more-seqs)
+  (if more-seqs
+      (apply #'map nil (lambda (&rest seqs)
+                         (unless (apply function seqs)
+                           (return-from every nil))) seq more-seqs)
+      ;; optimized single sequence case
+      (do-sequence (elt seq)
+        (unless (funcall function elt)
+          (return-from every nil))))
   t)
 
 (defun remove-if (func seq)
