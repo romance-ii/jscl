@@ -506,40 +506,41 @@
       (/ (* sign (expt 10.0 (* exponent-sign exponent)) number) divisor 1.0))))
 
 (defun !parse-integer (string junk-allow &optional (radix *read-base*))
-  (block nil
-    (let ((value 0)
-          (index 0)
-          (size (length string))
-          (sign 1))
-      ;; Leading whitespace
-      (while (and (< index size)
-                  (whitespacep (char string index)))
-        (incf index))
-      (unless (< index size) (return (values nil 0)))
-      ;; Optional sign
-      (case (char string 0)
-        (#\+ (incf index))
-        (#\- (setq sign -1)
-             (incf index)))
-      ;; First digit
-      (unless (and (< index size)
-                   (setq value (digit-char-p (char string index) radix)))
-        (return (values nil index)))
-      (incf index)
-      ;; Other digits
-      (while (< index size)
-        (let ((digit (digit-char-p (char string index) radix)))
-          (unless digit (return))
-          (setq value (+ (* value radix) digit))
-          (incf index)))
-      ;; Trailing whitespace
-      (do ((i index (1+ i)))
-          ((or (= i size) (not (whitespacep (char string i))))
-           (and (= i size) (setq index i))))
-      (if (or junk-allow
-              (= index size))
-          (values (* sign value) index)
-          (values nil index)))))
+  (let ((radix (or radix 10)))
+    (block nil
+      (let ((value 0)
+            (index 0)
+            (size (length string))
+            (sign 1))
+        ;; Leading whitespace
+        (while (and (< index size)
+                    (whitespacep (char string index)))
+          (incf index))
+        (unless (< index size) (return (values nil 0)))
+        ;; Optional sign
+        (case (char string 0)
+          (#\+ (incf index))
+          (#\- (setq sign -1)
+               (incf index)))
+        ;; First digit
+        (unless (and (< index size)
+                     (setq value (digit-char-p (char string index) radix)))
+          (return (values nil index)))
+        (incf index)
+        ;; Other digits
+        (while (< index size)
+          (let ((digit (digit-char-p (char string index) radix)))
+            (unless digit (return))
+            (setq value (+ (* value radix) digit))
+            (incf index)))
+        ;; Trailing whitespace
+        (do ((i index (1+ i)))
+            ((or (= i size) (not (whitespacep (char string i))))
+             (and (= i size) (setq index i))))
+        (if (or junk-allow
+                (= index size))
+            (values (* sign value) index)
+            (values nil index))))))
 
 #+jscl
 (defun parse-integer (string &key (start 0) (end (length string)) junk-allowed radix)
