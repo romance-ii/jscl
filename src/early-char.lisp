@@ -163,4 +163,4 @@ character exists."
        (or (and (<= 0 weight 9)
                 (code-char (+ (char-code #\0) weight)))
            (and (<= 10 weight 36)
-                (code-char (+ (char-code #\A) weight))))))
+                (code-char (+ (char-code #\A) (- weight 10)))))))
