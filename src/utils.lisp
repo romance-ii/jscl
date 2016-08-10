@@ -105,7 +105,7 @@ accumulated, in the order."
       ((minusp x)
        (concat "-" (integer-to-string (- x) radix)))
       ((and plusp (plusp x))
-       (concat "+'" (integer-to-string x radix)))
+       (concat "+" (integer-to-string x radix)))
       (*print-radix*
        (let ((*print-radix* nil))
          (case *print-base*
