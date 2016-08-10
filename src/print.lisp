@@ -415,12 +415,13 @@ to streams."
             (let ((next (char fmt (incf i))))
               (cond
                    ((digit-char-p next)
-                    (let ((param-end (position-if-not #'digit-char-p fmt :start i)))
-                      (push (parse-integer (subseq fmt i param-end)) params)
-                      (setf i (1- param-end))
-                      (when (char= (char fmt param-end) #\,)
-                        (incf i)
-                        (go read-control))))
+                    (multiple-value-bind (param ending)
+                        (parse-integer (subseq fmt i) :junk-allowed t)
+                      (push param params)
+                      (setf i (+ i ending)))
+                    (when (char= (char fmt i) #\,)
+                      (incf i)
+                      (go read-control)))
                    
                    ((char= #\apostrophe next)
                     (push (char fmt (incf i)) params)
@@ -450,8 +451,8 @@ to streams."
                    ((char= #\{ next)
                     (warn "~~{~~}  not supported; ignored"))
                    
-                   ((char= #\% next) (concatf res (apply #'format-terpri params)))
-                   ((char= #\& next) (concatf res (apply #'format-fresh-line params)))
+                   ((char= #\% next) (concatf res (apply #'format-terpri (reverse params))))
+                   ((char= #\& next) (concatf res (apply #'format-fresh-line (reverse params))))
                    
                    ((char= #\* next)
                     (let ((delta (* (or (and params (first params))
@@ -461,7 +462,7 @@ to streams."
                                                  (length arguments)
                                                  delta) args))))
                    
-                   (t (concatf res (format-special next (pop arguments) params
+                   (t (concatf res (format-special next (pop arguments) (reverse params)
                                                    :atp atp :colonp colonp))))))
             (setq res (concat res (string c))))
         (incf i)))
