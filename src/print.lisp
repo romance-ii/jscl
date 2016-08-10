@@ -387,8 +387,8 @@ to streams."
                      (1- count)
                      count)))
 
-(defun format-syntax (arg colonp atp params)
-  (declare (ignore colonp atp params))
+(defun format-syntax (arg colonp atp &rest _)
+  (declare (ignore colonp atp _))
   (prin1-to-string arg))
 
 (defun format-special (chr arg params &key colonp atp) ; should be generic …
