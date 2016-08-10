@@ -450,8 +450,8 @@ to streams."
                    ((char= #\{ next)
                     (warn "~~{~~}  not supported; ignored"))
                    
-                   ((char= #\% next) (apply #'format-terpri params))
-                   ((char= #\& next) (apply #'format-fresh-line params))
+                   ((char= #\% next) (concatf res (apply #'format-terpri params)))
+                   ((char= #\& next) (concatf res (apply #'format-fresh-line params)))
                    
                    ((char= #\* next)
                     (let ((delta (* (or (and params (first params))
