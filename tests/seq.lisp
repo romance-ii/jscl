@@ -51,7 +51,7 @@
 (test (equal (substitute-if 99 (lambda (elt) (<= elt 2)) '(1 2 3 4)) '(99 99 3 4)))
 (test (equal (substitute-if-not 99 (lambda (elt) (<= elt 2)) '(1 2 3 4)) '(1 2 99 99)))
 (test (equal (substitute-if-not #\- #'alphanumericp "The 12 ducks are not wet.")
-              "The-12-ducks-are-not-wet-"))
+             "The-12-ducks-are-not-wet-"))
 
 ;; CLHS SUBSTITUTE TESTS
 (test (equal (substitute #\. #\space "0 2 4 6") "0.2.4.6"))
@@ -67,7 +67,7 @@
 (expected-failure (equal (substitute-if 9 #'evenp '(1 2 4 1 3 4 5) :count 1 :from-end t)
                          '(1 2 4 1 3 9 5)))
 
-; POSITION
+                                        ; POSITION
 (test (= (position 1 #(1 2 3))  0))
 (test (= (position 1 '(1 2 3))  0))
 (test (= (position 1 #(1 2 3 1)) 0))
@@ -98,12 +98,13 @@
 (let ((v1 (remove-if #'zerop #(1 0 2 0 3))))
   (test (and (= (aref v1 0) 1) (= (aref v1 1) 2) (= (aref v1 2) 3)))) 
 (test (every #'zerop (remove-if-not #'zerop #(1 0 2 0 3))))
+(test (every #'= '(0 1 2 3) '(0 1 2 3))) ; test “every” with two seqs
 
-; SUBSEQ
+                                        ; SUBSEQ
 (let ((nums '(1 2 3 4 5)))
   (test (equal (subseq nums 3) '(4 5)))
   (test (equal (subseq nums 2 4) '(3 4)))
-  ; Test that nums hasn't been altered: SUBSEQ should construct fresh lists
+                                        ; Test that nums hasn't been altered: SUBSEQ should construct fresh lists
   (test (equal nums '(1 2 3 4 5))))
 
 ;; REVERSE
