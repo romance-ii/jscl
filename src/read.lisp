@@ -607,8 +607,12 @@
         (setf *labelled-objects* save-labelled-objects)
         (setf *fixup-locations* save-fixup-locations)))))
 
-(defun ls-read-from-string (string &optional (eof-error-p t) eof-value)
-  (ls-read (make-string-stream string) eof-error-p eof-value))
+(defun ls-read-from-string (string &optional (eof-error-p t) eof-value
+                            &key (start 0) (end nil) (preserve-whitespace t))
+  (funcall (if preserve-whitespace
+               #'ls-read  ; TODO: READ-PRESERVING-WHITESPACE
+               #'ls-read)
+           (make-string-stream (subseq string start (or end (length string)))) eof-error-p eof-value))
 
 #+jscl
 (defun read-from-string (string &optional (eof-errorp t) eof-value)
