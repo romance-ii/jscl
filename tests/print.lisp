@@ -88,6 +88,8 @@
           (equalp (format nil "~&") "")))
 (test (or (equalp (format nil "~3&") #(#\newline #\newline))
           (equalp (format nil "~3&") #(#\newline #\newline #\newline))))
+(test (equal (format nil "~a" #\c) "c"))
+(test (equal (format nil "~c" #\c) "c"))
 (test (or (equal (format nil "~@c" #\space) "#\\Space") ; JSCL doing this, unless someone objects
           (equal (format nil "~@c" #\space) "#\\ "))) ; SBCL does this, arguably equally valid
 (test (equal (format nil "~@c" #\newline) "#\\Newline"))
