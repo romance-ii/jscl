@@ -210,7 +210,8 @@
     (apply #'substitute substitute-args)))
 
 (defun substitute-if-not (new pred seq &rest keys
-                          &key key start (end nil endp) (count nil countp) from-end)
+                          &key (key #'identity) (start 0) (end nil endp)
+                               (count nil countp) from-end)
   (let ((substitute-args (append (list new t seq
                                        :key (lambda (elt)
                                               (not (funcall pred (funcall key elt))))
