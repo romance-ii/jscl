@@ -51,3 +51,12 @@
 
 ;; character literals
 (test (char= #\SPACE #\Space #\space))
+(test (= (code-char 3) #\u+3))
+(test (= (code-char #x2010) #\u+2010))
+
+;; parse-integer
+(test (= #x42 (parse-integer "42" :radix 16)))
+(test (multiple-value-bind (value ending)
+          (parse-integer "xx42xx" :start 2 :junk-allowed t)
+        (and (= 42 value)
+             (= 4 ending))))
