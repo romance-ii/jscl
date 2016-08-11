@@ -462,7 +462,7 @@ to streams."
                    
                      ((char-equal #\T next)
                       (concatf rest (make-string (min 1 (or (last params) 1)) :initial-element #\space)))
-                     
+                   
                    ((char= #\~ next)
                     (concatf res "~"))
                    
