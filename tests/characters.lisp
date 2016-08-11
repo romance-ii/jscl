@@ -157,7 +157,11 @@
 (test (char= #\u+2010 (name-char "U+2010")))
 (test (char= #\u+210 (name-char "U+210")))
 (test (or (equal (char-name #\u+210) "U+0210")
+          (equal (char-name #\u+210) "U+210")
           (equal (char-name #\u+210) "LATIN_CAPITAL_LETTER_R_WITH_DOUBLE_GRAVE"))) ; for SBCL
 (test (or (equal (char-name #\u+2010) "U+2010")
+          (equal (char-name #\u+210) "U+210")
           (equal (char-name #\u+2010) "HYPHEN")))
+
+(test (char-equal #\u+2010 #\‐ #\u+002010))
 
