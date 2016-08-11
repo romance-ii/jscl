@@ -1,6 +1,7 @@
 (/debug "loading char.lisp!")
 
-;; These comparison functions heavily borrowed from SBCL/CMUCL (public domain).
+;; These comparison  functions heavily borrowed from  SBCL/CMUCL (public
+;; domain).
 
 (defun char= (character &rest more-characters)
   (dolist (c more-characters t)
@@ -10,40 +11,40 @@
   (do* ((head character (car list))
         (list more-characters (cdr list)))
        ((null list) t)
-       (dolist (c list)
-         (when (eql head c) (return-from char/= nil)))))
+    (dolist (c list)
+      (when (eql head c) (return-from char/= nil)))))
 
 (defun char< (character &rest more-characters)
   (do* ((c character (car list))
         (list more-characters (cdr list)))
        ((null list) t)
-       (unless (< (char-int c)
-                  (char-int (car list)))
-         (return nil))))
+    (unless (< (char-int c)
+               (char-int (car list)))
+      (return nil))))
 
 (defun char> (character &rest more-characters)
   (do* ((c character (car list))
         (list more-characters (cdr list)))
        ((null list) t)
-       (unless (> (char-int c)
-                  (char-int (car list)))
-         (return nil))))
+    (unless (> (char-int c)
+               (char-int (car list)))
+      (return nil))))
 
 (defun char<= (character &rest more-characters)
   (do* ((c character (car list))
         (list more-characters (cdr list)))
        ((null list) t)
-       (unless (<= (char-int c)
-                   (char-int (car list)))
-         (return nil))))
+    (unless (<= (char-int c)
+                (char-int (car list)))
+      (return nil))))
 
 (defun char>= (character &rest more-characters)
   (do* ((c character (car list))
         (list more-characters (cdr list)))
        ((null list) t)
-       (unless (>= (char-int c)
-                   (char-int (car list)))
-         (return nil))))
+    (unless (>= (char-int c)
+                (char-int (car list)))
+      (return nil))))
 
 (defun equal-char-code (character)
   (char-code (char-upcase character)))
@@ -54,18 +55,18 @@
 (defun char-equal (character &rest more-characters)
   (do ((clist more-characters (cdr clist)))
       ((null clist) t)
-      (unless (two-arg-char-equal (car clist) character)
-        (return nil))))
+    (unless (two-arg-char-equal (car clist) character)
+      (return nil))))
 
 (defun char-not-equal (character &rest more-characters)
   (do* ((head character (car list))
         (list more-characters (cdr list)))
        ((null list) t)
-       (unless (do* ((l list (cdr l)))
-                    ((null l) t)
-                    (when (two-arg-char-equal head (car l))
-                        (return nil)))
-         (return nil))))
+    (unless (do* ((l list (cdr l)))
+                 ((null l) t)
+              (when (two-arg-char-equal head (car l))
+                (return nil)))
+      (return nil))))
 
 (defun two-arg-char-lessp (c1 c2)
   (< (equal-char-code c1) (equal-char-code c2)))
@@ -74,8 +75,8 @@
   (do* ((c character (car list))
         (list more-characters (cdr list)))
        ((null list) t)
-       (unless (two-arg-char-lessp c (car list))
-         (return nil))))
+    (unless (two-arg-char-lessp c (car list))
+      (return nil))))
 
 (defun two-arg-char-greaterp (c1 c2)
   (> (equal-char-code c1) (equal-char-code c2)))
@@ -84,8 +85,8 @@
   (do* ((c character (car list))
         (list more-characters (cdr list)))
        ((null list) t)
-       (unless (two-arg-char-greaterp c (car list))
-         (return nil))))
+    (unless (two-arg-char-greaterp c (car list))
+      (return nil))))
 
 (defun two-arg-char-not-greaterp (c1 c2)
   (<= (equal-char-code c1) (equal-char-code c2)))
@@ -94,8 +95,8 @@
   (do* ((c character (car list))
         (list more-characters (cdr list)))
        ((null list) t)
-       (unless (two-arg-char-not-greaterp c (car list))
-         (return nil))))
+    (unless (two-arg-char-not-greaterp c (car list))
+      (return nil))))
 
 (defun two-arg-char-not-lessp (c1 c2)
   (>= (equal-char-code c1) (equal-char-code c2)))
@@ -104,8 +105,8 @@
   (do* ((c character (car list))
         (list more-characters (cdr list)))
        ((null list) t)
-       (unless (two-arg-char-not-lessp c (car list))
-         (return nil))))
+    (unless (two-arg-char-not-lessp c (car list))
+      (return nil))))
 
 (defun character (character)
   (cond ((characterp character)
@@ -125,7 +126,8 @@
       (not (null (digit-char-p char)))))
 
 (defun graphic-char-p (char)
-  ;; from Wikipedia's Unicode article. Commented hex values because JSCL can't read #x yet.
+  ;; from Wikipedia's Unicode article. Commented hex values because JSCL
+  ;; can't read #x yet.
   (let ((n (char-code char)))
     (or
      ;; C0 control codes
@@ -191,13 +193,13 @@
 except with Common Lisp's suggested changes.
 For the first 32 characters ('C0 controls'), the first
 'Commonly used alternative alias' is used -- note that this differs from SBCL, which uses abbreviations.")
-;; I hope being slightly different from SBCL doesn't bite me down the road.
-;; I'll figure out a good way to add the other 21701 names later.
+;; I hope  being slightly different from  SBCL doesn't bite me  down the
+;; road. I'll figure out a good way to add the other 21701 names later.
 
 (defun char-name (char)
   "For consistency, I'm  using the SBCL convention of  the Unicode name,
-  with spaces as underscores, for  ASCII; or their \"U+xxxx\" convention
-  for names I don't know."
+ with spaces as underscores, for  ASCII; or their \"U+xxxx\" convention
+ for names I don't know."
   (let ((code (char-code char)))
     (if (<= code 127)
         (aref +ascii-names+ code)
@@ -206,6 +208,7 @@ For the first 32 characters ('C0 controls'), the first
 
 (defun name-char (name)
   (let ((name (string name)))
+<<<<<<< 80328c6abbcb36b24ecd8410c676388a9e0c60d4
   (if (and (< 3 (length name))
            (char-equal #\U (char name 0))
            (char-equal #\+ (char name 1))
@@ -214,6 +217,16 @@ For the first 32 characters ('C0 controls'), the first
     (code-char (parse-integer (subseq name 2) :radix 16))
       
     (dotimes (i (length +ascii-names+))
+=======
+    (if (and (< 3 (length name))
+             (char-equal #\U (char name 0))
+             (char-equal #\+ (char name 1))
+             (every (lambda (ch) (digit-char-p ch 16)) (subseq name 2)))
+
+        (code-char (parse-integer (subseq name 2) :radix 16))
+
+        (dotimes (i (length +ascii-names+))
+>>>>>>> Emacs auto-indent char.lisp
           (when (string-equal name (aref +ascii-names+ i))
             (return-from name-char (code-char i))))))
   nil)
