@@ -463,7 +463,7 @@ to streams."
                       (multiple-value-bind (param ending)
                           (parse-integer (subseq fmt i) :junk-allowed t)
                         (push param params)
-                        (setf i (1- (+ i ending))))
+                        (setf i ending))
                       (assert (and (< (1+ i) len) "~numbers at end of format"))
                       (when (char= (char fmt i) #\,)	; There's some off-by-one error here. BRFP TODO
                         (incf i))
