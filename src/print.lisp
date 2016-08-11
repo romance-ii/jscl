@@ -35,7 +35,7 @@
       (let ((ch (char string index)))
         (when (or (char= ch #\") (char= ch #\\))
           (setq output (concat output "\\")))
-        (when (or (char= ch #\newline))
+        (when (or (char= ch #\newline))   	; wait, what? \n in Lisp? No… *BRFP TODO
           (setq output (concat output "\\"))
           (setq ch #\n))
         (setq output (concat output (string ch))))
