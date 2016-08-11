@@ -92,7 +92,7 @@ internals.car = function(x){
   else if (x instanceof internals.Cons)
     return x.car;
   else {
-      console.log(x);
+    console.log(x);
       throw new Error('CAR called on non-list argument ' + x);
   }
 };
