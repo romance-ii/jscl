@@ -182,7 +182,7 @@
             (t (warn "SUBSTITUTE: sequence type not supported") 'vector))
           (lambda (elt)
             (prog1
-                (if (or (and countp (> counted count))
+                (if (or (and countp (>= counted count))
                         (< i start)
                         (and endp (> i end))
                         (not (funcall test old (funcall key elt))))
