@@ -359,7 +359,8 @@ to streams."
                      (make-string (- pad-length len) :initial-element #\space))
         s)))
 
-(defun format-numeric (arg colonp atp &optional (pad-length 1) (pad-char #\space))
+(defun format-numeric (arg colonp atp &optional (pad-length 1) (pad-char #\space)
+                                                (comma-char #\,) (comma-interval 3))
   (declare (ignore colonp))
   (if (numberp arg)
       (let* ((s (integer-to-string arg *print-base* atp))
@@ -371,13 +372,18 @@ to streams."
             s))
       (princ-to-string arg)))
 
-(defun format-hex (arg colonp atp &optional (pad-length 1) (pad-char #\space)) 
-  (let ((*print-base* 16))
-    (format-numeric arg colonp atp pad-length pad-char)))
+(defun format-hex (arg colonp atp &optional (pad-length 1) (pad-char #\space)
+                                            (comma-char #\,) (comma-interval 3))
+  (let ((*print-escape* nil)
+        (*print-base* 16)
+        (*print-radix* nil)
+        (*print-readably* nil))
+    (format-numeric arg colonp atp pad-length pad-char comma-char comma-interval)))
 
-(defun format-decimal (arg colonp atp &optional (pad-length 1) (pad-char #\space)) 
+(defun format-decimal (arg colonp atp &optional (pad-length 1) (pad-char #\space)
+                                                (comma-char #\,) (comma-interval 3)) 
   (let ((*print-base* 10))
-    (format-numeric arg colonp atp pad-length pad-char)))
+    (format-numeric arg colonp atp pad-length pad-char comma-char comma-interval)))
 
 (defun format-terpri (&optional (count 1))
   (make-string count :initial-element #\newline))
@@ -391,13 +397,21 @@ to streams."
   (declare (ignore colonp atp _))
   (prin1-to-string arg))
 
+(defun format-char (arg colonp atp &rest _)
+  (declare (ignore _))
+  (check-type arg character)
+  (cond (colonp (char-name arg))
+        (atp (prin1-to-string arg))
+        (t (string arg))))
+
 (defun format-special (chr arg params &key colonp atp) ; should be generic …
   (apply (case (char-upcase chr)
            (#\S #'format-syntax)
            (#\A #'format-aesthetic)
            (#\D #'format-decimal)
            (#\X #'format-hex)
-           (t (warn "~S is not implemented yet, using ~~S instead" chr)
+           (#\C #'format-char)
+           (t (warn "~~~a is not implemented yet, using ~~S instead" chr)
               #'format-syntax))
          arg colonp atp params))
 
@@ -405,33 +419,38 @@ to streams."
   (let ((len (length fmt))
         (i 0)
         (res "")
-        (arguments args)
-        params atp colonp)
+        (arguments args))
     (while (< i len)
       (let ((c (char fmt i)))
         (if (char= c #\~)
+            (let (params atp colonp)
             (tagbody
              read-control
-            (let ((next (char fmt (incf i))))
-              (cond
+                 (assert (and (< (1+ i) len) "~ at end of format"))
+               (let ((next (char fmt (incf i))))
+                 (cond
                    ((digit-char-p next)
                     (multiple-value-bind (param ending)
                         (parse-integer (subseq fmt i) :junk-allowed t)
                       (push param params)
-                      (setf i (+ i ending)))
+                        (setf i (1- (+ i ending))))
+                      (assert (and (< (1+ i) len) "~numbers at end of format"))
                     (when (char= (char fmt i) #\,)
-                      (incf i)
-                      (go read-control)))
+                        (incf i))
+                      (go read-control))
                    
                    ((char= #\apostrophe next)
-                    (push (char fmt (incf i)) params)
+                      (assert (and (< (1+ i) len) "~' at end of format"))
+                      (incf i)
+                      (push (char fmt i) params)
+                      (assert (and (< (1+ i) len) "~'char at end of format"))
                     (go read-control))
                    
                    ((char= #\, next)
                     (push nil params)
                     (go read-control))
                    
-                   ((char= #\v next)
+                     ((char-equal #\V next)
                     (push (pop arguments) params))
                    
                    ((char= #\: next)
@@ -441,8 +460,11 @@ to streams."
                     (setf atp t)
                     (go read-control))
                    
+                     ((char-equal #\T next)
+                      (concatf rest (make-string (min 1 (or (last params) 1)) :initial-element #\space)))
+                     
                    ((char= #\~ next)
-                 (concatf res "~"))
+                    (concatf res "~"))
                    
                    ((char= #\( next)
                     (warn "~~(~~) not supported; ignored"))
@@ -463,7 +485,7 @@ to streams."
                                                  delta) args))))
                    
                    (t (concatf res (format-special next (pop arguments) (reverse params)
-                                                   :atp atp :colonp colonp))))))
+                                                     :atp atp :colonp colonp)))))))
             (setq res (concat res (string c))))
         (incf i)))
 
