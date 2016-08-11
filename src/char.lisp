@@ -213,7 +213,7 @@ For the first 32 characters ('C0 controls'), the first
       (code-char (parse-integer (subseq name 2) :radix 16))
       
       (let ((name-upcase (string-upcase (string name))))
-        (dotimes (i (length +ascii-names+))
+  (dotimes (i (length +ascii-names+))
           (when (string= name-upcase (string-upcase (aref +ascii-names+ i))) ;; poor man's STRING-EQUAL
             (return-from name-char (code-char i)))) 
         nil)))
