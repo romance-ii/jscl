@@ -98,6 +98,10 @@
 
 (test (equal (read-from-string (format nil "~@c" #\u+2010)) #\u+2010))
 
+(test (not (equal (format nil "~5':x" 4) "::::4")))
+(test (equal (format nil "~5,':x" 4) "::::4"))
+(test (equal (format nil "~5,,2,':d" 400) " 4:00"))
+
 ;; String↔Vector
 #-jscl (expected-failure (equal (coerce #(#\s #\t #\r #\i #\n #\g) 'string) "string"))
 #-jscl (expected-failure (equal (coerce "string" 'vector) "string"))
@@ -108,3 +112,6 @@
 (test (vectorp "string"))
 (test (stringp "string"))
 
+(test (= 2 (char-code #u+2)))
+(test (= 0 (char-code #\Null)))
+(test (= 10 (char-code #\Newline)))
