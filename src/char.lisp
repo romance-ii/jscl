@@ -201,7 +201,8 @@ For the first 32 characters ('C0 controls'), the first
   (let ((code (char-code char)))
     (if (<= code 127)
         (aref +ascii-names+ code)
-        (format nil "U+~4,'0x" code))))
+        (format nil #-jscl "U+~4,'0x" ; HACK until padding works right.
+                #+jscl "U+~x" code))))
 
 (defun name-char (name)
   (if (and (< 3 (length name))
