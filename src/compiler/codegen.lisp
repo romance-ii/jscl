@@ -99,7 +99,7 @@
                       (setq ch #\0))
                      ((or (<= 1 (char-code ch) 26))
                       (setq output (concat output "\\c"
-                                           (code-char (+ (char-code #\A) -1 (char-code ch)))))
+                                           (string (code-char (+ (char-code #\A) -1 (char-code ch))))))
                       (setq ch skipper))
                      ((<= 27 (char-code ch) 31)
                       (setq output (concat output "\\x" (integer-to-string (char-code ch) 16)))

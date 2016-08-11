@@ -328,9 +328,11 @@ to streams."
 
   (defun princ (form &optional stream)
     (let ((*print-escape* nil) (*print-readably* nil))
-      (if (symbolp form)
-          (write (symbol-name form) :stream stream)
-          (write form :stream stream))))
+      (typecase form
+        (symbol (write (symbol-name form) :stream stream))
+        (character (write-char form :stream stream))
+        (t (write form :stream stream))))
+    form)
 
   (defun princ-to-string (form)
     (with-output-to-string (output)
