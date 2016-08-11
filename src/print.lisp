@@ -392,7 +392,7 @@ to streams."
         (if (< len min-column)
 >>>>>>> Emacs auto-indent print.lisp
             (concatenate 'string
-                         (make-string (- pad-length len) :initial-element pad-char)
+                         (make-string (- min-column len) :initial-element pad-char)
                          s)
             s))
       (princ-to-string arg)))
@@ -403,7 +403,7 @@ to streams."
         (*print-base* 16)
         (*print-radix* nil)
         (*print-readably* nil))
-    (format-numeric arg colonp atp pad-length pad-char comma-char comma-interval)))
+    (format-numeric arg colonp atp min-column pad-char comma-char comma-interval)))
 
 <<<<<<< e65b03baab54e94bc8705882cb2c68c6822b01a6
 (defun format-decimal (arg colonp atp &optional (pad-length 1) (pad-char #\space)
