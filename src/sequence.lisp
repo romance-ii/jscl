@@ -197,8 +197,6 @@
                       &key (key #'identity)
                            (start 0) (end nil endp) (count nil countp)
                            from-end)
-  (when from-end
-    (warn "SUBSTITUTE-IF :FROM-END not supported"))
   (let ((substitute-args (append (list new t seq
                                        :key (lambda (elt)
                                               (funcall pred (funcall key elt)))
@@ -207,12 +205,23 @@
                                                v)
                                        :start start)
                                  (when endp (list :end end))
+                                 (when from-end (list :from-end t))
                                  (when countp (list :count count)))))
     (apply #'substitute substitute-args)))
 
 (defun substitute-if-not (new pred seq &rest keys
-                          &key key start end count from-end)
-  (apply #'substitute-if new (complement pred) seq keys))
+                          &key key start (end nil endp) (count nil countp) from-end)
+  (let ((substitute-args (append (list new t seq
+                                       :key (lambda (elt)
+                                              (not (funcall pred (funcall key elt))))
+                                       :test (lambda (_ v)
+                                               (declare (ignore _))
+                                               v)
+                                       :start start)
+                                 (when endp (list :end end))
+                                 (when from-end (list :from-end t))
+                                 (when countp (list :count count)))))
+    (apply #'substitute substitute-args)))
 
 (defun remove (x seq &key key (test #'eql testp) (test-not #'eql test-not-p))
   (cond
