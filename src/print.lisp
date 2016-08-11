@@ -394,12 +394,12 @@ to streams."
         (*print-readably* nil))
     (format-numeric arg colonp atp min-column pad-char comma-char comma-interval)))
 
-(defun format-radix (arg colonp atp &optional (base 10 basep))
+(defun format-radix (arg colonp atp &optional base)
   (cond
     ((and atp colonp) (format nil "#<Roman numeral with long fours ~d>" arg))
     (atp (format nil "#<Roman numeral ~d>" arg))
     (colonp (format nil "#< ~d-th >" arg))
-    ((not basep) (format nil "#< Spelled out ~d >" arg))
+    ((not base) (format nil "#< Spelled out ~d >" arg))
     (t
      (let ((*print-base* base)
            (*print-radix* nil))
