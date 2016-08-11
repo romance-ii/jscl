@@ -204,8 +204,15 @@ For the first 32 characters ('C0 controls'), the first
         (format nil "U+~4,'0x" code))))
 
 (defun name-char (name)
-  (let ((name-upcase (string-upcase (string name))))
-    (dotimes (i (length +ascii-names+))
-      (when (string= name-upcase (string-upcase (aref +ascii-names+ i)))  ;; poor man's STRING-EQUAL
-        (return-from name-char (code-char i))))
-    nil))
+  (if (and (< 3 (length name))
+           (char-equal #\U (char name 0))
+           (char-equal #\+ (char name 1))
+           (every (lambda (ch) (digit-char-p ch 16)) (subseq name 2)))
+      
+      (code-char (parse-integer (subseq name 2) :radix 16))
+      
+      (let ((name-upcase (string-upcase (string name))))
+        (dotimes (i (length +ascii-names+))
+          (when (string= name-upcase (string-upcase (aref +ascii-names+ i))) ;; poor man's STRING-EQUAL
+            (return-from name-char (code-char i)))) 
+        nil)))
