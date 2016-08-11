@@ -132,8 +132,8 @@
 ;; The "Digit value" of a (Unicode) character, or NIL, if it doesn't have one.
 (defun unicode-digit-value (char)
   (let ((code (char-code char)))
-        (dolist (z +unicode-zeroes+)
-          (when (<= z code (+ z 9))
+    (dolist (z +unicode-zeroes+)
+      (when (<= z code (+ z 9))
         (return-from unicode-digit-value (- code z))))
     (when (= code 6618) ; it's special!
       1)))
@@ -151,7 +151,7 @@
          (potential (cond (number number) 
                           ((char<= #\A upper #\Z)
                            (+ 10 (- code-upper (char-code #\A))))
-                          ((<= 65313 code-upper 65338)  ; FULLWIDTH_LATIN_CAPITAL_LETTER_A - _Z
+                             ((<= 65313 code-upper 65338) ; FULLWIDTH_LATIN_CAPITAL_LETTER_A - _Z
                            (+ 10 (- code-upper 65313)))
                           (t nil))))
     (and potential (< potential radix) potential)))
