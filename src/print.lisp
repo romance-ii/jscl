@@ -243,10 +243,7 @@ to streams."
     ;; Characters
     (character
      (write-string "#\\" stream)
-     (case form
-       (#\newline (write-string "newline" stream))
-       (#\space   (write-string "space"   stream))
-       (otherwise (write-char form stream))))
+     (write-char (char-name form) stream))
     ;; Strings
     (string
      (if *print-escape*
