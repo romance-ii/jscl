@@ -129,18 +129,15 @@
   ;; from Wikipedia's Unicode article. Commented hex values because JSCL
   ;; can't read #x yet.
   (let ((n (char-code char)))
-    (or
-     ;; C0 control codes
-     (< 31 n 127)
-     ;; C1 control codes
-     (< 159 n 55296 #| xd800 |#)
-     ;; high and low surrogates
-     (< 57344 #| xe000 |# n 54976 #| xfdd0 |#)
-     ;; the following bit-patterns are never allowed
-     (/=  (logior n 65535 #| xffff |#) 65534 #| xfffe |#)
-     (/=  (logior n 65535 #| xffff |#) 65535 #| xffff |#)
-     ;; upper range of allowable characters
-     (< 65007 #| xfdef |# n 1114111 #| x10ffff |#))))
+    (not (or (< n 32)                   ; C0 control codes
+             (< 127 n 160)              ; C1 control codes
+             (< 55296 #| xd800 |# n < 57344 #| xe000 |#) ; high and low surrogates
+             (< 54976 #| xfdd0 |# n < 65007 #| xfffe |#) ; upper disallowed
+             ;; the following bit-patterns are never allowed
+             (= (logior n 65535 #| xffff |#) 65534 #| xfffe |#)
+             (= (logior n 65535 #| xffff |#) 65535 #| xffff |#)
+
+             (< 1114111 #| x10ffff |# n))))) ; upper range of allowable characters
 
 (defun standard-char-p (char)
   ;; from SBCL/CMUCL:
