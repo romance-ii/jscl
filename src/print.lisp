@@ -243,7 +243,9 @@ to streams."
     ;; Characters
     (character
      (write-string "#\\" stream)
-     (write-char (char-name form) stream))
+     (if (or (char= #\space form) (not (graphic-char-p form)))
+         (write-string (char-name form) stream)
+         (write-char form stream)))
     ;; Strings
     (string
      (if *print-escape*
