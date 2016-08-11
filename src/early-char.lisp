@@ -132,15 +132,17 @@
 ;; The "Digit value" of a (Unicode) character, or NIL, if it doesn't have one.
 (defun unicode-digit-value (char)
   (let ((code (char-code char)))
-    (dolist (z +unicode-zeroes+)
-      (when (<= z code (+ z 9))
+        (dolist (z +unicode-zeroes+)
+          (when (<= z code (+ z 9))
         (return-from unicode-digit-value (- code z))))
     (when (= code 6618) ; it's special!
       1)))
 
 ;; From comment #4 on <https://bugs.launchpad.net/sbcl/+bug/1177986>:
 (defun digit-char-p (char &optional (radix 10))
-  "Includes ASCII 0-9 a-z A-Z, plus Unicode Hex Digit characters (fullwidth variants of 0-9 and A-F)." 
+  "Includes ASCII 0-9 a-z A-Z, plus any Unicode decimal digit characters or fullwidth variants A-Z."
+  (check-type character char)
+  (check-type integer radix)
   (let* ((radix (or (and radix (<= 2 radix 36) radix) 10))
          (number (unicode-digit-value char))
          (code (char-code char))
@@ -158,7 +160,6 @@
   "All arguments must be integers. Returns a character object that represents
 a digit of the given weight in the specified radix. Returns NIL if no such
 character exists."
-  
   (and (>= weight 0) (< weight radix) (< weight 36)
        (or (and (<= 0 weight 9)
                 (code-char (+ (char-code #\0) weight)))
