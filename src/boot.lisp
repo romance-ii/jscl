@@ -390,6 +390,7 @@ macro cache is so aggressive that it cannot be redefined."
                      (if (find (car c) '(t otherwise))
                          `(t ,@(rest c))
                          `((,(ecase (car c)
+                                    (number 'numberp)
                                     (integer 'integerp)
                                     (cons 'consp)
                                     (list 'listp)
