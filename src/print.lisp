@@ -329,7 +329,9 @@ to streams."
 
   (defun princ (form &optional stream)
     (let ((*print-escape* nil) (*print-readably* nil))
-      (write form :stream stream)))
+      (if (symbolp form)
+          (write (symbol-name form) :stream stream)
+          (write form :stream stream))))
 
   (defun princ-to-string (form)
     (with-output-to-string (output)
@@ -351,24 +353,15 @@ to streams."
 
 ;;; Format
 
-(defun format-aesthetic (arg colonp atp &optional (pad-length 1))
+(defun format-aesthetic (arg colonp atp &optional (min-column 1))
   (let* ((s (princ-to-string arg))
          (len (length s)))
-    (if (< len pad-length)
+    (if (< len min-column)
         (concatenate 'string
                      s
-                     (make-string (- pad-length len) :initial-element #\space))
+                     (make-string (- min-column len) :initial-element #\space))
         s)))
 
-<<<<<<< e65b03baab54e94bc8705882cb2c68c6822b01a6
-(defun format-numeric (arg colonp atp &optional (pad-length 1) (pad-char #\space)
-                                                (comma-char #\,) (comma-interval 3))
-  (declare (ignore colonp))
-  (if (numberp arg)
-      (let* ((s (integer-to-string arg *print-base* atp))
-             (len (length s)))
-        (if (< len pad-length)
-=======
 (defun group-digits (comma group string)
   (let* ((rev (reverse string))
          (len (length string))
@@ -390,14 +383,13 @@ to streams."
                     s))
              (len (length s)))
         (if (< len min-column)
->>>>>>> Emacs auto-indent print.lisp
             (concatenate 'string
                          (make-string (- min-column len) :initial-element pad-char)
                          s)
             s))
       (princ-to-string arg)))
 
-(defun format-hex (arg colonp atp &optional (pad-length 1) (pad-char #\space)
+(defun format-hex (arg colonp atp &optional (min-column 1) (pad-char #\space)
                                             (comma-char #\,) (comma-interval 3))
   (let ((*print-escape* nil)
         (*print-base* 16)
@@ -405,15 +397,21 @@ to streams."
         (*print-readably* nil))
     (format-numeric arg colonp atp min-column pad-char comma-char comma-interval)))
 
-<<<<<<< e65b03baab54e94bc8705882cb2c68c6822b01a6
-(defun format-decimal (arg colonp atp &optional (pad-length 1) (pad-char #\space)
-                                                (comma-char #\,) (comma-interval 3)) 
-=======
+(defun format-radix (arg colonp atp &optional (base 10 basep))
+  (cond
+    ((and atp colonp) (format nil "#<Roman numeral with long fours ~d>" arg))
+    (atp (format nil "#<Roman numeral ~d>" arg))
+    (colonp (format nil "#< ~d-th >" arg))
+    ((not basep) (format nil "#< Spelled out ~d >" arg))
+    (t
+     (let ((*print-base* base)
+           (*print-radix* nil))
+       (format-numeric arg nil nil)))))
+
 (defun format-decimal (arg colonp atp &optional (min-column 1) (pad-char #\space)
                                                 (comma-char #\,) (comma-interval 3))
->>>>>>> Emacs auto-indent print.lisp
   (let ((*print-base* 10))
-    (format-numeric arg colonp atp pad-length pad-char comma-char comma-interval)))
+    (format-numeric arg colonp atp min-column pad-char comma-char comma-interval)))
 
 (defun format-terpri (&optional (count 1))
   (make-string count :initial-element #\newline))
@@ -440,6 +438,7 @@ to streams."
            (#\A #'format-aesthetic)
            (#\D #'format-decimal)
            (#\X #'format-hex)
+           (#\R #'format-radix)
            (#\C #'format-char)
            (t (warn "~~~a is not implemented yet, using ~~S instead" chr)
               #'format-syntax))
@@ -454,83 +453,26 @@ to streams."
       (let ((c (char fmt i)))
         (if (char= c #\~)
             (let (params atp colonp)
-            (tagbody
-             read-control
+              (tagbody
+               read-control
                  (assert (and (< (1+ i) len) "~ at end of format"))
-<<<<<<< e65b03baab54e94bc8705882cb2c68c6822b01a6
-               (let ((next (char fmt (incf i))))
-                 (cond
-                   ((digit-char-p next)
-                    (multiple-value-bind (param ending)
-                        (parse-integer (subseq fmt i) :junk-allowed t)
-                      (push param params)
-=======
                  (let ((next (char fmt (incf i))))
                    (cond
                      ((digit-char-p next)
                       (multiple-value-bind (param ending)
                           (parse-integer (subseq fmt i) :junk-allowed t)
                         (push param params)
->>>>>>> Emacs auto-indent print.lisp
                         (setf i (1- (+ i ending))))
                       (assert (and (< (1+ i) len) "~numbers at end of format"))
-                    (when (char= (char fmt i) #\,)
+                      (when (char= (char fmt i) #\,)
                         (incf i))
                       (go read-control))
-<<<<<<< e65b03baab54e94bc8705882cb2c68c6822b01a6
-                   
-                   ((char= #\apostrophe next)
-=======
 
                      ((char= #\apostrophe next)
->>>>>>> Emacs auto-indent print.lisp
                       (assert (and (< (1+ i) len) "~' at end of format"))
                       (incf i)
                       (push (char fmt i) params)
                       (assert (and (< (1+ i) len) "~'char at end of format"))
-<<<<<<< e65b03baab54e94bc8705882cb2c68c6822b01a6
-                    (go read-control))
-                   
-                   ((char= #\, next)
-                    (push nil params)
-                    (go read-control))
-                   
-                     ((char-equal #\V next)
-                    (push (pop arguments) params))
-                   
-                   ((char= #\: next)
-                    (setf colonp t)
-                    (go read-control))
-                   ((char= #\@ next)
-                    (setf atp t)
-                    (go read-control))
-                   
-                     ((char-equal #\T next)
-                      (concatf rest (make-string (min 1 (or (last params) 1)) :initial-element #\space)))
-                   
-                   ((char= #\~ next)
-                    (concatf res "~"))
-                   
-                   ((char= #\( next)
-                    (warn "~~(~~) not supported; ignored"))
-                   ((char= #\[ next)
-                    (warn "~~[~~]  not supported; ignored"))
-                   ((char= #\{ next)
-                    (warn "~~{~~}  not supported; ignored"))
-                   
-                   ((char= #\% next) (concatf res (apply #'format-terpri (reverse params))))
-                   ((char= #\& next) (concatf res (apply #'format-fresh-line (reverse params))))
-                   
-                   ((char= #\* next)
-                    (let ((delta (* (or (and params (first params))
-                                        1)
-                                    (if colonp 1 -1)))) ; sign inverted for - below
-                      (setf arguments (nthcdr (- (length args)
-                                                 (length arguments)
-                                                 delta) args))))
-                   
-                   (t (concatf res (format-special next (pop arguments) (reverse params)
-=======
                       (go read-control))
 
                      ((char= #\, next)
@@ -572,7 +514,6 @@ to streams."
                                                    delta) args))))
 
                      (t (concatf res (format-special next (pop arguments) (reverse params)
->>>>>>> Emacs auto-indent print.lisp
                                                      :atp atp :colonp colonp)))))))
             (setq res (concat res (string c))))
         (incf i)))
@@ -587,4 +528,3 @@ to streams."
        (write-string res destination)))))
 
 #+jscl (fset 'format (fdefinition '!format))
-
