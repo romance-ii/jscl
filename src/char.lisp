@@ -209,25 +209,14 @@ For the first 32 characters ('C0 controls'), the first
 
 (defun name-char (name)
   (let ((name (string name)))
-<<<<<<< 80328c6abbcb36b24ecd8410c676388a9e0c60d4
-  (if (and (< 3 (length name))
-           (char-equal #\U (char name 0))
-           (char-equal #\+ (char name 1))
-           (every (lambda (ch) (digit-char-p ch 16)) (subseq name 2)))
-      
-    (code-char (parse-integer (subseq name 2) :radix 16))
-      
-    (dotimes (i (length +ascii-names+))
-=======
-    (if (and (< 3 (length name))
+    (if (and (<= 3 (length name))
              (char-equal #\U (char name 0))
              (char-equal #\+ (char name 1))
              (every (lambda (ch) (digit-char-p ch 16)) (subseq name 2)))
 
         (code-char (parse-integer (subseq name 2) :radix 16))
 
-        (dotimes (i (length +ascii-names+))
->>>>>>> Emacs auto-indent char.lisp
+        (progn (dotimes (i (length +ascii-names+))
           (when (string-equal name (aref +ascii-names+ i))
-            (return-from name-char (code-char i))))))
-  nil)
+                   (return-from name-char (code-char i))))
+               nil))))
