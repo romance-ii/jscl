@@ -144,15 +144,15 @@
   (check-type radix integer)
   (let* ((radix (or (and radix (<= 2 radix 36) radix) 10))
          (number (unicode-digit-value char))
-           (code (char-code char))
-           (upper (char-upcase char))
+         (code (char-code char))
+         (upper (char-upcase char))
          (code-upper (char-code upper))
          (potential (cond (number number)
-                             ((char<= #\A upper #\Z)
-                              (+ 10 (- code-upper (char-code #\A))))
-                             ((<= 65313 code-upper 65338) ; FULLWIDTH_LATIN_CAPITAL_LETTER_A - _Z
-                              (+ 10 (- code-upper 65313)))
-                             (t nil))))
+                          ((char<= #\A upper #\Z)
+                           (+ 10 (- code-upper (char-code #\A))))
+                          ((<= 65313 code-upper 65338) ; FULLWIDTH_LATIN_CAPITAL_LETTER_A - _Z
+                           (+ 10 (- code-upper 65313)))
+                          (t nil))))
     (and potential (< potential radix) potential)))
 
 (defun digit-char (weight &optional (radix 10))
