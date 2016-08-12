@@ -2,25 +2,25 @@
 
 ;; Copyright (C) 2013, 2014 David Vazquez
 
-;; JSCL is free software: you can redistribute it and/or modify it under
-;; the terms of the GNU General  Public License as published by the Free
-;; Software Foundation,  either version  3 of the  License, or  (at your
-;; option) any later version.
+;; JSCL is free software: you can redistribute it and/or
+;; modify it under the terms of the GNU General Public License as
+;; published by the Free Software Foundation, either version 3 of the
+;; License, or (at your option) any later version.
 ;;
-;; JSCL is distributed  in the hope that it will  be useful, but WITHOUT
-;; ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-;; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-;; for more details.
+;; JSCL is distributed in the hope that it will be useful, but
+;; WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+;; General Public License for more details.
 ;;
-;; You should  have received a  copy of  the GNU General  Public License
-;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
+;; You should have received a copy of the GNU General Public License
+;; along with JSCL.  If not, see <http://www.gnu.org/licenses/>.
 
 
-;;; This code generator takes as  input a S-expression representation of
-;;; the Javascript  AST and generates Javascript  code without redundant
-;;; syntax constructions like extra parenthesis.
+;;; This code generator takes as input a S-expression representation
+;;; of the Javascript AST and generates Javascript code without
+;;; redundant syntax constructions like extra parenthesis.
 ;;;
-;;; It is  intended to  be used  with the new  compiler. However,  it is
+;;; It is intended to be used with the new compiler. However, it is
 ;;; quite independent so it has been integrated early in JSCL.
 
 (/debug "loading compiler-codegen.lisp!")
@@ -55,11 +55,13 @@
 
 ;;; Two seperate  functions are  needed for  escaping strings: One  for producing  JavaScript string
 ;;;  literals (which are singly or doubly quoted) And one for producing Lisp strings (which are only
-;;;  doubly quoted)
+;;;   doubly quoted)
 ;;;
-;;; The same function would suffice for both, but for javascript string literals it is neater to use
-;;; either depending on the  context, e.g: foo's => "foo's" "foo" => '"foo"'  which avoids having to
-;;; escape quotes where possible
+;;; The same function would suffice for both, but for javascript string
+;;; literals it is neater to use either depending on the context, e.g:
+;;  foo's => "foo's"
+;;;  "foo" => '"foo"'
+;; …which avoids having to escape quotes where possible
 (defun js-escape-string (string)
   (let ((index 0)
         (size (length string))
@@ -522,24 +524,24 @@
                  (js-format ")")
                  (js-stmt `(progn ,@body))))
            (switch
-               (destructuring-bind (value &rest cases) (cdr form)
-                 (js-format "switch(")
-                 (js-expr value)
-                 (js-format "){")
-                 (dolist (case cases)
-                   (cond
-                     ((and (consp case) (eq (car case) 'case))
-                      (js-format "case ")
-                      (let ((value (cadr case)))
-                        (unless (or (stringp value) (integerp value))
-                          (error "Non-constant switch case `~S'." value))
-                        (js-expr value))
-                      (js-format ":"))
-                     ((eq case 'default)
-                      (js-format "default:"))
-                     (t
-                      (js-stmt case))))
-                 (js-format "}")))
+            (destructuring-bind (value &rest cases) (cdr form)
+              (js-format "switch(")
+              (js-expr value)
+              (js-format "){")
+              (dolist (case cases)
+                (cond
+                  ((and (consp case) (eq (car case) 'case))
+                   (js-format "case ")
+                   (let ((value (cadr case)))
+                     (unless (or (stringp value) (integerp value))
+                       (error "Non-constant switch case `~S'." value))
+                     (js-expr value))
+                   (js-format ":"))
+                  ((eq case 'default)
+                   (js-format "default:"))
+                  (t
+                   (js-stmt case))))
+              (js-format "}")))
            (for
             (destructuring-bind ((start condition step) &body body) (cdr form)
               (js-format "for (")
@@ -578,7 +580,7 @@
                  (js-expr object)
                  (js-end-stmt)))
            (object
-            ;; wrap ourselves within  a pair of parens, in  case JS EVAL
+            ;; wrap ourselves within a pair of parens, in case JS EVAL
             ;; interprets us as a block of code
             (js-object-initializer (cdr form) t)
             (js-end-stmt))

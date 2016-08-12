@@ -401,7 +401,7 @@ macro cache is so aggressive that it cannot be redefined."
                          `(t ,@(rest c))
                          `((,(ecase (car c)
                                (fixnum 'integerp)
-                               (number 'numberp)
+                                    (number 'numberp)
                                     (integer 'integerp)
                                     (cons 'consp)
                                     (list 'listp)

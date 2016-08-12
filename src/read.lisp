@@ -328,7 +328,8 @@
                    (progn
                      (add-labelled-object id *future-value*)
                      (let ((obj (ls-read stream eof-error-p eof-value t)))
-                       ;; FIXME: somehow the more natural (setf (cdr (find-labelled-object id)) obj)
+                       ;; FIXME: somehow the more natural
+                       ;;;    (setf (cdr (find-labelled-object id)) obj)
                        ;; doesn't work
                        (rplacd (find-labelled-object id) obj)
                        obj))))

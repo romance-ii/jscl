@@ -10,8 +10,8 @@
 ;; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
 ;; for more details.
 ;;
-;; You should have received a copy of the GNU General Public License
-;; along with JSCL.  If not, see <http://www.gnu.org/licenses/>.
+;; You should  have received a  copy of  the GNU General  Public License
+;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
 
 (/debug "loading print.lisp!")
 
@@ -344,12 +344,12 @@ to streams."
   (defun terpri (&optional (stream *standard-output*))
     (write-char #\newline stream)
     (values))
-  
+
   (defun write-line (x)
     (write-string x)
     (terpri)
     x)
-  
+
   (defun print (x &optional (stream *standard-output*))
     (prog1 (prin1 x stream)
       (terpri stream))))
