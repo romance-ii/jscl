@@ -150,9 +150,15 @@ internals.char_to_codepoint = function(ch) {
     if (ch.length == 1) {
         return ch.charCodeAt(0);
     } else {
-        var xh = ch.charCodeAt(0) - 0xD800;
-        var xl = ch.charCodeAt(1) - 0xDC00;
-        return 0x10000 + (xh << 10) + (xl);
+        if (ch.length == 2 &&
+            ch.charCodeAt(0) >= 0xD800 && ch.charCodeAt(0) < 0xDC00 &&
+            ch.charCodeAt(1) >= 0xDC00 && ch.charCodeAt(0) < 0xDF00) {
+            var xh = ch.charCodeAt(0) - 0xD800;
+            var xl = ch.charCodeAt(1) - 0xDC00;
+            return 0x10000 + (xh << 10) + (xl);
+        } else {
+            throw new Error ("Not a character: " + ch + " is a " + (typeof ch));
+        }
     }
 };
 
@@ -169,11 +175,15 @@ internals.char_from_codepoint = function(x) {
 
 // if a char (JS string) has the same number of codepoints after .toUpperCase(), return that, else the original.
 internals.safe_char_upcase = function(x) {
-    var xu = x.toUpperCase();
-    if (codepoints(xu).length == 1) {
-        return xu;
-    } else {
-        return x;
+    try {
+        var xu = x.toUpperCase();
+        if (codepoints(xu).length == 1) {
+            return xu;
+        } else {
+            return x;
+        }
+    } catch (e) {
+        throw new Error ("Probably not a character? : " + x + " (type=" + (typeof x) + ")");
     }
 };
 internals.safe_char_downcase = function(x) {

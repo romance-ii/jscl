@@ -99,9 +99,8 @@
 (defvar *variable-counter*)
 
 (defun gvarname (symbol)
-  (declare (ignore symbol))
   (incf *variable-counter*)
-  (make-symbol (concat "v" (integer-to-string *variable-counter*))))
+  (safe-js-var-name (limit-string-length symbol 32) (integer-to-string *variable-counter*)))
 
 (defun translate-variable (symbol)
   (awhen (lookup-in-lexenv symbol *environment* 'variable)
@@ -264,14 +263,36 @@
           (ll-optional-arguments-canonical lambda-list))))
     (remove nil (mapcar #'third args))))
 
+(defun js-identifier-char-p (char)
+  (or (char= #\_ char)
+      (char= #\$ char)
+      (alphanumericp char)))
+
+(defun js-name-part (name)
+  (substitute-if #\$ (complement #'js-identifier-char-p)
+                 (substitute #\_ #\- (string name))))
+
+(defun safe-js-name (&rest name-parts)
+  (intern (join (mapcar #'js-name-part name-parts) "_")))
+
+(defun safe-js-fun-name (&rest name-parts)
+  (apply #'safe-js-name "fun" name-parts))
+
+(defun safe-js-var-name (&rest name-parts)
+  (apply #'safe-js-name "var" name-parts))
+
+(defun safe-js-lit-name (&rest name-parts)
+  (apply #'safe-js-name "lit" name-parts))
+
 (defun lambda-name/docstring-wrapper (name docstring code)
+  (let ((func (safe-js-fun-name name)))
   (if (or name docstring)
       `(selfcall
-        (var (func ,code))
-        ,(when name `(= (get func "fname") ,name))
-        ,(when docstring `(= (get func "docstring") ,docstring))
-        (return func))
-      code))
+          (var (,func ,code))
+          ,(when name `(= (get ,func "fname") ,name))
+          ,(when docstring `(= (get ,func "docstring") ,docstring))
+          (return ,func))
+        code)))
 
 (defun lambda-check-argument-count
     (n-required-arguments n-optional-arguments rest-p)
@@ -441,10 +462,9 @@
                                     optional-arguments
                                     keyword-arguments
                                     (ll-svars ll)))))
-
-        (lambda-name/docstring-wrapper name documentation
-                                       `(function (|values| ,@(mapcar (lambda (x)
-                                                                        (translate-variable x))
+        (lambda-name/docstring-wrapper
+         name documentation
+         `(function (|values| ,@(mapcar #'translate-variable
                                                                       (append required-arguments optional-arguments)))
                                                   ;; Check number of arguments
                                                   ,(lambda-check-argument-count n-required-arguments
@@ -515,9 +535,17 @@
 (defvar *literal-table*)
 (defvar *literal-counter*)
 
-(defun genlit ()
+(defun limit-string-length (string length)
+  (and string
+       (let ((string (princ-to-string string)))
+         (if (> (length string) length)
+             (subseq string 0 length)
+             string))))
+
+(defun genlit (&optional name)
   (incf *literal-counter*)
-  (make-symbol (concat "l" (integer-to-string *literal-counter*))))
+  (safe-js-lit-name (or (limit-string-length name 32) "")
+                    (integer-to-string *literal-counter*)))
 
 (defun dump-symbol (symbol)
   (let ((package (symbol-package symbol)))
@@ -571,7 +599,10 @@
                          (array (dump-array sexp)))))
            (if (and recursive (not (symbolp sexp)))
                dumped
-               (let ((jsvar (genlit)))
+               (let ((jsvar (genlit (typecase sexp
+                                      (cons "expr")
+                                      (array "array")
+                                      (t (string sexp))))))
                  (push (cons sexp jsvar) *literal-table*)
                  (toplevel-compilation `(var (,jsvar ,dumped)))
                  (when (keywordp sexp)
@@ -986,7 +1017,7 @@
         (dolist (x args)
           (if (or (floatp x) (numberp x))
               (collect-fargs x)
-              (let ((v (make-symbol (concat "x" (integer-to-string (incf counter))))))
+              (let ((v (make-symbol (concat "arg" (integer-to-string (incf counter))))))
                 (collect-fargs v)
                 (collect-prelude `(var (,v ,(convert x))))
                 (collect-prelude `(if (!= (typeof ,v) "number")
@@ -1021,6 +1052,10 @@
   (if (null numbers)
       1
       (variable-arity numbers `(* ,@numbers))))
+
+(define-builtin logior (x y) (list 'logior x y))
+(define-builtin logand (x y) (list 'logand x y))
+(define-builtin logxor (x y) (list 'logxor x y))
 
 (define-raw-builtin / (x &rest others)
   (let ((args (cons x others)))

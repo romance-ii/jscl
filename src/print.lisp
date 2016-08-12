@@ -15,6 +15,16 @@
 
 (/debug "loading print.lisp!")
 
+;;; HACK HACK — if an error  occurs during startup before toplevel binds
+;;; this correctly,
+#+jscl
+(setq *standard-output*
+      (vector 'stream
+              (lambda (ch)
+                ((jscl::oget (%js-vref "global") "console" "error") (string ch)))
+              (lambda (string)
+                ((jscl::oget (%js-vref "global") "console" "error") string))))
+
 ;;; Printer
 
 (defun lisp-escape-string (string)
@@ -56,12 +66,13 @@
   (dotimes (i (length string))
     (let ((char (char string i)))
       (cond
-        ;; Digits TODO: DIGIT-CHAR-P should work with the current
-        ;; radix here. If the radix is not decimal, then we have to
-        ;; make sure there is not a decimal-point in the string.
-        ((digit-char-p char))
+        ;; DIGIT-CHAR-P should work with  the current radix (*READ-BASE*) here. If  the radix is not
+        ;; decimal, then we have to make sure there is not a decimal-point in the string.
+        ((digit-char-p char *read-base*))
         ;; Signs, ratios, decimal point and extension mark
-        ((find char "+-/._^"))
+        ((find char "+-/_^"))
+        ((and (= 10 *read-base*)
+              (char= #\. char)))
         ;; Number marker
         ((alpha-char-p char)
          (when (and (< i (1- (length string)))
@@ -74,12 +85,14 @@
          (return-from potential-number-p)))))
   (and
    ;; Second Rule. In particular string is not empty.
-   (find-if #'digit-char-p string)
+   (find-if (lambda (ch) (digit-char-p ch *read-base*)) string)
    ;; Third rule
    (let ((first (char string 0)))
      (and (not (char= first #\:))
           (or (digit-char-p first)
-              (find first "+-._^"))))
+              (and (= 10 *read-base*)
+                   (char= #\. first))
+              (find first "+-_^"))))
    ;; Fourth rule
    (not (find (char string (1- (length string))) "+-)"))))
 
@@ -110,13 +123,16 @@
       s))
 
 #+jscl (defvar *print-escape* t)
+#+jscl (defvar *print-readably* t)
 #+jscl (defvar *print-circle* nil)
+#+jscl (defvar *print-radix* nil)
+#+jscl (defvar *print-base* 10)
 
-;; To support *print-circle* some objects must be tracked for sharing:
-;; conses, arrays and apparently-uninterned symbols.  These objects
-;; are placed in an array and a parallel array is used to mark if
-;; they're found multiple times by assining them an id starting from
-;; 1.
+#+jscl (defvar *read-base* 10) ; NB. This file is loaded before read.lisp
+
+;; To  support  *print-circle*  some  objects  must  be tracked  for  sharing:  conses,  arrays  and
+;; apparently-uninterned symbols. These objects are placed in  an array and a parallel array is used
+;; to mark if they're found multiple times by assining them an id starting from 1.
 ;;
 ;; After the  tracking has been completed  the printing phase  can begin: if  an object has an  id >
 ;; 0 then  #<n>= is prefixed  and the id is  changed to negative.  If an object  has an id <  0 then
@@ -156,9 +172,8 @@
     (values known-objects object-ids)))
 
 ;;; Write an integer to stream.
-;;; TODO: Support for different basis.
-(defun write-integer (value stream)
-  (write-string (integer-to-string value) stream))
+(defun write-integer (value stream &optional (radix *print-base*))
+  (write-string (integer-to-string value radix) stream))
 
 (defun simple-format (stream fmt &rest args)
   "This  version of  format  supports only  ~A for  strings  and ~D  for
@@ -227,10 +242,9 @@ to streams."
     ;; Characters
     (character
      (write-string "#\\" stream)
-     (case form
-       (#\newline (write-string "newline" stream))
-       (#\space   (write-string "space"   stream))
-       (otherwise (write-char form stream))))
+     (if (or (char= #\space form) (not (graphic-char-p form)))
+         (write-string (char-name form) stream)
+         (write-char form stream)))
     ;; Strings
     (string
      (if *print-escape*
@@ -311,8 +325,12 @@ to streams."
       (prin1 form output)))
 
   (defun princ (form &optional stream)
-    (let ((*print-escape* nil))
-      (write form :stream stream)))
+    (let ((*print-escape* nil) (*print-readably* nil))
+      (typecase form
+        (symbol (write (symbol-name form) :stream stream))
+        (character (write-char form stream))
+        (t (write form :stream stream))))
+    form)
 
   (defun princ-to-string (form)
     (with-output-to-string (output)
@@ -334,14 +352,134 @@ to streams."
 
 ;;; Format
 
-(defun format-special (chr arg)
-  (case (char-upcase chr)
-    (#\S (prin1-to-string arg))
-    (#\A (princ-to-string arg))
-    (#\D (princ-to-string arg))
+(defun format-aesthetic (arg colonp atp &optional (min-column 1))
+  (let* ((s (princ-to-string arg))
+         (len (length s)))
+    (if (< len min-column)
+        (concatenate 'string
+                     s
+                     (make-string (- min-column len) :initial-element #\space))
+        s)))
+
+(defun group-digits (comma group string)
+  (let* ((rev (reverse string))
+         (len (length string))
+         (out-len (+ len -1 (floor (1- len) group)))
+         (i 0) (j out-len)
+         (out (make-string out-len :initial-element comma)))
+    (while (< i (1- len))
+      (setf (aref out (decf j)) (char rev (incf i)))
+      (when (zerop (mod i group))
+        (decf j)))
+    out))
+
+(defun format-numeric (arg colonp atp &optional (min-column 1) (pad-char #\space)
+                                                (group-comma #\,) (group-length 3))
+  (if (integerp arg)
+      (let* ((s (integer-to-string arg *print-base* atp))
+             (s (if colonp
+                    (group-digits group-comma group-length s)
+                    s))
+             (len (length s)))
+        (if (< len min-column)
+            (concatenate 'string
+                         (make-string (- min-column len) :initial-element pad-char)
+                         s)
+            s))
+      (princ-to-string arg)))
+
+(defun format-hex (arg colonp atp &optional (min-column 1) (pad-char #\space)
+                                            (comma-char #\,) (comma-interval 3))
+  (let ((*print-escape* nil)
+        (*print-base* 16)
+        (*print-radix* nil)
+        (*print-readably* nil))
+    (format-numeric arg colonp atp min-column pad-char comma-char comma-interval)))
+
+(defun format-radix (arg colonp atp &optional base)
+  (cond
+    ((and atp colonp) (format nil "#<Roman numeral with long fours ~d>" arg))
+    (atp (format nil "#<Roman numeral ~d>" arg))
+    (colonp (format nil "#< ~d-th >" arg))
+    ((not base) (format nil "#< Spelled out ~d >" arg))
     (t
-     (warn "~S is not implemented yet, using ~~S instead" chr)
-     (prin1-to-string arg))))
+     (let ((*print-base* base)
+           (*print-radix* nil))
+       (format-numeric arg nil nil)))))
+
+(defun format-decimal (arg colonp atp &optional (min-column 1) (pad-char #\space)
+                                                (comma-char #\,) (comma-interval 3))
+  (let ((*print-base* 10))
+    (format-numeric arg colonp atp min-column pad-char comma-char comma-interval)))
+
+(defun format-terpri (&optional (count 1))
+  (make-string count :initial-element #\newline))
+
+(defun format-fresh-line (&optional (count 1))
+  (format-terpri (if (< 1 count)
+                     (1- count)
+                     count)))
+
+(defun format-syntax (arg colonp atp &rest _)
+  (declare (ignore colonp atp _))
+  (prin1-to-string arg))
+
+(defun format-write (arg colonp atp)
+  (let ((*print-pretty* (or colonp *print-pretty*))
+        (*print-level* (if atp 0 *print-level*))
+        (*print-length* (if atp 0 *print-length*)))
+    (with-output-to-string (s)
+      (write arg s))))
+
+(defun format-char (arg colonp atp &rest _)
+  (declare (ignore _))
+  (check-type arg character)
+  (cond (colonp (char-name arg))
+        (atp (prin1-to-string arg))
+        (t (string arg))))
+
+(defun format-float-e (arg colonp atp &rest _)
+  (declare (ignore colonp atp _))
+  (format-syntax arg nil nil))
+(defun format-float-f (arg colonp atp &rest _)
+  (declare (ignore colonp atp _))
+  (format-syntax arg nil nil))
+(defun format-float-g (arg colonp atp &rest _)
+  (declare (ignore colonp atp _))
+  (format-syntax arg nil nil))
+(defun format-float-$ (arg colonp atp &rest _)
+  (declare (ignore colonp atp _))
+  (format-syntax arg nil nil))
+
+(defun format-letter-case (arg colonp atp)
+  (warn "~~( ~~) not implemented yet"))
+(defun format-justify (arg colonp atp)
+  (warn "~~< ~~> not implemented yet"))
+(defun format-conditional (arg colonp atp)
+  (warn "~~[ ~~] not implemented yet"))
+(defun format-repeat (arg colonp atp)
+  (warn "~~{ ~~} not implemented yet"))
+
+(defun format-special (chr arg params &key colonp atp) ; should be generic …
+  (apply (case (char-upcase chr)
+           (#\$ #'format-float-$)
+           (#\( #'format-letter-case)
+           (#\< #'format-justify)
+           (#\A #'format-aesthetic)
+           (#\C #'format-char)
+           (#\D #'format-decimal)
+           (#\E #'format-float-e)
+           (#\F #'format-float-f)
+           (#\G #'format-float-g)
+           (#\R #'format-radix)
+           (#\S #'format-syntax)
+           (#\W #'format-write)
+           (#\X #'format-hex)
+           (#\[ #'format-conditional)
+           (#\{ #'format-repeat)
+           (t (warn "~~~a is not implemented yet, using ~~S instead" chr)
+              #'format-syntax))
+         arg colonp atp params))
 
 (defun !format (destination fmt &rest args)
   (let ((len (length fmt))
@@ -351,18 +489,75 @@ to streams."
     (while (< i len)
       (let ((c (char fmt i)))
         (if (char= c #\~)
+            (let (params atp colonp)
+              (tagbody
+               read-control
+                 (assert (and (< (1+ i) len) "~ at end of format"))
             (let ((next (char fmt (incf i))))
               (cond
-                ((char= next #\~)
+                     ((digit-char-p next)
+                      (multiple-value-bind (param ending)
+                          (parse-integer (subseq fmt i) :junk-allowed t)
+                        (push param params)
+                        (setf i ending))
+                      (assert (and (< (1+ i) len) "~numbers at end of format"))
+                      (when (char= (char fmt i) #\,)	; There's some off-by-one error here. BRFP TODO
+                        (incf i))
+                      (go read-control))
+
+                     ((char= #\apostrophe next)
+                      (assert (and (< (1+ i) len) "~' at end of format"))
+                      (incf i)
+                      (push (char fmt i) params)
+                      (assert (and (< (1+ i) len) "~'char at end of format"))
+                      (go read-control))
+
+                     ((char= #\, next)
+                      (push nil params)
+                      (go read-control))
+
+                     ((char-equal #\V next)
+                      (push (pop arguments) params))
+
+                     ((char= #\Newline next))
+
+                     ((char= #\: next)
+                      (setf colonp t)
+                      (go read-control))
+                     ((char= #\@ next)
+                      (setf atp t)
+                      (go read-control))
+
+                     ((char-equal #\T next)
+                      (concatf rest (make-string (min 1 (or (last params) 1)) :initial-element #\space)))
+
+                     ((char-equal #\P next)
+                      (when colonp
+                        (setf arguments (nthcdr (- (length args)
+                                                   (length arguments)
+                                                   1)
+                                                args)))
+                      (let ((one-p (= 1 (pop args))))
+                        (unless one-p
+                          (if atp "ies" "s"))))
+
+                     ((char= #\~ next)
                  (concatf res "~"))
-                ((or (char= next #\&)
-                     (char= next #\%))
-                 (concatf res (string #\newline)))
-                ((char= next #\*)
-                 (pop arguments))
-                (t
-                 (concatf res (format-special next (car arguments)))
-                 (pop arguments))))
+
+                     ((char= #\| next) (concatf res (string #\|)))
+                     ((char= #\% next) (concatf res (apply #'format-terpri (reverse params))))
+                     ((char= #\& next) (concatf res (apply #'format-fresh-line (reverse params))))
+
+                     ((char= #\* next)
+                      (let ((delta (* (or (and params (first params))
+                                          1)
+                                      (if colonp 1 -1)))) ; sign inverted for - below
+                        (setf arguments (nthcdr (- (length args)
+                                                   (length arguments)
+                                                   delta) args))))
+
+                     (t (concatf res (format-special next (pop arguments) (reverse params)
+                                                     :atp atp :colonp colonp)))))))
             (setq res (concat res (string c))))
         (incf i)))
 
@@ -374,5 +569,9 @@ to streams."
        res)
       (t
        (write-string res destination)))))
+
+(defmacro with-input-from-string ((stream string) &body body)
+  `(let ((,stream (cons ,string 0)))
+     ,@body))
 
 #+jscl (fset 'format (fdefinition '!format))
