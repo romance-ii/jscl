@@ -1,15 +1,13 @@
-;; JSCL is free software: you can redistribute it and/or modify it under
-;; the terms of the GNU General  Public License as published by the Free
-;; Software Foundation,  either version  3 of the  License, or  (at your
-;; option) any later version.
+;; JSCL is  free software:  you can  redistribute it  and/or modify it  under the  terms of  the GNU
+;; General Public  License as published  by the  Free Software Foundation,  either version 3  of the
+;; License, or (at your option) any later version.
 ;;
-;; JSCL is distributed  in the hope that it will  be useful, but WITHOUT
-;; ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-;; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-;; for more details.
+;; JSCL is distributed  in the hope that it  will be useful, but WITHOUT ANY  WARRANTY; without even
+;; the implied warranty of MERCHANTABILITY or FITNESS  FOR A PARTICULAR PURPOSE. See the GNU General
+;; Public License for more details.
 ;;
-;; You should  have received a  copy of  the GNU General  Public License
-;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
+;; You should have  received a copy of the GNU  General Public License along with JSCL.  If not, see
+;; <http://www.gnu.org/licenses/>.
 
 (/debug "loading repl-web/repl.lisp!")
 
@@ -27,8 +25,7 @@
   (#j:localStorage:setItem "jqhist" (#j:JSON:stringify (#j:jqconsole:GetHistory))))
 
 
-;;; Decides wheater  the input the user  has entered is completed  or we
-;;; should accept one more line.
+;;; Decides wheater the input the user has entered is completed or we should accept one more line.
 (defun indent-level (string)
   (let ((i 0)
         (stringp nil)

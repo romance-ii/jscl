@@ -2,18 +2,16 @@
 
 ;; Copyright (C) 2012, 2013 David Vazquez Copyright (C) 2012 Raimon Grau
 
-;; JSCL is free software: you can redistribute it and/or modify it under
-;; the terms of the GNU General  Public License as published by the Free
-;; Software Foundation,  either version  3 of the  License, or  (at your
-;; option) any later version.
+;; JSCL is  free software:  you can  redistribute it  and/or modify it  under the  terms of  the GNU
+;; General Public  License as published  by the  Free Software Foundation,  either version 3  of the
+;; License, or (at your option) any later version.
 ;;
-;; JSCL is distributed  in the hope that it will  be useful, but WITHOUT
-;; ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-;; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-;; for more details.
+;; JSCL is distributed  in the hope that it  will be useful, but WITHOUT ANY  WARRANTY; without even
+;; the implied warranty of MERCHANTABILITY or FITNESS  FOR A PARTICULAR PURPOSE. See the GNU General
+;; Public License for more details.
 ;;
-;; You should  have received a  copy of  the GNU General  Public License
-;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
+;; You should have  received a copy of the GNU  General Public License along with JSCL.  If not, see
+;; <http://www.gnu.org/licenses/>.
 
 (defpackage :jscl
   (:use :cl)
@@ -27,9 +25,8 @@
       *default-pathname-defaults*))
 
 (defvar *version*
-  ;; Read the  version from  the package.json file.  We could  have used
-  ;; a json library to parse this, but that would introduce a dependency
-  ;; and we are not using ASDF yet.
+  ;; Read the version from  the package.json file. We could have used a  json library to parse this,
+  ;; but that would introduce a dependency and we are not using ASDF yet.
   (with-open-file (in (merge-pathnames "package.json" *base-directory*))
     (loop
        for line = (read-line in nil)
@@ -117,11 +114,11 @@
 ;;; Compile and load jscl into the host
 (with-compilation-unit ()
   (do-source input :host
-             (multiple-value-bind (fasl warn fail) (compile-file input)
-               (declare (ignore warn))
-               (when fail
-                 (error "Compilation of ~A failed." input))
-               (load fasl))))
+    (multiple-value-bind (fasl warn fail) (compile-file input)
+      (declare (ignore warn))
+      (when fail
+        (error "Compilation of ~A failed." input))
+      (load fasl))))
 
 (defun read-whole-file (filename)
   (with-open-file (in filename)
@@ -154,7 +151,7 @@
          until (eq x eof-mark)
          do (let ((compilation (compile-toplevel x)))
               (if (possibly-valid-js-p compilation)
-              (when (plusp (length compilation))
+                  (when (plusp (length compilation))
                     (write-string compilation out))
                   (error "Generated illegal characters (first is ~@c)~%Compiling form:~%~S~%from ~s~%Generated:~%~s"
                          (find-if (complement #'possibly-valid-js-p) compilation)
@@ -182,16 +179,16 @@
 
 (defun compile-application (files output &key shebang)
   (with-compilation-environment
-      (with-open-file (out output :direction :output :if-exists :supersede)
-        (when shebang
-          (format out "#!/usr/bin/env node~%"))
-        (format out "(function(jscl){~%")
-        (format out "'use strict';~%")
-        (format out "(function(values, internals){~%")
-        (dolist (input files)
-          (!compile-file input out))
-        (format out "})(jscl.internals.pv, jscl.internals);~%")
-        (format out "})( typeof require !== 'undefined'? require('./jscl'): window.jscl )~%"))))
+    (with-open-file (out output :direction :output :if-exists :supersede)
+      (when shebang
+        (format out "#!/usr/bin/env node~%"))
+      (format out "(function(jscl){~%")
+      (format out "'use strict';~%")
+      (format out "(function(values, internals){~%")
+      (dolist (input files)
+        (!compile-file input out))
+      (format out "})(jscl.internals.pv, jscl.internals);~%")
+      (format out "})( typeof require !== 'undefined'? require('./jscl'): window.jscl )~%"))))
 
 
 
@@ -201,16 +198,16 @@
         (*default-pathname-defaults* *base-directory*))
     (setq *environment* (make-lexenv))
     (with-compilation-environment
-        (with-open-file (out (merge-pathnames "jscl.js" *base-directory*)
-                             :direction :output
-                             :if-exists :supersede)
-          (format out "(function(){~%")
-          (format out "'use strict';~%")
-          (write-string (read-whole-file (source-pathname "prelude.js")) out)
-          (do-source input :target
-                     (!compile-file input out :print verbose))
-          (dump-global-environment out)
-          (format out "})();~%")))
+      (with-open-file (out (merge-pathnames "jscl.js" *base-directory*)
+                           :direction :output
+                           :if-exists :supersede)
+        (format out "(function(){~%")
+        (format out "'use strict';~%")
+        (write-string (read-whole-file (source-pathname "prelude.js")) out)
+        (do-source input :target
+          (!compile-file input out :print verbose))
+        (dump-global-environment out)
+        (format out "})();~%")))
 
     (report-undefined-functions)
 

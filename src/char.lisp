@@ -1,7 +1,6 @@
 (/debug "loading char.lisp!")
 
-;; These comparison  functions heavily borrowed from  SBCL/CMUCL (public
-;; domain).
+;; These comparison functions heavily borrowed from SBCL/CMUCL (public domain).
 
 (defun char= (character &rest more-characters)
   (dolist (c more-characters t)
@@ -218,6 +217,6 @@ For the first 32 characters ('C0 controls'), the first
         (code-char (parse-integer (subseq name 2) :radix 16))
 
         (progn (dotimes (i (length +ascii-names+))
-          (when (string-equal name (aref +ascii-names+ i))
+                 (when (string-equal name (aref +ascii-names+ i))
                    (return-from name-char (code-char i))))
                nil))))

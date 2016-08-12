@@ -24,14 +24,13 @@
 (test (= (string< "" "a") 0))
 (test (= (string< "aaa" "aaaaa") 3))
 
-;;; BUG: The compiler will macroexpand the forms below (char str N) will
-;;; expand  to internal  SBCL code  instead of  our (setf  char). It  is
-;;; because macrodefinitions  during bootstrapping  are not  included in
-;;; the host's environment. It should, but we have to think how to avoid
-;;; conflicts (package renaming??)
+;;; BUG: The  compiler will macroexpand the  forms below (char str  N) will expand to  internal SBCL
+;;; code instead  of our (setf  char). It is because  macrodefinitions during bootstrapping  are not
+;;; included in  the host's  environment. It should,  but we  have to think  how to  avoid conflicts
+;;; (package renaming??)
 
-;; (let ((str "hello")) (setf (char str  0) #\X) (setf (char str 4) #\X)
-;;   (test (string= str "XellX")))
+;; (let  ((str "hello"))  (setf  (char str  0)  #\X) (setf  (char  str 4)  #\X)  (test (string=  str
+;;   "XellX")))
 
 ;; ---------------------------------------- The following  tests in this
 ;; file were  derived from  the file  "must-string.lisp", part  of SACLA
