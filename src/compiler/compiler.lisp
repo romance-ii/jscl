@@ -243,8 +243,8 @@
 
 (defun ll-keyword-arguments-canonical (ll)
   (flet ((canonicalize (keyarg)
-           ;; Build a canonical keyword argument descriptor, filling
-           ;; the optional fields. The result is a list of the form
+           ;; Build a canonical keyword argument descriptor, filling the
+           ;; optional  fields.  The  result  is  a  list  of  the  form
            ;; ((keyword-name var) init-form svar).
            (let ((arg (ensure-list keyarg)))
              (cons (if (listp (car arg))
@@ -423,7 +423,7 @@
 ;;; NAME is given, it should be a constant string and it will become
 ;;; the name of the function. If BLOCK is non-NIL, a named block is
 ;;; created around the body. NOTE: No block (even anonymous) is
-;;; created if BLOCk is NIL.
+;;; created if BLOCK is NIL.
 (defun compile-lambda (ll body &key name block)
   (multiple-value-bind (required-arguments
                         optional-arguments
@@ -990,7 +990,13 @@
                 (collect-fargs v)
                 (collect-prelude `(var (,v ,(convert x))))
                 (collect-prelude `(if (!= (typeof ,v) "number")
-                                      (throw "Not a number!"))))))
+                                      (throw (new (call |Error| (+ "" (typeof ,v)
+                                                                   " is not a number: " ,v " "
+                                                                   ,(princ-to-string (convert x)) " in "
+                                                                   ,(princ-to-string function)
+                                                                   ,@(mapcar (lambda (s)
+                                                                               (concatenate 'string " "
+                                                                                            (princ-to-string s))) args))))))))))
         `(selfcall
           (progn ,@prelude)
           ,(funcall function fargs))))))
@@ -1232,7 +1238,7 @@
 (define-builtin storage-vector-ref (vector n)
   `(selfcall
     (var (x (property ,vector ,n)))
-    (if (=== x undefined) (throw "Out of range."))
+    (if (=== x undefined) (throw (new (call |Error| ,(concatenate 'string "AREF out of range for vector " (string vector))))))
     (return x)))
 
 (define-builtin storage-vector-set (vector n value)
@@ -1240,7 +1246,7 @@
     (var (x ,vector))
     (var (i ,n))
     (if (or (< i 0) (>= i (get x "length")))
-        (throw "Out of range."))
+        (throw (new (call |Error| ,(concatenate 'string "SETF AREF out of range for vector " (string vector))))))
     (return (= (property x i) ,value))))
 
 (define-builtin concatenate-storage-vector (sv1 sv2)
@@ -1479,7 +1485,7 @@
                                          `(call-internal |lisp_to_js| ,(convert s)))
                                        args))))
       (t
-       (error "Bad function descriptor")))))
+       (error "Bad function designator `~S'" function)))))
 
 (defun convert-block (sexps &optional return-last-p decls-allowed-p)
   (multiple-value-bind (sexps decls)

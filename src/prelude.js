@@ -66,11 +66,11 @@ internals.forcemv = function(x) {
 var values = internals.mv;
 
 internals.checkArgsAtLeast = function(args, n){
-    if (args < n) throw 'too few arguments';
+    if (args < n) throw new Error('too few arguments; needed at least ' + n + ' but got only ' + args);
 };
 
 internals.checkArgsAtMost = function(args, n){
-    if (args > n) throw 'too many arguments';
+    if (args > n) throw new Error ('too many arguments; needed at most ' + n + ' but got ' + args);
 };
 
 internals.checkArgs = function(args, n){
@@ -93,7 +93,7 @@ internals.car = function(x){
         return x.car;
     else {
         console.log(x);
-        throw new Error('CAR called on non-list argument');
+        throw new Error('CAR called on non-list argument ' + x);
     }
 };
 
@@ -103,7 +103,7 @@ internals.cdr = function(x){
     else if (x instanceof internals.Cons)
         return x.cdr;
     else
-        throw new Error('CDR called on non-list argument');
+        throw new Error('CDR called on non-list argument ' + x);
 };
 
 // Improper list constructor (like LIST*)
@@ -126,7 +126,7 @@ internals.QIList = function(){
 // Arithmetic
 
 internals.handled_division = function (x, y) {
-    if (y == 0) throw "Division by zero";
+    if (y == 0) throw new Error("Division (of " + x + ") by zero");
     return x/y;
 };
 
@@ -295,9 +295,12 @@ internals.Symbol = function(name, package_name){
 };
 
 internals.symbolValue = function (symbol){
+    if (symbol === undefined) {
+        throw new Error("Trying to take the value of «undefined» as a symbol");
+    }
     var value = symbol.value;
     if (value === undefined){
-        throw new Error("Variable " + symbol.name + " is unbound.");
+        throw new Error("Variable " + ((symbol !== undefined) ? symbol.name || "(unnamed symbol)" : "(undefined symbol)") + " is unbound.");
     } else {
         return value;
     }
@@ -330,7 +333,7 @@ internals.intern = function (name, package_name){
     package_name = package_name || "JSCL";
     var lisp_package = packages[package_name];
     if (!lisp_package)
-        throw "No package " + package_name;
+        throw new Error ("No package " + package_name);
 
     var symbol = lisp_package.symbols[name];
     if (!symbol)
