@@ -53,6 +53,7 @@
   (= (equal-char-code c1) (equal-char-code c2)))
 
 (defun char-equal (character &rest more-characters)
+  (check-type character character)
   (do ((clist more-characters (cdr clist)))
       ((null clist) t)
     (unless (two-arg-char-equal (car clist) character)
@@ -211,7 +212,7 @@ For the first 32 characters ('C0 controls'), the first
   (let ((name (string name)))
     (if (and (<= 3 (length name))
              (char-equal #\U (char name 0))
-             (char-equal #\+ (char name 1))
+             (char= #\+ (char name 1))
              (every (lambda (ch) (digit-char-p ch 16)) (subseq name 2)))
 
         (code-char (parse-integer (subseq name 2) :radix 16))
