@@ -1,4 +1,4 @@
-;;; compiler-codege.lisp --- Naive Javascript unparser
+;;; compiler/codegen.lisp --- Naive Javascript unparser
 
 ;; Copyright (C) 2013, 2014 David Vazquez
 
