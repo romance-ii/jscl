@@ -195,14 +195,14 @@
 
 (defun compile-application (files output &key shebang)
   (with-compilation-environment
-      (with-open-file (out output :direction :output :if-exists :supersede)
-        (when shebang
-          (write-string "#!/usr/bin/env node" out)
-          (terpri out))
-        (with-scoping-function (out)
-          (dolist (input files)
-            (terpri out)
-            (!compile-file input out))))))
+    (with-open-file (out output :direction :output :if-exists :supersede)
+      (when shebang
+        (write-string "#!/usr/bin/env node" out)
+        (terpri out))
+      (with-scoping-function (out)
+        (dolist (input files)
+          (terpri out)
+          (!compile-file input out))))))
 
 (defun compile-test-suite ()
   (compile-application
@@ -224,15 +224,15 @@
 
 (defun compile-jscl.js (verbosep)
   (with-compilation-environment
-      (with-open-file (out (merge-pathnames "jscl.js" *base-directory*)
-                           :direction :output
-                           :if-exists :supersede)
-        (format out "(function(){~%'use strict';~%")
-        (write-string (read-whole-file (source-pathname "prelude.js")) out)
-        (do-source input :target
-          (!compile-file input out :print verbosep))
-        (dump-global-environment out)
-        (format out "})();~%"))))
+    (with-open-file (out (merge-pathnames "jscl.js" *base-directory*)
+                         :direction :output
+                         :if-exists :supersede)
+      (format out "(function(){~%'use strict';~%")
+      (write-string (read-whole-file (source-pathname "prelude.js")) out)
+      (do-source input :target
+        (!compile-file input out :print verbosep))
+      (dump-global-environment out)
+      (format out "})();~%"))))
 
 (defun bootstrap (&optional verbosep)
   (let ((*features* (list* :jscl :jscl-xc *features*))
