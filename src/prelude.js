@@ -150,9 +150,15 @@ internals.char_to_codepoint = function(ch) {
     if (ch.length == 1) {
         return ch.charCodeAt(0);
     } else {
-        var xh = ch.charCodeAt(0) - 0xD800;
-        var xl = ch.charCodeAt(1) - 0xDC00;
-        return 0x10000 + (xh << 10) + (xl);
+        if (ch.length == 2 &&
+            ch.charCodeAt(0) >= 0xD800 && ch.charCodeAt(0) < 0xDC00 &&
+            ch.charCodeAt(1) >= 0xDC00 && ch.charCodeAt(0) < 0xDF00) {
+            var xh = ch.charCodeAt(0) - 0xD800;
+            var xl = ch.charCodeAt(1) - 0xDC00;
+            return 0x10000 + (xh << 10) + (xl);
+        } else {
+            throw new Error ("Not a character: " + ch + " is a " + (typeof ch));
+        }
     }
 };
 
