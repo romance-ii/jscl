@@ -1,4 +1,4 @@
-;;; defstruct.lisp ---
+;;; defstruct.lisp --- 
 
 ;; JSCL is free software: you can redistribute it and/or modify it under
 ;; the terms of the GNU General  Public License as published by the Free
@@ -10,8 +10,8 @@
 ;; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
 ;; for more details.
 ;;
-;; You should  have received a  copy of  the GNU General  Public License
-;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
+;; You should have received a copy of the GNU General Public License
+;; along with JSCL.  If not, see <http://www.gnu.org/licenses/>.
 
 (/debug "loading defstruct.lisp!")
 
@@ -38,15 +38,15 @@
       (setq predicate (gensym "PREDICATE")))
 
     (let* ((slot-descriptions
-            (mapcar (lambda (sd)
-                      (cond
-                        ((symbolp sd)
-                         (list sd))
-                        ((and (listp sd) (car sd) (null (cddr sd)))
-                         sd)
-                        (t
-                         (error "Bad slot description `~S'." sd))))
-                    slots))
+          (mapcar (lambda (sd)
+                    (cond
+                      ((symbolp sd)
+                       (list sd))
+                      ((and (listp sd) (car sd) (null (cddr sd)))
+                       sd)
+                      (t
+                       (error "Bad slot description `~S'." sd))))
+                  slots))
 
            constructor-expansion
            predicate-expansion
@@ -68,33 +68,33 @@
               `(defun ,copier (x)
                  (copy-list x))))
 
-      `(progn
+    `(progn
          ,constructor-expansion
          ,predicate-expansion
          ,copier-expansion
-         ;; Slot accessors
-         ,@(with-collect
-               (let ((index 1))
-                 (dolist (slot slot-descriptions)
-                   (let* ((name (car slot))
-                          (accessor-name (intern (concat name-string "-" (string name)))))
-                     (collect
-                         `(defun ,accessor-name (x)
-                            (unless (,predicate x)
-                              (error "The object `~S' is not of type `~S'" x ,name-string))
-                            (nth ,index x)))
+       ;; Slot accessors
+       ,@(with-collect
+          (let ((index 1))
+            (dolist (slot slot-descriptions)
+              (let* ((name (car slot))
+                     (accessor-name (intern (concat name-string "-" (string name)))))
+                (collect
+                    `(defun ,accessor-name (x)
+                       (unless (,predicate x)
+                         (error "The object `~S' is not of type `~S'" x ,name-string))
+                       (nth ,index x)))
                      ;; TODO:  Implement   this  with  a   higher  level
                      ;; abstraction like defsetf or (defun (setf …))
-                     (collect
-                         `(define-setf-expander ,accessor-name (x)
-                            (let ((object (gensym))
-                                  (new-value (gensym)))
-                              (values (list object)
-                                      (list x)
-                                      (list new-value)
-                                      `(progn
-                                         (rplaca (nthcdr ,',index ,object) ,new-value)
-                                         ,new-value)
-                                      `(,',accessor-name ,object)))))
-                     (incf index)))))
+                (collect
+                    `(define-setf-expander ,accessor-name (x)
+                       (let ((object (gensym))
+                             (new-value (gensym)))
+                         (values (list object)
+                                 (list x)
+                                 (list new-value)
+                                 `(progn
+                                    (rplaca (nthcdr ,',index ,object) ,new-value) 
+                                    ,new-value)
+                                 `(,',accessor-name ,object)))))
+                (incf index)))))
          ',name))))

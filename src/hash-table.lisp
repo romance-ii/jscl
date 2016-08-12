@@ -10,8 +10,8 @@
 ;; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
 ;; for more details.
 ;;
-;; You should  have received a  copy of  the GNU General  Public License
-;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
+;; You should have received a copy of the GNU General Public License
+;; along with JSCL.  If not, see <http://www.gnu.org/licenses/>.
 
 ;;; Plain Javascript  objects are  the natural  way to  implement Common
 ;;; Lisp hash tables. However, there  is a big differences betweent them
@@ -98,7 +98,7 @@
             (list g!new-value)                              ; store variables
             `(progn
                (sethash ,g!new-value ,g!key ,g!hash-table)  ; storing form
-               ,g!new-value)
+               ,g!new-value)              
             `(gethash ,g!new-value ,g!key ,g!hash-table)    ; accessing form
             )))
 
@@ -121,6 +121,6 @@
 
 (defun maphash (function hash-table)
   (map-for-in (lambda (x)
-                (funcall function (car x) (cdr x)))
-              (caddr hash-table))
+		(funcall function (car x) (cdr x)))
+	      (caddr hash-table))
   nil)

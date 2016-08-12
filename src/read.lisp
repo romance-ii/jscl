@@ -248,7 +248,7 @@
             (dotimes (i index)
               (aset result (decf index) (pop elements)))
             result)
-         (let* ((ix index) ; Can't just use index: the same var would be captured in all fixups
+         (let* ((ix index)      ; Can't just use index: the same var would be captured in all fixups
                 (*make-fixup-function* (lambda ()
                                          (lambda (obj)
                                            (aset result ix obj))))
@@ -330,7 +330,7 @@
                      (let ((obj (ls-read stream eof-error-p eof-value t)))
                        ;; FIXME: somehow the more natural
                        ;;;    (setf (cdr (find-labelled-object id)) obj)
-                       ;; doesn't work
+                       ;;    doesn't work
                        (rplacd (find-labelled-object id) obj)
                        obj))))
               ((#\0 #\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9)

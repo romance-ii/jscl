@@ -10,8 +10,8 @@
 ;; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
 ;; for more details.
 ;;
-;; You should  have received a  copy of  the GNU General  Public License
-;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
+;; You should have received a copy of the GNU General Public License
+;; along with JSCL.  If not, see <http://www.gnu.org/licenses/>.
 
 (/debug "loading misc.lisp!")
 
@@ -81,8 +81,8 @@
 
 ;;;; TRACE
 
-;;; This trace  implementation works on symbols,  replacing the function
-;;; with a wrapper. So  it will not trace calls to  the function if they
+;;; This trace implementation works on symbols, replacing the function
+;;; with a wrapper. So it will not trace calls to the function if they
 ;;; got the function object before it was traced.
 
 ;;; An alist  of the  form (NAME  FUNCTION), where NAME  is the  name of

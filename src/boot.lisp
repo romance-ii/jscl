@@ -1,25 +1,26 @@
 ;;; boot.lisp --- First forms to be cross compiled
 
-;; Copyright (C) 2012, 2013 David Vazquez Copyright (C) 2012 Raimon Grau
+;; Copyright (C) 2012, 2013 David Vazquez
+;;; Copyright (C) 2012 Raimon Grau
 
-;; JSCL is free software: you can redistribute it and/or modify it under
-;; the terms of the GNU General  Public License as published by the Free
-;; Software Foundation,  either version  3 of the  License, or  (at your
-;; option) any later version.
+;; JSCL is free software: you can redistribute it and/or
+;; modify it under the terms of the GNU General Public License as
+;; published by the Free Software Foundation, either version 3 of the
+;; License, or (at your option) any later version.
 ;;
-;; JSCL is distributed  in the hope that it will  be useful, but WITHOUT
-;; ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-;; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-;; for more details.
+;; JSCL is distributed in the hope that it will be useful, but
+;; WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+;; General Public License for more details.
 ;;
 ;; You should have received a copy of the GNU General Public License
 ;; along with JSCL.  If not, see <http://www.gnu.org/licenses/>.
 
-;;; This  code  is  executed  when   JSCL  compiles  this  file  itself.
-;;; The compiler provides compilation of  some special forms, as well as
+;;; This code is executed when JSCL compiles this file itself. The
+;;; compiler provides compilation of some special forms, as well as
 ;;; funcalls and macroexpansion, but no functions. So, we define the
-;;; Lisp world from scratch. This code  has to define enough language to
-;;; the compiler to be able to run.
+;;; Lisp world from scratch. This code has to define enough language
+;;; to the compiler to be able to run.
 
 (/debug "loading boot.lisp!")
 
@@ -35,8 +36,10 @@
                                       (destructuring-bind ,args ,whole
                                         ,@body))))))
 
-                  ;; If we  are boostrapping JSCL, we  need to quote the  macroexpander, because the
-                  ;; macroexpander will need to be dumped in the final environment somehow.
+                  ;; If we are boostrapping JSCL, we need to quote the
+                  ;; macroexpander, because the macroexpander will
+                  ;; need to be dumped in the final environment
+                  ;; somehow.
                   (when (find :jscl-xc *features*)
                     (setq expander `(quote ,expander)))
                   
@@ -428,10 +431,6 @@ macro cache is so aggressive that it cannot be redefined."
        (typecase ,g!x
          ,@clausules
          (t (error "~S fell through etypecase expression." ,g!x))))))
-
-;;; No type system is implemented yet.
-(defun subtypep (type1 type2)
-  (values nil nil))
 
 (defun notany (fn seq)
   (not (some fn seq)))
