@@ -295,8 +295,8 @@
 
 (defun lambda-check-argument-count
     (n-required-arguments n-optional-arguments rest-p)
-  ;; Note: Remember that we assume that the number of arguments of a
-  ;; call is at least 1 (the values argument).
+  ;; Note:  Remember that  we assume  that  the number  of arguments  of
+  ;; a call is at least 1 (the values argument).
   (let ((min n-required-arguments)
         (max (if rest-p 'n/a (+ n-required-arguments n-optional-arguments))))
     (block nil
