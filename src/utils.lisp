@@ -1,20 +1,19 @@
 ;;; utils.lisp ---
 
-;; Copyright (C) 2012, 2013 David Vazquez
-;; Copyright (C) 2012 Raimon Grau
+;; Copyright (C) 2012, 2013 David Vazquez Copyright (C) 2012 Raimon Grau
 
-;; JSCL is free software: you can redistribute it and/or
-;; modify it under the terms of the GNU General Public License as
-;; published by the Free Software Foundation, either version 3 of the
-;; License, or (at your option) any later version.
+;; JSCL is free software: you can redistribute it and/or modify it under
+;; the terms of the GNU General  Public License as published by the Free
+;; Software Foundation,  either version  3 of the  License, or  (at your
+;; option) any later version.
 ;;
-;; JSCL is distributed in the hope that it will be useful, but
-;; WITHOUT ANY WARRANTY; without even the implied warranty of
-;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-;; General Public License for more details.
+;; JSCL is distributed  in the hope that it will  be useful, but WITHOUT
+;; ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+;; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+;; for more details.
 ;;
-;; You should have received a copy of the GNU General Public License
-;; along with JSCL.  If not, see <http://www.gnu.org/licenses/>.
+;; You should  have received a  copy of  the GNU General  Public License
+;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
 
 (/debug "loading utils.lisp!")
 
@@ -35,9 +34,9 @@ accumulated, in the order."
 
 (defmacro with-collector ((name &optional (collector (intern (format nil "COLLECT-~a" (symbol-name name))))) &body body)
   "Similar to `with-collect' with the following differences:
-  1) However the list where the values are being accumulated is available to the body by the name NAME.
-  2) The name COLLECTOR function can be passed as a parameter
-  3) The return value the last form of BODY"
+ 1) However the list where the values are being accumulated is available to the body by the name NAME.
+ 2) The name COLLECTOR function can be passed as a parameter
+ 3) The return value the last form of BODY"
   (let ((head (gensym))
         (tail (gensym)))
     `(let* ((,head (cons 'sentinel nil))
@@ -83,12 +82,12 @@ accumulated, in the order."
 (defun vector-to-list (vector)
   (let ((size (length vector)))
     (with-collect
-      (dotimes (i size)
-        (collect (aref vector i))))))
+        (dotimes (i size)
+          (collect (aref vector i))))))
 
 (defun list-to-vector (list)
   (let ((v (make-array (length list)))
-	(i 0))
+        (i 0))
     (dolist (x list v)
       (aset v i x)
       (incf i))))
@@ -109,7 +108,7 @@ accumulated, in the order."
          (push (mod x 10) digits)
          (setq x (truncate x 10)))
        (mapconcat (lambda (x) (string (digit-char x)))
-		  digits)))))
+                  digits)))))
 
 (defun float-to-string (x)
   #+jscl (float-to-string x)
@@ -126,7 +125,7 @@ accumulated, in the order."
 (defun interleave (list element &optional after-last-p)
   (unless (null list)
     (with-collect
-      (collect (car list))
+        (collect (car list))
       (dolist (x (cdr list))
         (collect element)
         (collect x))

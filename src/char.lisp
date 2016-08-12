@@ -1,6 +1,7 @@
 (/debug "loading char.lisp!")
 
-;; These comparison functions heavily borrowed from SBCL/CMUCL (public domain).
+;; These comparison  functions heavily borrowed from  SBCL/CMUCL (public
+;; domain).
 
 (defun char= (character &rest more-characters)
   (dolist (c more-characters t)
@@ -10,40 +11,40 @@
   (do* ((head character (car list))
         (list more-characters (cdr list)))
        ((null list) t)
-       (dolist (c list)
-         (when (eql head c) (return-from char/= nil)))))
+    (dolist (c list)
+      (when (eql head c) (return-from char/= nil)))))
 
 (defun char< (character &rest more-characters)
   (do* ((c character (car list))
         (list more-characters (cdr list)))
        ((null list) t)
-       (unless (< (char-int c)
-                  (char-int (car list)))
-         (return nil))))
+    (unless (< (char-int c)
+               (char-int (car list)))
+      (return nil))))
 
 (defun char> (character &rest more-characters)
   (do* ((c character (car list))
         (list more-characters (cdr list)))
        ((null list) t)
-       (unless (> (char-int c)
-                  (char-int (car list)))
-         (return nil))))
+    (unless (> (char-int c)
+               (char-int (car list)))
+      (return nil))))
 
 (defun char<= (character &rest more-characters)
   (do* ((c character (car list))
         (list more-characters (cdr list)))
        ((null list) t)
-       (unless (<= (char-int c)
-                   (char-int (car list)))
-         (return nil))))
+    (unless (<= (char-int c)
+                (char-int (car list)))
+      (return nil))))
 
 (defun char>= (character &rest more-characters)
   (do* ((c character (car list))
         (list more-characters (cdr list)))
        ((null list) t)
-       (unless (>= (char-int c)
-                   (char-int (car list)))
-         (return nil))))
+    (unless (>= (char-int c)
+                (char-int (car list)))
+      (return nil))))
 
 (defun equal-char-code (character)
   (char-code (char-upcase character)))
@@ -54,18 +55,18 @@
 (defun char-equal (character &rest more-characters)
   (do ((clist more-characters (cdr clist)))
       ((null clist) t)
-      (unless (two-arg-char-equal (car clist) character)
-        (return nil))))
+    (unless (two-arg-char-equal (car clist) character)
+      (return nil))))
 
 (defun char-not-equal (character &rest more-characters)
   (do* ((head character (car list))
         (list more-characters (cdr list)))
        ((null list) t)
-       (unless (do* ((l list (cdr l)))
-                    ((null l) t)
-                    (when (two-arg-char-equal head (car l))
-                        (return nil)))
-         (return nil))))
+    (unless (do* ((l list (cdr l)))
+                 ((null l) t)
+              (when (two-arg-char-equal head (car l))
+                (return nil)))
+      (return nil))))
 
 (defun two-arg-char-lessp (c1 c2)
   (< (equal-char-code c1) (equal-char-code c2)))
@@ -74,8 +75,8 @@
   (do* ((c character (car list))
         (list more-characters (cdr list)))
        ((null list) t)
-       (unless (two-arg-char-lessp c (car list))
-         (return nil))))
+    (unless (two-arg-char-lessp c (car list))
+      (return nil))))
 
 (defun two-arg-char-greaterp (c1 c2)
   (> (equal-char-code c1) (equal-char-code c2)))
@@ -84,8 +85,8 @@
   (do* ((c character (car list))
         (list more-characters (cdr list)))
        ((null list) t)
-       (unless (two-arg-char-greaterp c (car list))
-         (return nil))))
+    (unless (two-arg-char-greaterp c (car list))
+      (return nil))))
 
 (defun two-arg-char-not-greaterp (c1 c2)
   (<= (equal-char-code c1) (equal-char-code c2)))
@@ -94,8 +95,8 @@
   (do* ((c character (car list))
         (list more-characters (cdr list)))
        ((null list) t)
-       (unless (two-arg-char-not-greaterp c (car list))
-         (return nil))))
+    (unless (two-arg-char-not-greaterp c (car list))
+      (return nil))))
 
 (defun two-arg-char-not-lessp (c1 c2)
   (>= (equal-char-code c1) (equal-char-code c2)))
@@ -104,8 +105,8 @@
   (do* ((c character (car list))
         (list more-characters (cdr list)))
        ((null list) t)
-       (unless (two-arg-char-not-lessp c (car list))
-         (return nil))))
+    (unless (two-arg-char-not-lessp c (car list))
+      (return nil))))
 
 (defun character (character)
   (cond ((characterp character)
@@ -234,8 +235,8 @@
 ;; consecutive sets.  There's 37 spans of 10, plus 1 extra digit (6618).
 (defconstant +unicode-zeroes+
   '(48 1632 1776 1984 2406 2534 2662 2790 2918 3046 3174 3302 3430 3664
-       3792 3872 4160 4240 6112 6160 6470 6608 6784 6800 6992 7088 7232 7248
-       42528 43216 43264 43472 43600 44016 65296 66720 120782)
+    3792 3872 4160 4240 6112 6160 6470 6608 6784 6800 6992 7088 7232 7248
+    42528 43216 43264 43472 43600 44016 65296 66720 120782)
   "Unicode codepoints which have Digit value 0, followed by 1, 2, ..., 9, as of Unicode 6.2")
 
 ;; The "Digit value" of a (Unicode) character, or NIL, if it doesn't have one.
@@ -243,9 +244,9 @@
   (let ((code (char-code char)))
     (if (= code 6618)
         1  ;; it's special!
-      (dolist (z +unicode-zeroes+)
-        (when (<= z code (+ z 9))
-          (return-from unicode-digit-value (- code z)))))))
+        (dolist (z +unicode-zeroes+)
+          (when (<= z code (+ z 9))
+            (return-from unicode-digit-value (- code z)))))))
 
 ;; from SBCL/CMUCL:
 (defun digit-char (weight &optional (radix 10))
@@ -253,8 +254,8 @@
 a digit of the given weight in the specified radix. Returns NIL if no such
 character exists."
   (and ;; (typep weight 'fixnum)
-       (>= weight 0) (< weight radix) (< weight 36)
-       (code-char (if (< weight 10) (+ 48 weight) (+ 55 weight)))))
+   (>= weight 0) (< weight radix) (< weight 36)
+   (code-char (if (< weight 10) (+ 48 weight) (+ 55 weight)))))
 
 ;; From comment #4 on <https://bugs.launchpad.net/sbcl/+bug/1177986>:
 (defun digit-char-p (char &optional (radix 10))
@@ -275,7 +276,7 @@ character exists."
                           (t nil))))
     (if (and potential (< potential radix))
         potential
-      nil)))
+        nil)))
 
 (defun graphic-char-p (char)
   ;; from SBCL/CMUCL:
@@ -346,7 +347,7 @@ For the first 32 characters ('C0 controls'), the first
   (let ((code (char-code char)))
     (if (<= code 127)
         (aref +ascii-names+ code)
-      nil)))  ;; for now, no name
+        nil)))  ;; for now, no name
 
 (defun name-char (name)
   (let ((name-upcase (string-upcase (string name))))

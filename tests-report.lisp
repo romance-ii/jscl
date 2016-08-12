@@ -16,5 +16,4 @@
 
  #+jscl
  (when #j:phantom
-   (#j:phantom:exit *failed-tests*))
-)
+   (#j:phantom:exit *failed-tests*)))

@@ -1,20 +1,19 @@
 ;;; jscl.lisp ---
 
-;; Copyright (C) 2012, 2013 David Vazquez
-;; Copyright (C) 2012 Raimon Grau
+;; Copyright (C) 2012, 2013 David Vazquez Copyright (C) 2012 Raimon Grau
 
-;; JSCL is free software: you can redistribute it and/or
-;; modify it under the terms of the GNU General Public License as
-;; published by the Free Software Foundation, either version 3 of the
-;; License, or (at your option) any later version.
+;; JSCL is free software: you can redistribute it and/or modify it under
+;; the terms of the GNU General  Public License as published by the Free
+;; Software Foundation,  either version  3 of the  License, or  (at your
+;; option) any later version.
 ;;
-;; JSCL is distributed in the hope that it will be useful, but
-;; WITHOUT ANY WARRANTY; without even the implied warranty of
-;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-;; General Public License for more details.
+;; JSCL is distributed  in the hope that it will  be useful, but WITHOUT
+;; ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+;; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+;; for more details.
 ;;
-;; You should have received a copy of the GNU General Public License
-;; along with JSCL.  If not, see <http://www.gnu.org/licenses/>.
+;; You should  have received a  copy of  the GNU General  Public License
+;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
 
 (defpackage :jscl
   (:use :cl)
@@ -28,8 +27,8 @@
       *default-pathname-defaults*))
 
 (defvar *version*
-  ;; Read the version from the package.json file. We could have used a
-  ;; json library to parse this, but that would introduce a dependency
+  ;; Read the  version from  the package.json file.  We could  have used
+  ;; a json library to parse this, but that would introduce a dependency
   ;; and we are not using ASDF yet.
   (with-open-file (in (merge-pathnames "package.json" *base-directory*))
     (loop
@@ -95,15 +94,15 @@
 
 (defun get-files (file-list type dir)
   "Traverse FILE-LIST and retrieve a list of the files within which match
-   either TYPE or :BOTH, processing subdirectories."
+ either TYPE or :BOTH, processing subdirectories."
   (let ((file (car file-list)))
     (cond
       ((null file-list)
        ())
       ((listp (cadr file))
        (append
-         (get-files (cdr file)      type (append dir (list (car file))))
-         (get-files (cdr file-list) type dir)))
+        (get-files (cdr file)      type (append dir (list (car file))))
+        (get-files (cdr file-list) type dir)))
       ((member (cadr file) (list type :both))
        (cons (source-pathname (car file) :directory dir :type "lisp")
              (get-files (cdr file-list) type dir)))
@@ -112,7 +111,7 @@
 
 (defmacro do-source (name type &body body)
   "Iterate over all the source files that need to be compiled in the host or
-   the target, depending on the TYPE argument."
+ the target, depending on the TYPE argument."
   (unless (member type '(:host :target))
     (error "TYPE must be one of :HOST or :TARGET, not ~S" type))
   `(dolist (,name (get-files *source* ,type '(:relative "src")))
@@ -121,11 +120,11 @@
 ;;; Compile and load jscl into the host
 (with-compilation-unit ()
   (do-source input :host
-    (multiple-value-bind (fasl warn fail) (compile-file input)
-      (declare (ignore warn))
-      (when fail
-        (error "Compilation of ~A failed." input))
-      (load fasl))))
+             (multiple-value-bind (fasl warn fail) (compile-file input)
+               (declare (ignore warn))
+               (when fail
+                 (error "Compilation of ~A failed." input))
+               (load fasl))))
 
 (defun read-whole-file (filename)
   (with-open-file (in filename)
@@ -189,16 +188,16 @@
         (*default-pathname-defaults* *base-directory*))
     (setq *environment* (make-lexenv))
     (with-compilation-environment
-      (with-open-file (out (merge-pathnames "jscl.js" *base-directory*)
-                           :direction :output
-                           :if-exists :supersede)
-        (format out "(function(){~%")
-        (format out "'use strict';~%")
-        (write-string (read-whole-file (source-pathname "prelude.js")) out)
-        (do-source input :target
-          (!compile-file input out :print verbose))
-        (dump-global-environment out)
-        (format out "})();~%")))
+        (with-open-file (out (merge-pathnames "jscl.js" *base-directory*)
+                             :direction :output
+                             :if-exists :supersede)
+          (format out "(function(){~%")
+          (format out "'use strict';~%")
+          (write-string (read-whole-file (source-pathname "prelude.js")) out)
+          (do-source input :target
+                     (!compile-file input out :print verbose))
+          (dump-global-environment out)
+          (format out "})();~%")))
 
     (report-undefined-functions)
 

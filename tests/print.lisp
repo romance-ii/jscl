@@ -49,5 +49,3 @@
   (test (string= "#1=(1 . #1#)"
                  (let ((*print-circle* t))
                    (write-to-string list)))))
-
-
