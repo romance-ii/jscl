@@ -10,8 +10,8 @@
 ;; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
 ;; for more details.
 ;;
-;; You should have received a copy of the GNU General Public License
-;; along with JSCL.  If not, see <http://www.gnu.org/licenses/>.
+;; You should  have received a  copy of  the GNU General  Public License
+;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
 
 (/debug "loading print.lisp!")
 
@@ -260,22 +260,22 @@ to streams."
     ;; Lists
     (list
      (write-char #\( stream)
-                 (unless (null form)
-                   (write-aux (car form) stream known-objects object-ids)
-                   (do ((tail (cdr form) (cdr tail)))
+     (unless (null form)
+       (write-aux (car form) stream known-objects object-ids)
+       (do ((tail (cdr form) (cdr tail)))
                        ;; Stop on symbol OR if the object is already known when we
                        ;; accept circular printing.
-                       ((or (atom tail)
-                            (and *print-circle*
-                                 (let* ((ix (or (position tail known-objects) 0))
-                                        (id (aref object-ids ix)))
-                                   (not (zerop id)))))
-                        (unless (null tail)
-                          (write-string " . " stream)
-                          (write-aux tail stream known-objects object-ids)))
-                     (write-char #\space stream)
-                     (write-aux (car tail) stream known-objects object-ids)))
-                 (write-char #\) stream))
+           ((or (atom tail)
+                (and *print-circle*
+                     (let* ((ix (or (position tail known-objects) 0))
+                            (id (aref object-ids ix)))
+                       (not (zerop id)))))
+            (unless (null tail)
+              (write-string " . " stream)
+              (write-aux tail stream known-objects object-ids)))
+         (write-char #\space stream)
+         (write-aux (car tail) stream known-objects object-ids)))
+     (write-char #\) stream))
     ;; Vectors
     (vector
      (write-string "#(" stream)
@@ -286,12 +286,12 @@ to streams."
          (write-char #\space stream)
          (write-aux (aref form i) stream known-objects object-ids)))
      (write-char #\) stream))
-  ;; Packages
-  (package
-   (simple-format stream "#<PACKAGE ~a>" (package-name form)))
-  ;; Others
-  (otherwise
-   (simple-format stream "#<JS-OBJECT ~a>" (#j:String form)))))
+    ;; Packages
+    (package
+     (simple-format stream "#<PACKAGE ~a>" (package-name form)))
+    ;; Others
+    (otherwise
+     (simple-format stream "#<JS-OBJECT ~a>" (#j:String form)))))
 
 
 (defun output-stream-designator (x)
@@ -378,15 +378,15 @@ STRING is a string of digits with an optional leading + or - sign."
         ((<= (length string) group-length)
          string)
         (t (let* ((rev (reverse string))
-                  (len (length string))
+         (len (length string))
                   (out-len (+ len (floor (1- len) group-length)))
-                  (i 0) (j out-len)
-                  (out (make-string out-len :initial-element comma)))
+         (i 0) (j out-len)
+         (out (make-string out-len :initial-element comma)))
              (while (< i len)
                (setf (aref out (decf j)) (char rev i))
                (incf i)
                (when (zerop (mod i group-length))
-                 (decf j)))
+        (decf j)))
              out))))
 
 (defun format-pad-to-right (string min-column &optional (pad-char #\space))
@@ -397,7 +397,7 @@ If the length of STRING is known, passing it in can save a few cycles."
   (let ((min-column (or min-column 1))
         (length (length string)))
     (if (< length min-column)
-        (concatenate 'string
+            (concatenate 'string
                      (make-string (- min-column length) :initial-element (or pad-char #\space))
                      string)
         string)))
@@ -536,24 +536,24 @@ dispatching on the CHR ending the format sequence."
   (apply (case (char-upcase chr)
            (#\$ #'format-float-$)
            (#\( #'format-letter-case)
-            (#\< #'format-justify)
-            (#\A #'format-aesthetic)
+           (#\< #'format-justify)
+           (#\A #'format-aesthetic)
             (#\B #'format-binary)
-            (#\C #'format-char)
-            (#\D #'format-decimal)
-            (#\E #'format-float-e)
-            (#\F #'format-float-f)
-            (#\G #'format-float-g)
+           (#\C #'format-char)
+           (#\D #'format-decimal)
+           (#\E #'format-float-e)
+           (#\F #'format-float-f)
+           (#\G #'format-float-g)
             (#\O #'format-octal)
-            (#\R #'format-radix)
-            (#\S #'format-syntax)
-            (#\W #'format-write)
-            (#\X #'format-hex)
-            (#\[ #'format-conditional)
-            (#\{ #'format-repeat)
-            (t (warn "~~~a is not implemented yet, using ~~S instead" chr)
-               #'format-syntax))
-           arg colonp atp params))
+           (#\R #'format-radix)
+           (#\S #'format-syntax)
+           (#\W #'format-write)
+           (#\X #'format-hex)
+           (#\[ #'format-conditional)
+           (#\{ #'format-repeat)
+           (t (warn "~~~a is not implemented yet, using ~~S instead" chr)
+              #'format-syntax))
+         arg colonp atp params))
 
   (defun !format (destination control-string &rest format-arguments)
     ;; docstring c/o SBCL
@@ -581,65 +581,65 @@ dispatching on the CHR ending the format sequence."
  FORMAT has many additional capabilities not described here. Consult the
  manual for details."
     (let ((length (length control-string))
-          (i 0)
+        (i 0)
           (output "")
           (arguments format-arguments))
       (while (< i length)
         (let ((c (char control-string i)))
-          (if (char= c #\~)
-              (let (params atp colonp)
-                (tagbody
-                 read-control
+        (if (char= c #\~)
+            (let (params atp colonp)
+              (tagbody
+               read-control
                    (assert (and (< (1+ i) length) "~ at end of format"))
                    (let ((next (char control-string (incf i))))
-                     (cond
-                       ((digit-char-p next)
-                        (multiple-value-bind (param ending)
+              (cond
+                     ((digit-char-p next)
+                      (multiple-value-bind (param ending)
                             (parse-integer (subseq control-string i) :junk-allowed t)
-                          (push param params)
+                        (push param params)
                           (setf i (1+ ending)))
                         (assert (and (< i length) "~numbers at end of format"))
                         (unless (char= (char control-string i) #\,)
                           (decf i))
-                        (go read-control))
+                      (go read-control))
 
-                       ((char= #\apostrophe next)
+                     ((char= #\apostrophe next)
                         (assert (and (< (1+ i) length) "~' at end of format"))
-                        (incf i)
+                      (incf i)
                         (push (char control-string i) params)
                         (assert (and (< (1+ i) length) "~'char at end of format"))
-                        (go read-control))
+                      (go read-control))
 
-                       ((char= #\, next)
-                        (push nil params)
-                        (go read-control))
+                     ((char= #\, next)
+                      (push nil params)
+                      (go read-control))
 
-                       ((char-equal #\V next)
-                        (push (pop arguments) params))
+                     ((char-equal #\V next)
+                      (push (pop arguments) params))
 
-                       ((char= #\Newline next))
+                     ((char= #\Newline next))
 
-                       ((char= #\: next)
-                        (setf colonp t)
-                        (go read-control))
-                       ((char= #\@ next)
-                        (setf atp t)
-                        (go read-control))
+                     ((char= #\: next)
+                      (setf colonp t)
+                      (go read-control))
+                     ((char= #\@ next)
+                      (setf atp t)
+                      (go read-control))
 
-                       ((char-equal #\T next)
-                        (concatf rest (make-string (min 1 (or (last params) 1)) :initial-element #\space)))
+                     ((char-equal #\T next)
+                      (concatf rest (make-string (min 1 (or (last params) 1)) :initial-element #\space)))
 
-                       ((char-equal #\P next)
-                        (when colonp
+                     ((char-equal #\P next)
+                      (when colonp
                           (setf arguments (nthcdr (- (length format-arguments)
-                                                     (length arguments)
-                                                     1)
+                                                   (length arguments)
+                                                   1)
                                                   format-arguments)))
                         (let ((one-p (= 1 (pop format-arguments))))
-                          (unless one-p
-                            (if atp "ies" "s"))))
+                        (unless one-p
+                          (if atp "ies" "s"))))
 
-                       ((char= #\~ next)
+                     ((char= #\~ next)
                         (concatf output "~"))
 
                        ((char= #\| next) (concatf output (string #\|)))
@@ -655,7 +655,7 @@ dispatching on the CHR ending the format sequence."
                                                    delta) format-arguments))))
 
                      (t (concatf output (format-special next (pop arguments) (reverse params)
-                                                        :atp atp :colonp colonp)))))))
+                                                     :atp atp :colonp colonp)))))))
           (concatf output (string c)))
         (incf i)))
 
