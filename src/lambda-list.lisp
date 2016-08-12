@@ -2,7 +2,6 @@
 
 ;;; Copyright (C) 2013 David Vazquez
 
-<<<<<<< a58a89375191fa0219fa4c111c1ce022320470b8
 ;; JSCL is free software: you can redistribute it and/or modify it under
 ;; the terms of the GNU General  Public License as published by the Free
 ;; Software Foundation,  either version  3 of the  License, or  (at your
@@ -15,18 +14,6 @@
 ;;
 ;; You should  have received a  copy of  the GNU General  Public License
 ;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
-=======
-;; JSCL is  free software:  you can  redistribute it  and/or modify it  under the  terms of  the GNU
-;; General Public  License as published  by the  Free Software Foundation,  either version 3  of the
-;; License, or (at your option) any later version.
-;;
-;; JSCL is distributed  in the hope that it  will be useful, but WITHOUT ANY  WARRANTY; without even
-;; the implied warranty of MERCHANTABILITY or FITNESS  FOR A PARTICULAR PURPOSE. See the GNU General
-;; Public License for more details.
-;;
-;; You should have  received a copy of the GNU  General Public License along with JSCL.  If not, see
-;; <http://www.gnu.org/licenses/>.
->>>>>>> Mass-reformat
 
 (/debug "loading lambda-list.lisp!")
 
@@ -37,16 +24,16 @@
 ;;;; Lambda list parsing
 
 (def!struct optvar
-    variable initform supplied-p-parameter)
+  variable initform supplied-p-parameter)
 
 (def!struct keyvar
-    variable keyword-name initform supplied-p-parameter)
+  variable keyword-name initform supplied-p-parameter)
 
 (def!struct auxvar
-    variable initform)
+  variable initform)
 
 (def!struct lambda-list
-    wholevar
+  wholevar
   reqvars
   optvars
   restvar
@@ -205,16 +192,16 @@
 ;;; Return T if KEYWORD is supplied in the list of arguments LIST.
 (defun keyword-supplied-p (keyword list)
   (do-keywords key value list
-               (declare (ignore value))
-               (when (eq key keyword) (return t))
-               (setq list (cddr list))))
+    (declare (ignore value))
+    (when (eq key keyword) (return t))
+    (setq list (cddr list))))
 
-;;; Return the value of KEYWORD in the list of arguments LIST or NIL
-;;; if it is not supplied.
+;;; Return the value of KEYWORD in the  list of arguments LIST or NIL if
+;;; it is not supplied.
 (defun keyword-lookup (keyword list)
   (do-keywords key value list
-               (when (eq key keyword) (return value))
-               (setq list (cddr list))))
+    (when (eq key keyword) (return value))
+    (setq list (cddr list))))
 
 (defun validate-reqvars (list n)
   (unless (listp list)
@@ -230,15 +217,15 @@
 
 ;;; Validate a list of keyword arguments.
 (defun validate-keyvars (list keyword-list &optional allow-other-keys)
-  (let (;; If it is non-NIL, we have to check for unknown keyword
+  (let  (;; If  it is  non-NIL,  we have  to check  for unknown  keyword
         ;; arguments in the list to signal an error in that case.
         (allow-other-keys
-         (or allow-other-keys (keyword-lookup :allow-other-keys list))))
+          (or allow-other-keys (keyword-lookup :allow-other-keys list))))
     (unless allow-other-keys
       (do-keywords key value list
-                   (declare (ignore value))
-                   (unless (find key keyword-list)
-                     (error "Unknown keyword argument `~S'." key))))
+        (declare (ignore value))
+        (unless (find key keyword-list)
+          (error "Unknown keyword argument `~S'." key))))
     (do* ((tail list (cddr tail))
           (key (car tail) (car tail)))
          ((null tail) list)
@@ -252,8 +239,8 @@
   (multiple-value-bind (ll)
       (parse-destructuring-lambda-list lambda-list)
     (let ((bindings '()))
-      (labels ( ;;  Return a chain of  the form (CAR (CDR  (CDR ... (CDR
-               ;; X))), such that there are N calls to CDR.
+      (labels ( ;;  Return  a chain of the form (CAR  (CDR (CDR ... (CDR
+               ;;  X))), such that there are N calls to CDR.
                (nth-chain (x n &optional tail)
                  (if tail
                      (if (zerop n) x `(cdr ,(nth-chain x (1- n) t)))
@@ -272,11 +259,7 @@
                    ((lambda-list-p pattern)
                     (compute-bindings pattern form))))
 
-<<<<<<< a58a89375191fa0219fa4c111c1ce022320470b8
                ;; Compute  the  bindings  for the  full  LAMBDA-LIST  ll
-=======
-               ;; Compute the bindings for the full LAMBDA-LIST ll
->>>>>>> Mass-reformat
                ;; against FORM.
                (compute-bindings (ll form)
                  (let ((reqvar-count (length (lambda-list-reqvars ll)))
@@ -305,7 +288,6 @@
 
                      ;; Rest-variable and keywords
 
-<<<<<<< a58a89375191fa0219fa4c111c1ce022320470b8
                      ;; If there is a rest  or keyword variable, we will
                      ;; add  a  binding for  the  rest  or an  auxiliary
                      ;; variable.  The computations  in  of the  keyword
@@ -313,31 +295,22 @@
                      ;; tail  of nested  CAR/CDR  operations each  time.
                      ;; We also include validation  of keywords if there
                      ;; is any.
-=======
-                     ;; If there is a rest or keyword variable, we
-                     ;; will add a binding for the rest or an
-                     ;; auxiliary variable. The computations in of the
-                     ;; keyword start in this variable, so we avoid
-                     ;; the long tail of nested CAR/CDR operations
-                     ;; each time. We also include validation of
-                     ;; keywords if there is any.
->>>>>>> Mass-reformat
                      (let* ((chain (nth-chain whole (+ reqvar-count optvar-count) t))
                             (restvar (lambda-list-restvar ll))
                             (pattern (or restvar (gensym)))
                             (keywords (mapcar #'keyvar-keyword-name (lambda-list-keyvars ll)))
                             (rest
-                             ;; Create  a binding  for the  rest of  the
-                             ;; arguments.  If there  is keywords,  then
-                             ;; validate  this  list.  If  there  is  no
-                             ;; keywords  and  no &rest  variable,  then
-                             ;; validate that  the rest is empty,  it is
-                             ;; to say, there is  no more arguments that
-                             ;; we expect.
-                             (cond
-                               (keywords (compute-pbindings pattern `(validate-keyvars ,chain ',keywords ,(lambda-list-allow-other-keys ll))))
-                               (restvar  (compute-pbindings pattern chain))
-                               (t        (compute-pbindings pattern `(validate-max-args ,chain))))))
+                              ;; Create a  binding for  the rest  of the
+                              ;; arguments. If  there is  keywords, then
+                              ;; validate  this  list.  If there  is  no
+                              ;; keywords  and no  &rest variable,  then
+                              ;; validate that the rest  is empty, it is
+                              ;; to say, there is no more arguments that
+                              ;; we expect.
+                              (cond
+                                (keywords (compute-pbindings pattern `(validate-keyvars ,chain ',keywords ,(lambda-list-allow-other-keys ll))))
+                                (restvar  (compute-pbindings pattern chain))
+                                (t        (compute-pbindings pattern `(validate-max-args ,chain))))))
                        (when (lambda-list-keyvars ll)
                          ;; Keywords
                          (dolist (keyvar (lambda-list-keyvars ll))
@@ -375,8 +348,8 @@
 #+jscl
 (eval-when (:compile-toplevel)
   (let ((macroexpander
-         '#'(lambda (form &optional environment)
-              (declare (ignore environment))
-              (apply #'!expand-destructuring-bind form))))
+          '#'(lambda (form &optional environment)
+               (declare (ignore environment))
+               (apply #'!expand-destructuring-bind form))))
     (%compile-defmacro '!destructuring-bind macroexpander)
     (%compile-defmacro  'destructuring-bind macroexpander)))
