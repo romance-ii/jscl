@@ -163,4 +163,24 @@
           (equal (char-name #\u+210) "U+210")
           (equal (char-name #\u+2010) "HYPHEN")))
 
+;;; CHAR=/CHAR-EQUAL
+(test (char= #\a #\a))
+(test (not (char= #\a #\A)))
+(test (char-equal #\a #\A))
+(test (char-equal #\á #\Á))
+
 (test (char-equal #\u+2010 #\‐ #\u+002010))
+
+;; String↔Vector
+#-jscl (expected-failure (equal (coerce #(#\s #\t #\r #\i #\n #\g) 'string) "string"))
+#-jscl (expected-failure (equal (coerce "string" 'vector) "string"))
+(test (not (equal #(#\x) "x")))
+(test (equalp #(#\x) "x"))
+(test (not (equalp #\x "x")))
+(test (not (stringp #(#\v #\e #\c #\t #\o #\r))))
+(test (vectorp "string"))
+(test (stringp "string"))
+
+;; (test (= 2 (char-code #u+2))) CRASHER
+(test (= 0 (char-code #\Null)))
+(test (= 10 (char-code #\Newline)))
