@@ -1,38 +1,34 @@
 ;;; read.lisp --- 
 
-;; Copyright (C) 2012, 2013 David Vazquez
-;; Copyright (C) 2012 Raimon Grau
+;; Copyright (C) 2012, 2013 David Vazquez Copyright (C) 2012 Raimon Grau
 
-;; JSCL is free software: you can redistribute it and/or
-;; modify it under the terms of the GNU General Public License as
-;; published by the Free Software Foundation, either version 3 of the
+;; JSCL is  free software:  you can  redistribute it  and/or modify it  under the  terms of  the GNU
+;; General Public  License as published  by the  Free Software Foundation,  either version 3  of the
 ;; License, or (at your option) any later version.
 ;;
-;; JSCL is distributed in the hope that it will be useful, but
-;; WITHOUT ANY WARRANTY; without even the implied warranty of
-;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-;; General Public License for more details.
+;; JSCL is distributed  in the hope that it  will be useful, but WITHOUT ANY  WARRANTY; without even
+;; the implied warranty of MERCHANTABILITY or FITNESS  FOR A PARTICULAR PURPOSE. See the GNU General
+;; Public License for more details.
 ;;
-;; You should have received a copy of the GNU General Public License
-;; along with JSCL.  If not, see <http://www.gnu.org/licenses/>.
+;; You should have  received a copy of the GNU  General Public License along with JSCL.  If not, see
+;; <http://www.gnu.org/licenses/>.
 
 #+jscl (/debug "loading read.lisp!")
 #-jscl (in-package :jscl)
 
 ;;;; Reader
 
-;;; If it is not NIL, we do not want to read the expression but just
-;;; ignore it. For example, it is used in conditional reads #+.
+;;; If it is not NIL,  we do not want to read the expression but just  ignore it. For example, it is
+;;; used in conditional reads #+.
 (defvar *read-skip-p* nil)
 
-;;; The Lisp reader, parse strings and return Lisp objects. The main
-;;; entry points are `ls-read' and `ls-read-from-string'.
+;;; The Lisp reader, parse strings and return Lisp  objects. The main entry points are `ls-read' and
+;;; `ls-read-from-string'.
 
 ;;; #= / ## implementation
 
-;; For now associations label->object are kept in a plist
-;; May be it makes sense to use a vector instead if speed
-;; is considered a problem with many labelled objects
+;; For now  associations label->object are kept  in a plist  May be it  makes sense to use  a vector
+;; instead if speed is considered a problem with many labelled objects
 (defvar *labelled-objects* nil)
 
 (defun new-labelled-objects-table ()
@@ -44,18 +40,15 @@
 (defun add-labelled-object (id value)
   (push (cons id value) *labelled-objects*))
 
-;; A unique value used to mark in the labelled objects
-;; table an object that is being constructed
+;; A unique  value used to mark  in the labelled objects  table an object that  is being constructed
 ;; (e.g. #1# while reading elements of "#1=(#1# #1# #1#)")
 (defvar *future-value* (make-symbol "future"))
 
-;; A unique value used to mark temporary values that will
-;; be replaced when fixups are run.
+;; A unique value used to mark temporary values that will be replaced when fixups are run.
 (defvar *fixup-value* (make-symbol "fixup"))
 
-;; Fixup locations keeps a list of conses where the CAR
-;; is a callable to be called with the value of the object
-;; associated to label stored in CDR once reading is completed
+;; Fixup locations keeps a list of conses where the CAR is a callable to be called with the value of
+;; the object associated to label stored in CDR once reading is completed
 (defvar *fixup-locations* nil)
 
 (defun fixup-backrefs ()
@@ -68,9 +61,8 @@
           (error "Internal error in fixup-backrefs: object #~S# not found"
                  (cdr fixup))))))
 
-;; A function that will need to return a fixup callback
-;; for the object that is being read. The returned callback will
-;; be called with the result of reading.
+;; A  function that  will  need to  return a  fixup  callback for  the  object that  is being  read.
+;; The returned callback will be called with the result of reading.
 (defvar *make-fixup-function*
   (lambda ()
     (error "Internal error in fixup creation during read")))
@@ -211,10 +203,9 @@
     (keyword
      (and (find expression *features*) t))
     (list
-     ;; Macrocharacters for conditional reading #+ and #- bind the
-     ;; current package to KEYWORD so features are correctly
-     ;; interned. For this reason, AND, OR and NOT symbols will be
-     ;; also keyword in feature expressions.
+     ;; Macrocharacters for  conditional reading #+  and #- bind the  current package to  KEYWORD so
+     ;; features are  correctly interned.  For this  reason, AND, OR  and NOT  symbols will  be also
+     ;; keyword in feature expressions.
      (ecase (first expression)
        (:and
         (every #'eval-feature-expression (rest expression)))
@@ -225,11 +216,17 @@
           (not (eval-feature-expression subexpr))))))))
 
 
+(defun read-integer-from-stream (stream)
+  (parse-integer (read-until stream
+                             (lambda (ch)
+                               (not (digit-char-p ch *read-base*))))
+                 :radix *read-base*))
+
 (defun read-sharp (stream &optional eof-error-p eof-value)
   (%read-char stream)
   (let ((ch (%read-char stream)))
     (case ch
-      (#\'
+      (#\apostrophe
        (list 'function (ls-read stream eof-error-p eof-value t)))
       (#\.
        (eval (ls-read stream)))
@@ -260,18 +257,10 @@
       (#\\
        (cond ((and (char-equal #\U (%peek-char stream))
                    (char-equal #\+ (%peek-char stream 1)))
-<<<<<<< 50a55dcc5535034d6b7079941eb1aa16f0730fd0
-           (%read-char stream) ; U (or u)
-           (%read-char stream)          ; +
-           (let ((hex-id (read-until stream (lambda (ch)
-                                              (not (digit-char-p ch 16))))))
-=======
               (%read-char stream)          ; U (or u)
               (%read-char stream)          ; +
-              (let ((hex-id (read-until stream (lambda (ch)
-                                                 (not (digit-char-p ch 16))))))
->>>>>>> Emacs auto-indent read.lisp
-                (code-char (parse-integer hex-id :radix 16))))
+              (let ((*read-base* 16))
+                (code-char (read-integer-from-stream stream))))
              (t (let ((cname
                        (concat (string (%read-char stream))
                                (read-until stream #'terminalp))))
@@ -289,7 +278,7 @@
                  (ls-read stream eof-error-p eof-value t)))))
       ((#\B #\b)
        (let ((*read-base* 2))
-         (read-integer stream)))
+         (read-integer-from-stream stream)))
       ((#\J #\j)
        (unless (char= (%peek-char stream) #\:)
          (error "FFI descriptor must start with a colon."))
@@ -304,10 +293,10 @@
            (push (subseq descriptor start end) subdescriptors))))
       ((#\O #\o)
        (let ((*read-base* 8))
-         (read-integer stream)))
+         (read-integer-from-stream stream)))
       ((#\X #\x)
        (let ((*read-base* 16))
-         (read-integer stream)))
+         (read-integer-from-stream stream)))
       (#\|
        (labels ((read-til-bar-sharpsign ()
                   (do ((ch (%read-char stream) (%read-char stream)))
@@ -333,18 +322,17 @@
                    (progn
                      (add-labelled-object id *future-value*)
                      (let ((obj (ls-read stream eof-error-p eof-value t)))
-                       ;; FIXME: somehow the more natural
-                       ;;    (setf (cdr (find-labelled-object id)) obj)
+                       ;; FIXME: somehow the more natural (setf (cdr (find-labelled-object id)) obj)
                        ;; doesn't work
                        (rplacd (find-labelled-object id) obj)
                        obj))))
-              ((#\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9)
-               (let ((param (parse-integer (read-until (complement #'digit-char-p) stream))))
+              ((#\0 #\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9)
+               (let ((param (read-integer-from-stream stream)))
                  (ecase (%peek-char stream)
                    ((#\R #\r)
                     (assert (<= 2 param 36) (param) "#nR radix must be 2-36; got ~d" param)
-                    (parse-integer (read-until (lambda (ch) (not (digit-char-p ch param))) stream)
-                                   :radix param))
+                    (let ((*read-base* param))
+                      (read-integer-from-stream stream)))
                    (#\( (error "READer cannot read multi-dimension arrays yet")))))
               (#\#
                (%read-char stream)
@@ -382,10 +370,9 @@
                 (setf result (concat result (string-upcase (string ch))))))))
     result))
 
-;;; Parse a string of the form NAME, PACKAGE:NAME or
-;;; PACKAGE::NAME and return the name. If the string is of the
-;;; form 1) or 3), but the symbol does not exist, it will be created
-;;; and interned in that package.
+;;; Parse a  string of  the form NAME,  PACKAGE:NAME or  PACKAGE::NAME and return  the name.  If the
+;;; string is of the form  1) or 3), but the symbol does not exist, it  will be created and interned
+;;; in that package.
 (defun read-symbol (string)
   (let ((size (length string))
         package name internalp index)
@@ -433,7 +420,7 @@
     (dotimes (i size)
       (let ((elt (char string i)))
         (cond
-          ((digit-char-p elt)
+          ((digit-char-p elt *read-base*)
            (setq number (+ (* (or number 0) *read-base*) (digit-char-p elt *read-base*))))
           ((zerop i)
            (case elt
@@ -508,8 +495,7 @@
             (setq exponent (+ (* exponent 10) value))
             (incf index))))
       (unless (= index size) (return))
-      ;; Everything went ok, we have a float
-      ;; XXX: Use FLOAT when implemented.
+      ;; Everything went ok, we have a float XXX: Use FLOAT when implemented.
       (/ (* sign (expt 10.0 (* exponent-sign exponent)) number) divisor 1.0))))
 
 (defun !parse-integer (string junk-allow &optional (radix *read-base*))
@@ -613,6 +599,10 @@
                #'ls-read  ; TODO: READ-PRESERVING-WHITESPACE
                #'ls-read)
            (make-string-stream (subseq string start (or end (length string)))) eof-error-p eof-value))
+
+#+jscl
+(defun read (&optional (stream *standard-input*) (eof-error-p t) (eof-value nil) (recursive-p nil))
+  (ls-read stream eof-error-p eof-value recursive-p))
 
 #+jscl
 (defun read-from-string (string &optional (eof-errorp t) eof-value)

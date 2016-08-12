@@ -100,7 +100,6 @@
 
 (test (equal (read-from-string (format nil "~@c" #\u+2010)) #\u+2010))
 
-(test (not (equal (format nil "~5':x" 4) "::::4")))
 (test (equal (format nil "~5,':x" 4) "::::4"))
 ;;(test (equal (format nil "~5,,2,':d" 400) " 4:00")) CRASHER
 
