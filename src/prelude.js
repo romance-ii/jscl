@@ -175,11 +175,15 @@ internals.char_from_codepoint = function(x) {
 
 // if a char (JS string) has the same number of codepoints after .toUpperCase(), return that, else the original.
 internals.safe_char_upcase = function(x) {
-    var xu = x.toUpperCase();
-    if (codepoints(xu).length == 1) {
-        return xu;
-    } else {
-        return x;
+    try {
+        var xu = x.toUpperCase();
+        if (codepoints(xu).length == 1) {
+            return xu;
+        } else {
+            return x;
+        }
+    } catch (e) {
+        throw new Error ("Probably not a character? : " + x + " (type=" + (typeof x) + ")");
     }
 };
 internals.safe_char_downcase = function(x) {
