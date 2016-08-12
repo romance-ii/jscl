@@ -256,7 +256,7 @@
           (read-escaped-until stream #'terminalp)))))
       (#\\
        (cond ((and (char-equal #\U (%peek-char stream))
-                   (char-equal #\+ (%peek-char stream 1)))
+                   (char=      #\+ (%peek-char stream 1)))
               (%read-char stream)          ; U (or u)
               (%read-char stream)          ; +
               (let ((*read-base* 16))
