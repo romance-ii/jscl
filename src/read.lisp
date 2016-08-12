@@ -2,33 +2,36 @@
 
 ;; Copyright (C) 2012, 2013 David Vazquez Copyright (C) 2012 Raimon Grau
 
-;; JSCL is  free software:  you can  redistribute it  and/or modify it  under the  terms of  the GNU
-;; General Public  License as published  by the  Free Software Foundation,  either version 3  of the
-;; License, or (at your option) any later version.
+;; JSCL is free software: you can redistribute it and/or modify it under
+;; the terms of the GNU General  Public License as published by the Free
+;; Software Foundation,  either version  3 of the  License, or  (at your
+;; option) any later version.
 ;;
-;; JSCL is distributed  in the hope that it  will be useful, but WITHOUT ANY  WARRANTY; without even
-;; the implied warranty of MERCHANTABILITY or FITNESS  FOR A PARTICULAR PURPOSE. See the GNU General
-;; Public License for more details.
+;; JSCL is distributed  in the hope that it will  be useful, but WITHOUT
+;; ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+;; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+;; for more details.
 ;;
-;; You should have  received a copy of the GNU  General Public License along with JSCL.  If not, see
-;; <http://www.gnu.org/licenses/>.
+;; You should  have received a  copy of  the GNU General  Public License
+;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
 
 #+jscl (/debug "loading read.lisp!")
 #-jscl (in-package :jscl)
 
 ;;;; Reader
 
-;;; If it is not NIL,  we do not want to read the expression but just  ignore it. For example, it is
-;;; used in conditional reads #+.
+;;; If it  is not NIL, we  do not want  to read the expression  but just
+;;; ignore it. For example, it is used in conditional reads #+.
 (defvar *read-skip-p* nil)
 
-;;; The Lisp reader, parse strings and return Lisp  objects. The main entry points are `ls-read' and
-;;; `ls-read-from-string'.
+;;; The Lisp  reader, parse  strings and return  Lisp objects.  The main
+;;; entry points are `ls-read' and `ls-read-from-string'.
 
 ;;; #= / ## implementation
 
-;; For now  associations label->object are kept  in a plist  May be it  makes sense to use  a vector
-;; instead if speed is considered a problem with many labelled objects
+;; For now  associations label->object  are kept  in a  plist May  be it
+;; makes sense to use a vector  instead if speed is considered a problem
+;; with many labelled objects
 (defvar *labelled-objects* nil)
 
 (defun new-labelled-objects-table ()
@@ -40,8 +43,9 @@
 (defun add-labelled-object (id value)
   (push (cons id value) *labelled-objects*))
 
-;; A unique  value used to mark  in the labelled objects  table an object that  is being constructed
-;; (e.g. #1# while reading elements of "#1=(#1# #1# #1#)")
+;; A unique value  used to mark in the labelled  objects table an object
+;; that  is  being  constructed  (e.g. #1#  while  reading  elements  of
+;; "#1=(#1# #1# #1#)")
 (defvar *future-value* (make-symbol "future"))
 
 ;; A unique value used to mark temporary values that will be replaced when fixups are run.

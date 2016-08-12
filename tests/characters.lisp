@@ -31,19 +31,19 @@
 (test (char>= #\d #\d #\c #\a))
 (test (not (char> #\e #\d #\b #\c #\a)))
 (test (not (char>= #\e #\d #\b #\c #\a)))
-;; (char> #\z #\A) =>  implementation-dependent
-;; (char> #\Z #\a) =>  implementation-dependent
+;; (char>  #\z  #\A)  =>  implementation-dependent (char>  #\Z  #\a)  =>
+;; implementation-dependent
 (test (char-equal #\A #\a))
-;; (stable-sort (list #\b #\A #\B #\a #\c #\C) #'char-lessp) =>  (#\A #\a #\b #\B #\c #\C)
-;; (stable-sort (list #\b #\A #\B #\a #\c #\C) #'char<) => implementation-dependent
+;; (stable-sort (list #\b #\A #\B #\a #\c #\C) #'char-lessp) => (#\A #\a
+;; #\b #\B #\c #\C) (stable-sort (list #\b #\A #\B #\a #\c #\C) #'char<)
+;; => implementation-dependent
 
 ;; CHARACTER
 (test (equal #\a (character #\a)))
 (test (equal #\a (character "a")))
-;; (test (equal #\A (character 'a)))
-;; (test (equal #\a (character '\a)))
-;; (expected-failure (character 65.))
-;; (expected-failure (character 'apple))
+;; (test (equal #\A (character 'a)))  (test (equal #\a (character '\a)))
+;; (expected-failure   (character  65.))   (expected-failure  (character
+;; 'apple))
 
 ;; CHARACTERP
 (test (characterp #\a))
@@ -151,7 +151,7 @@
 (test (char= #\    #\Space))
 (test
  (let ((x (char-name #\a)))
-  (or (not x) (eql (name-char x) #\a))))
+   (or (not x) (eql (name-char x) #\a))))
 
 ;; Unicode chars without explicit names
 (test (char= #\u+2010 (name-char "U+2010")))
@@ -164,4 +164,3 @@
           (equal (char-name #\u+2010) "HYPHEN")))
 
 (test (char-equal #\u+2010 #\‐ #\u+002010))
-

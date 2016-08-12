@@ -14,31 +14,31 @@
 
 (defun test-fn (condition form)
   (async
-    (cond
-      (condition
-       (format t "Test `~S' passed~%" form)
-       (incf *passed-tests*))
-      (t
-       (if *use-html-output-p*
-           (format t "<font color='red'>Test `~S' failed.</font>~%" form)
-           (format t "Test `~S' failed.~%" form))
-       (push (list form :failed) *failed-tests-details*)
-       (incf *failed-tests*)))
-    (incf *total-tests*)))
+   (cond
+     (condition
+      (format t "Test `~S' passed~%" form)
+      (incf *passed-tests*))
+     (t
+      (if *use-html-output-p*
+          (format t "<font color='red'>Test `~S' failed.</font>~%" form)
+          (format t "Test `~S' failed.~%" form))
+      (push (list form :failed) *failed-tests-details*)
+      (incf *failed-tests*)))
+   (incf *total-tests*)))
 
 (defun expected-failure-fn (condition form)
   (async
-    (cond
-      (condition
-       (if *use-html-output-p*
-           (format t "<font color='orange'>Test `~S' passed unexpectedly!</font>~%" form)
-           (format t "Test `~S' passed unexpectedly!~%" form))
-       (incf *unexpected-passes*))
-      (t
-       (format t "Test `~S' failed expectedly.~%" form)
-       (push (list form :failed-expected) *failed-tests-details*)
-       (incf *expected-failures*)))
-    (incf *total-tests*)))
+   (cond
+     (condition
+      (if *use-html-output-p*
+          (format t "<font color='orange'>Test `~S' passed unexpectedly!</font>~%" form)
+          (format t "Test `~S' passed unexpectedly!~%" form))
+      (incf *unexpected-passes*))
+     (t
+      (format t "Test `~S' failed expectedly.~%" form)
+      (push (list form :failed-expected) *failed-tests-details*)
+      (incf *expected-failures*)))
+   (incf *total-tests*)))
 
 
 (defmacro test (condition)

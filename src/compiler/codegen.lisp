@@ -2,9 +2,10 @@
 
 ;; Copyright (C) 2013, 2014 David Vazquez
 
-;; JSCL is  free software:  you can  redistribute it  and/or modify it  under the  terms of  the GNU
-;; General Public  License as published  by the  Free Software Foundation,  either version 3  of the
-;; License, or (at your option) any later version.
+;; JSCL is free software: you can redistribute it and/or modify it under
+;; the terms of the GNU General  Public License as published by the Free
+;; Software Foundation,  either version  3 of the  License, or  (at your
+;; option) any later version.
 ;;
 ;; JSCL is distributed  in the hope that it will  be useful, but WITHOUT
 ;; ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -532,15 +533,15 @@
                       (js-stmt case))))
                  (js-format "}")))
            (for
-            (destructuring-bind ((start condition step) &body body) (cdr form)
-              (js-format "for (")
-              (js-expr start)
-              (js-format ";")
-              (js-expr condition)
-              (js-format ";")
-              (js-expr step)
-              (js-format ")")
-              (js-stmt `(progn ,@body))))
+               (destructuring-bind ((start condition step) &body body) (cdr form)
+                 (js-format "for (")
+                 (js-expr start)
+                 (js-format ";")
+                 (js-expr condition)
+                 (js-format ";")
+                 (js-expr step)
+                 (js-format ")")
+                 (js-stmt `(progn ,@body))))
            (for-in
             (destructuring-bind ((x object) &body body) (cdr form)
               (js-format "for (")

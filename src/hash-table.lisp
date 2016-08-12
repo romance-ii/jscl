@@ -44,8 +44,8 @@
   (eq-hash x))
 
 
-;;; In the case of equal-based hash tables, we do not store the hash
-;;; in the objects, but compute a hash from the elements it contains.
+;;; In the case of equal-based hash tables,  we do not store the hash in
+;;; the objects, but compute a hash from the elements it contains.
 (defun equal-hash (x)
   (typecase x
     (cons

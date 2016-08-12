@@ -130,13 +130,13 @@
   ;; from Wikipedia's Unicode article. Commented hex values because JSCL
   ;; can't read #x yet.
   (let ((n (char-code char)))
-    (cond 
+    (cond
       ((< n 32) nil)                       ; C0 control codes
       ((< n 127) t)
       ((< n 160) nil)                         ; C1 control codes
       ((< n 55296 #| xd800 |#) t)
       ((< n 57344 #| xe000 |#) nil)    ; high and low surrogates
-      ((< n 54976 #| xfdd0 |#) t) 
+      ((< n 54976 #| xfdd0 |#) t)
       ((< n 65007 #| xfffe |#) nil) ; upper disallowed
       ;; the following bit-patterns are never allowed
       ((= (logior n 65535 #| xffff |#) 65534 #| xfffe |#) nil)
