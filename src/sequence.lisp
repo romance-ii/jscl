@@ -47,7 +47,6 @@
     (list (revappend sequence '()))
     (vector (vector-reverse sequence))))
 
-
 (defun list-nreverse (list)
   (do ((1st (cdr list) (if (endp 1st) 1st (cdr 1st)))
        (2nd list 1st)
@@ -184,7 +183,7 @@
   (position-if (complement predicate) sequence
                :from-end from-end :key key :start start :end end))
 
-(defun substitute (new old seq 
+(defun substitute (new old seq
                    &key (key #'identity) (test #'eql)
                         (start 0) (end nil endp)
                         (count nil countp)
