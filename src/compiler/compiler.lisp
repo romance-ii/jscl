@@ -286,15 +286,6 @@
 
 (defun lambda-name/docstring-wrapper (name docstring code)
   (let ((func (safe-js-fun-name name)))
-<<<<<<< df752f2f855d1337c76192d2a18a20f3323ea3fd
-  (if (or name docstring)
-      `(selfcall
-        (var (func ,code))
-        ,(when name `(= (get func "fname") ,name))
-        ,(when docstring `(= (get func "docstring") ,docstring))
-        (return func))
-      code))
-=======
     (if (or name docstring)
         `(selfcall
           (var (,func ,code))
@@ -302,7 +293,6 @@
           ,(when docstring `(= (get ,func "docstring") ,docstring))
           (return ,func))
         code)))
->>>>>>> Emacs auto-indent compiler.lisp
 
 (defun lambda-check-argument-count
     (n-required-arguments n-optional-arguments rest-p)
@@ -457,19 +447,11 @@
                                     optional-arguments
                                     keyword-arguments
                                     (ll-svars ll)))))
-<<<<<<< df752f2f855d1337c76192d2a18a20f3323ea3fd
-        (lambda-name/docstring-wrapper name documentation
-         `(function (|values| ,@(mapcar (lambda (x)
-					  (translate-variable x))
-					(append required-arguments optional-arguments)))
-                     ;; Check number of arguments
-=======
         (lambda-name/docstring-wrapper
          name documentation
          `(function (|values| ,@(mapcar #'translate-variable
                                         (append required-arguments optional-arguments)))
                     ;; Check number of arguments
->>>>>>> Emacs auto-indent compiler.lisp
                     ,(lambda-check-argument-count n-required-arguments
                                                   n-optional-arguments
                                                   (or rest-argument keyword-arguments))
