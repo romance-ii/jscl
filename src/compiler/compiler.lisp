@@ -54,8 +54,9 @@
 ;;; will be used, so we can optimize to avoid the VALUES function call.
 (defvar *multiple-value-p* nil)
 
-;;; It is bound dinamically  to the number of nested calls to `convert'.  Therefore, a form is being
-;;; compiled as toplevel if it is zero.
+;;; It is bound dynamically to the number of nested calls to
+;;; `convert'. Therefore, a form is being compiled as toplevel if it
+;;; is zero.
 (defvar *convert-level* -1)
 
 
@@ -310,29 +311,29 @@
 
 (defun compile-lambda-optional (ll)
   (let* ((optional-arguments (ll-optional-arguments-canonical ll))
-	 (n-required-arguments (length (ll-required-arguments ll)))
+         (n-required-arguments (length (ll-required-arguments ll)))
          (n-optional-arguments (length optional-arguments))
          (svars (remove nil (mapcar #'third optional-arguments))))
 
     (when optional-arguments
       `(progn
          ,(when svars
-            `(var ,@(mapcar (lambda (svar)
-                              (list (translate-variable svar)
-                                    (convert t)))
-                            svars)))
+                `(var ,@(mapcar (lambda (svar)
+                                  (list (translate-variable svar)
+                                        (convert t)))
+                                svars)))
          (switch (nargs)
-               ,@(with-collect
-                  (dotimes (idx n-optional-arguments)
-                    (let ((arg (nth idx optional-arguments)))
-                      (collect `(case ,(+ idx n-required-arguments)))
-                      (collect `(= ,(translate-variable (car arg))
-                                   ,(convert (cadr arg))))
-                      (collect (when (third arg)
-                                 `(= ,(translate-variable (third arg))
-                                     ,(convert nil))))))
-                  (collect 'default)
-               (collect '(break))))))))
+                 ,@(with-collect
+                    (dotimes (idx n-optional-arguments)
+                      (let ((arg (nth idx optional-arguments)))
+                        (collect `(case ,(+ idx n-required-arguments)))
+                        (collect `(= ,(translate-variable (car arg))
+                                     ,(convert (cadr arg))))
+                        (collect (when (third arg)
+                                   `(= ,(translate-variable (third arg))
+                                       ,(convert nil))))))
+                    (collect 'default)
+                    (collect '(break))))))))
 
 (defun compile-lambda-rest (ll)
   (let ((n-required-arguments (length (ll-required-arguments ll)))
@@ -439,11 +440,11 @@
     (push-to-lexenv binding *environment* 'variable)
     `(var (,gvar |this|))))
 
-;;; Compile a lambda function with lambda list LL and body BODY. If NAME
-;;; is given, it should be a constant string and it will become the name
-;;; of  the function.  If BLOCK  is non-NIL,  a named  block is  created
-;;; around the body. NOTE: No block (even anonymous) is created if BLOCK
-;;; is NIL.
+;;; Compile a lambda function with lambda list LL and body BODY. If
+;;; NAME is given, it should be a constant string and it will become
+;;; the name of the function. If BLOCK is non-NIL, a named block is
+;;; created around the body. NOTE: No block (even anonymous) is
+;;; created if BLOCK is NIL.
 (defun compile-lambda (ll body &key name block)
   (multiple-value-bind (required-arguments
                         optional-arguments
@@ -466,7 +467,7 @@
                                        `(named-function ,(safe-js-fun-name name)
                                                         (|values| ,@(mapcar (lambda (x)
 					  (translate-variable x))
-					(append required-arguments optional-arguments)))
+                                        (append required-arguments optional-arguments)))
                      ;; Check number of arguments
                     ,(lambda-check-argument-count n-required-arguments
                                                   n-optional-arguments

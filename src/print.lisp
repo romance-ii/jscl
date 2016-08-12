@@ -10,8 +10,8 @@
 ;; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
 ;; for more details.
 ;;
-;; You should  have received a  copy of  the GNU General  Public License
-;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
+;; You should have received a copy of the GNU General Public License
+;; along with JSCL.  If not, see <http://www.gnu.org/licenses/>.
 
 (/debug "loading print.lisp!")
 
@@ -263,7 +263,8 @@ to streams."
      (unless (null form)
        (write-aux (car form) stream known-objects object-ids)
        (do ((tail (cdr form) (cdr tail)))
-           ;; Stop on symbol OR if the object is already known when we accept circular printing.
+           ;; Stop on symbol OR if the object is already known when we
+           ;; accept circular printing.
            ((or (atom tail)
                 (and *print-circle*
                      (let* ((ix (or (position tail known-objects) 0))
@@ -343,17 +344,17 @@ to streams."
   (defun terpri (&optional (stream *standard-output*))
     (write-char #\newline stream)
     (values))
-
+  
   (defun write-line (x)
     (write-string x)
     (terpri)
     x)
-
+  
   (defun print (x &optional (stream *standard-output*))
     (prog1 (prin1 x stream)
       (terpri stream))))
 
-
+
 ;;; FORMAT
 
 (defun format-aesthetic (arg colonp atp &optional (min-column 1))
@@ -377,15 +378,15 @@ STRING is a string of digits with an optional leading + or - sign."
         ((<= (length string) group-length)
          string)
         (t (let* ((rev (reverse string))
-                  (len (length string))
+         (len (length string))
                   (out-len (+ len (floor (1- len) group-length)))
-                  (i 0) (j out-len)
-                  (out (make-string out-len :initial-element comma)))
+         (i 0) (j out-len)
+         (out (make-string out-len :initial-element comma)))
              (while (< i len)
                (setf (aref out (decf j)) (char rev i))
                (incf i)
                (when (zerop (mod i group-length))
-                 (decf j)))
+        (decf j)))
              out))))
 
 (defun format-pad-to-right (string min-column &optional (pad-char #\space))
@@ -396,7 +397,7 @@ If the length of STRING is known, passing it in can save a few cycles."
   (let ((min-column (or min-column 1))
         (length (length string)))
     (if (< length min-column)
-        (concatenate 'string
+            (concatenate 'string
                      (make-string (- min-column length) :initial-element (or pad-char #\space))
                      string)
         string)))
@@ -591,7 +592,7 @@ dispatching on the CHR ending the format sequence."
                read-control
                  (assert (and (< (1+ i) length) "~ at end of format"))
                  (let ((next (char control-string (incf i))))
-                   (cond
+              (cond
                      ((digit-char-p next)
                       (multiple-value-bind (param ending)
                           (parse-integer (subseq control-string i) :junk-allowed t)
@@ -654,7 +655,7 @@ dispatching on the CHR ending the format sequence."
                                                    delta) format-arguments))))
 
                      (t (concatf output (format-special next (pop arguments) (reverse params)
-                                                        :atp atp :colonp colonp)))))))
+                                                     :atp atp :colonp colonp)))))))
             (concatf output (string c)))
         (incf i)))
 

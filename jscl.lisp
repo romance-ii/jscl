@@ -12,8 +12,8 @@
 ;; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
 ;; for more details.
 ;;
-;; You should  have received a  copy of  the GNU General  Public License
-;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
+;; You should have received a copy of the GNU General Public License
+;; along with JSCL.  If not, see <http://www.gnu.org/licenses/>.
 
 (defpackage :jscl
   (:use :cl)
@@ -89,15 +89,15 @@
 
 (defun get-files (file-list type dir)
   "Traverse FILE-LIST and retrieve a list of the files within which match
- either TYPE or :BOTH, processing subdirectories."
+   either TYPE or :BOTH, processing subdirectories."
   (let ((file (car file-list)))
     (cond
       ((null file-list)
        ())
       ((listp (cadr file))
        (append
-        (get-files (cdr file)      type (append dir (list (car file))))
-        (get-files (cdr file-list) type dir)))
+         (get-files (cdr file)      type (append dir (list (car file))))
+         (get-files (cdr file-list) type dir)))
       ((member (cadr file) (list type :both))
        (cons (source-pathname (car file) :directory dir :type "lisp")
              (get-files (cdr file-list) type dir)))
@@ -106,7 +106,7 @@
 
 (defmacro do-source (name type &body body)
   "Iterate over all the source files that need to be compiled in the host or
- the target, depending on the TYPE argument."
+   the target, depending on the TYPE argument."
   (unless (member type '(:host :target))
     (error "TYPE must be one of :HOST or :TARGET, not ~S" type))
   `(dolist (,name (get-files *source* ,type '(:relative "src")))
@@ -115,11 +115,11 @@
 ;;; Compile and load jscl into the host
 (with-compilation-unit ()
   (do-source input :host
-             (multiple-value-bind (fasl warn fail) (compile-file input)
-               (declare (ignore warn))
-               (when fail
-                 (error "Compilation of ~A failed." input))
-               (load fasl))))
+    (multiple-value-bind (fasl warn fail) (compile-file input)
+      (declare (ignore warn))
+      (when fail
+        (error "Compilation of ~A failed." input))
+      (load fasl))))
 
 (defun read-whole-file (filename)
   (with-open-file (in filename)
@@ -156,7 +156,7 @@
          until (eq form eof-mark)
          do (let ((compilation (compile-toplevel form)))
               (if (possibly-valid-js-p compilation)
-                  (when (plusp (length compilation))
+              (when (plusp (length compilation))
                     (write-string compilation out))
                   (complain-about-illegal-chars form in compilation)))))))
 
@@ -195,7 +195,7 @@
           (write-string "#!/usr/bin/env node" out)
           (terpri out))
         (with-scoping-function (out)
-          (dolist (input files)
+        (dolist (input files)
             (terpri out)
             (!compile-file input out))))))
 
@@ -218,7 +218,7 @@
    :shebang t))
 
 (defun compile-jscl.js (verbosep)
-  (with-compilation-environment
+    (with-compilation-environment
       (with-open-file (out (merge-pathnames "jscl.js" *base-directory*)
                            :direction :output
                            :if-exists :supersede)

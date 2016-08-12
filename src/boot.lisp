@@ -12,12 +12,12 @@
 ;; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
 ;; for more details.
 ;;
-;; You should  have received a  copy of  the GNU General  Public License
-;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
+;; You should have received a copy of the GNU General Public License
+;; along with JSCL.  If not, see <http://www.gnu.org/licenses/>.
 
 ;;; This  code  is  executed  when   JSCL  compiles  this  file  itself.
 ;;; The compiler provides compilation of  some special forms, as well as
-;;; funcalls and  macroexpansion, but  no functions.  So, we  define the
+;;; funcalls and macroexpansion, but no functions. So, we define the
 ;;; Lisp world from scratch. This code  has to define enough language to
 ;;; the compiler to be able to run.
 
@@ -39,12 +39,12 @@
                   ;; macroexpander will need to be dumped in the final environment somehow.
                   (when (find :jscl-xc *features*)
                     (setq expander `(quote ,expander)))
-
+                  
                   `(eval-when (:compile-toplevel :execute)
                      (%compile-defmacro ',name ,expander))
 
                   )))))
-
+    
     (%compile-defmacro 'defmacro defmacro-macroexpander)))
 
 (defmacro declaim (&rest decls)
@@ -248,7 +248,7 @@
   `(block nil
      (let ,(mapcar (lambda (x) (if (symbolp x)
                                    (list x nil)
-                                   (list (first x) (second x)))) varlist)
+                                 (list (first x) (second x)))) varlist)
        (while t
          (when ,(car endlist)
            (return (progn ,@(cdr endlist))))
@@ -265,7 +265,7 @@
   `(block nil
      (let* ,(mapcar (lambda (x1) (if (symbolp x1)
                                      (list x1 nil)
-                                     (list (first x1) (second x1)))) varlist)
+                                   (list (first x1) (second x1)))) varlist)
        (while t
          (when ,(car endlist)
            (return (progn ,@(cdr endlist))))
@@ -325,18 +325,6 @@ macro cache is so aggressive that it cannot be redefined."
 
 (defun atom (x)
   (not (consp x)))
-
-(defun alpha-char-p (x)
-  (or (<= (char-code #\a) (char-code x) (char-code #\z))
-      (<= (char-code #\A) (char-code x) (char-code #\Z))))
-
-(defun digit-char-p (x)
-  (and (<= (char-code #\0) (char-code x) (char-code #\9))
-       (- (char-code x) (char-code #\0))))
-
-(defun digit-char (weight)
-  (and (<= 0 weight 9)
-       (char "0123456789" weight)))
 
 (defun equal (x y)
   (cond
@@ -414,21 +402,21 @@ macro cache is so aggressive that it cannot be redefined."
                          `((,(ecase (car c)
                                (fixnum 'integerp)
                                (number 'numberp)
-                               (integer 'integerp)
-                               (cons 'consp)
-                               (list 'listp)
-                               (vector 'vectorp)
-                               (character 'characterp)
-                               (sequence 'sequencep)
-                               (symbol 'symbolp)
-                               (keyword 'keywordp)
-                               (function 'functionp)
-                               (float 'floatp)
-                               (array 'arrayp)
-                               (string 'stringp)
-                               (atom 'atom)
-                               (null 'null)
-                               (package 'packagep))
+                                    (integer 'integerp)
+                                    (cons 'consp)
+                                    (list 'listp)
+                                    (vector 'vectorp)
+                                    (character 'characterp)
+                                    (sequence 'sequencep)
+                                    (symbol 'symbolp)
+                                    (keyword 'keywordp)
+                                    (function 'functionp)
+                                    (float 'floatp)
+                                    (array 'arrayp)
+                                    (string 'stringp)
+                                    (atom 'atom)
+                                    (null 'null)
+                                    (package 'packagep))
                              ,value)
                            ,@(or (rest c)
                                  (list nil)))))
