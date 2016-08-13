@@ -15,7 +15,8 @@
 
 (defpackage :jscl
   (:use :cl)
-  (:export #:bootstrap #:run-tests-in-host))
+  (:export #:bootstrap #:run-tests-in-host
+           #:write-javascript-for-files #:compile-application))
 
 (in-package :jscl)
 
@@ -174,18 +175,21 @@
 
 
 
-(defun compile-application (files output &key shebang)
+(defun write-javascript-for-files (files &optional (stream *standard-output*))
   (with-compilation-environment
-      (with-open-file (out output :direction :output :if-exists :supersede)
-        (when shebang
-          (format out "#!/usr/bin/env node~%"))
-        (format out "(function(jscl){~%")
-        (format out "'use strict';~%")
-        (format out "(function(values, internals){~%")
-        (dolist (input files)
-          (!compile-file input out))
-        (format out "})(jscl.internals.pv, jscl.internals);~%")
-        (format out "})( typeof require !== 'undefined'? require('./jscl'): window.jscl )~%"))))
+    (format t "(function(jscl){~%")
+    (format t "'use strict';~%")
+    (format t "(function(values, internals){~%")
+    (dolist (input files)
+      (!compile-file input t))
+    (format t "})(jscl.internals.pv, jscl.internals);~%")
+    (format t "})( typeof require !== 'undefined'? require('./jscl'): window.jscl )~%")))
+
+(defun compile-application (files output &key shebang)
+  (with-open-file (out output :direction :output :if-exists :supersede)
+    (when shebang
+      (format out "#!/usr/bin/env node~%"))
+    (write-javascript-for-files files out)))
 
 
 
