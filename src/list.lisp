@@ -1,15 +1,17 @@
 ;;; list.lisp ---
 
-;; JSCL is  free software:  you can  redistribute it  and/or modify it  under the  terms of  the GNU
-;; General Public  License as published  by the  Free Software Foundation,  either version 3  of the
-;; License, or (at your option) any later version.
+;; JSCL is free software: you can redistribute it and/or modify it under
+;; the terms of the GNU General  Public License as published by the Free
+;; Software Foundation,  either version  3 of the  License, or  (at your
+;; option) any later version.
 ;;
-;; JSCL is distributed  in the hope that it  will be useful, but WITHOUT ANY  WARRANTY; without even
-;; the implied warranty of MERCHANTABILITY or FITNESS  FOR A PARTICULAR PURPOSE. See the GNU General
-;; Public License for more details.
+;; JSCL is distributed  in the hope that it will  be useful, but WITHOUT
+;; ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+;; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+;; for more details.
 ;;
-;; You should have  received a copy of the GNU  General Public License along with JSCL.  If not, see
-;; <http://www.gnu.org/licenses/>.
+;; You should  have received a  copy of  the GNU General  Public License
+;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
 
 (/debug "loading list.lisp!")
 
@@ -212,39 +214,39 @@
 
 (defun map1 (func list)
   (with-collect
-      (while list
-        (collect (funcall func (car list)))
-        (setq list (cdr list)))))
+    (while list
+      (collect (funcall func (car list)))
+      (setq list (cdr list)))))
 
 (defun mapcar (func list &rest lists)
   (let ((lists (cons list lists)))
     (with-collect
-        (block loop
-          (loop
-             (let ((elems (map1 #'car lists)))
-               (do ((tail lists (cdr tail)))
-                   ((null tail))
-                 (when (null (car tail)) (return-from loop))
-                 (rplaca tail (cdar tail)))
-               (collect (apply func elems))))))))
+      (block loop
+        (loop
+           (let ((elems (map1 #'car lists)))
+             (do ((tail lists (cdr tail)))
+                 ((null tail))
+               (when (null (car tail)) (return-from loop))
+               (rplaca tail (cdar tail)))
+             (collect (apply func elems))))))))
 
 (defun mapn (func list)
   (with-collect
-      (while list
-        (collect (funcall func list))
-        (setq list (cdr list)))))
+    (while list
+      (collect (funcall func list))
+      (setq list (cdr list)))))
 
 (defun maplist (func list &rest lists)
   (let ((lists (cons list lists)))
     (with-collect
-        (block loop
-          (loop
-             (let ((elems (mapn #'car lists)))
-               (do ((tail lists (cdr tail)))
-                   ((null tail))
-                 (when (null (car tail)) (return-from loop))
-                 (rplaca tail (cdar tail)))
-               (collect (apply func elems))))))))
+      (block loop
+        (loop
+           (let ((elems (mapn #'car lists)))
+             (do ((tail lists (cdr tail)))
+                 ((null tail))
+               (when (null (car tail)) (return-from loop))
+               (rplaca tail (cdar tail)))
+             (collect (apply func elems))))))))
 
 (defun mapc (func &rest lists)
   (do* ((tails lists (map1 #'cdr tails))
@@ -322,9 +324,9 @@
 (defun copy-alist (alist)
   "Return a new association list which is EQUAL to ALIST."
   (with-collect
-      (while alist
-        (collect (cons (caar alist) (cdar alist)))
-        (setq alist (cdr alist)))))
+    (while alist
+      (collect (cons (caar alist) (cdar alist)))
+      (setq alist (cdr alist)))))
 
 (define-setf-expander car (x)
   (let ((cons (gensym))
