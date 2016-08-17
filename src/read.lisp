@@ -2,32 +2,36 @@
 
 ;; Copyright (C) 2012, 2013 David Vazquez Copyright (C) 2012 Raimon Grau
 
-;; JSCL is  free software:  you can  redistribute it  and/or modify it  under the  terms of  the GNU
-;; General Public  License as published  by the  Free Software Foundation,  either version 3  of the
-;; License, or (at your option) any later version.
+;; JSCL is free software: you can redistribute it and/or modify it under
+;; the terms of the GNU General  Public License as published by the Free
+;; Software Foundation,  either version  3 of the  License, or  (at your
+;; option) any later version.
 ;;
-;; JSCL is distributed  in the hope that it  will be useful, but WITHOUT ANY  WARRANTY; without even
-;; the implied warranty of MERCHANTABILITY or FITNESS  FOR A PARTICULAR PURPOSE. See the GNU General
-;; Public License for more details.
+;; JSCL is distributed  in the hope that it will  be useful, but WITHOUT
+;; ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+;; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+;; for more details.
 ;;
-;; You should have  received a copy of the GNU  General Public License along with JSCL.  If not, see
-;; <http://www.gnu.org/licenses/>.
+;; You should  have received a  copy of  the GNU General  Public License
+;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
 
+(in-package :jscl)
 (/debug "loading read.lisp!")
 
 ;;;; Reader
 
-;;; If it is not NIL,  we do not want to read the expression but just  ignore it. For example, it is
-;;; used in conditional reads #+.
+;;; If it  is not NIL, we  do not want  to read the expression  but just
+;;; ignore it. For example, it is used in conditional reads #+.
 (defvar *read-skip-p* nil)
 
-;;; The Lisp reader, parse strings and return Lisp  objects. The main entry points are `ls-read' and
-;;; `ls-read-from-string'.
+;;; The Lisp  reader, parse  strings and return  Lisp objects.  The main
+;;; entry points are `ls-read' and `ls-read-from-string'.
 
 ;;; #= / ## implementation
 
-;; For now  associations label->object are kept  in a plist  May be it  makes sense to use  a vector
-;; instead if speed is considered a problem with many labelled objects
+;; For now  associations label->object  are kept  in a  plist May  be it
+;; makes sense to use a vector  instead if speed is considered a problem
+;; with many labelled objects
 (defvar *labelled-objects* nil)
 
 (defun new-labelled-objects-table ()
@@ -39,15 +43,18 @@
 (defun add-labelled-object (id value)
   (push (cons id value) *labelled-objects*))
 
-;; A unique  value used to mark  in the labelled objects  table an object that  is being constructed
-;; (e.g. #1# while reading elements of "#1=(#1# #1# #1#)")
+;; A unique value  used to mark in the labelled  objects table an object
+;; that  is  being  constructed  (e.g. #1#  while  reading  elements  of
+;; "#1=(#1# #1# #1#)")
 (defvar *future-value* (make-symbol "future"))
 
-;; A unique value used to mark temporary values that will be replaced when fixups are run.
+;; A unique  value used to mark  temporary values that will  be replaced
+;; when fixups are run.
 (defvar *fixup-value* (make-symbol "fixup"))
 
-;; Fixup locations keeps a list of conses where the CAR is a callable to be called with the value of
-;; the object associated to label stored in CDR once reading is completed
+;; Fixup locations keeps a list of conses where the CAR is a callable to
+;; be called with the value of  the object associated to label stored in
+;; CDR once reading is completed
 (defvar *fixup-locations* nil)
 
 (defun fixup-backrefs ()
@@ -60,14 +67,18 @@
           (error "Internal error in fixup-backrefs: object #~S# not found"
                  (cdr fixup))))))
 
-;; A  function that  will  need to  return a  fixup  callback for  the  object that  is being  read.
-;; The returned callback will be called with the result of reading.
+;; A function that  will need to return a fixup  callback for the object
+;; that is  being read. The  returned callback  will be called  with the
+;; result of reading.
 (defvar *make-fixup-function*
   (lambda ()
     (error "Internal error in fixup creation during read")))
 
-(defun make-string-stream (string)
+(defun !make-string-input-stream (string)
   (cons string 0))
+
+#+jscl (setf (symbol-function 'make-string-input-stream)
+             (symbol-function '!make-string-input-stream))
 
 (defun %peek-char (stream &optional (look-ahead 0))
   (and (< (+ look-ahead (cdr stream)) (length (car stream)))
@@ -144,7 +155,7 @@
   (let ((ch (%peek-char stream)))
     (cond
       ((null ch)
-       (error "Unexpected EOF"))
+       (error "Unexpected end of file"))
       ((char= ch #\))
        (discard-char stream #\))
        nil)
@@ -202,9 +213,10 @@
     (keyword
      (and (find expression *features*) t))
     (list
-     ;; Macrocharacters for  conditional reading #+  and #- bind the  current package to  KEYWORD so
-     ;; features are  correctly interned.  For this  reason, AND, OR  and NOT  symbols will  also be
-     ;; keyword in feature expressions.
+     ;; Macrocharacters  for  conditional reading  #+  and  #- bind  the
+     ;; current package  to KEYWORD so features  are correctly interned.
+     ;; For this reason, AND, OR and NOT symbols will also be keyword in
+     ;; feature expressions.
      (ecase (first expression)
        (:and
         (every #'eval-feature-expression (rest expression)))
@@ -228,7 +240,9 @@
       (#\apostrophe
        (list 'function (ls-read stream eof-error-p eof-value t)))
       (#\.
-       (eval (ls-read stream)))
+       (if *read-eval*
+           (eval (ls-read stream))
+           nil))
       (#\(
        (do ((elements nil)
             (result nil)
@@ -321,8 +335,8 @@
                    (progn
                      (add-labelled-object id *future-value*)
                      (let ((obj (ls-read stream eof-error-p eof-value t)))
-                       ;; FIXME: somehow the more natural (setf (cdr (find-labelled-object id)) obj)
-                       ;; doesn't work
+                       ;; FIXME:  somehow the  more  natural (setf  (cdr
+                       ;; (find-labelled-object id)) obj) doesn't work
                        (rplacd (find-labelled-object id) obj)
                        obj))))
               ((#\0 #\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9)
@@ -494,8 +508,8 @@
             (setq exponent (+ (* exponent 10) value))
             (incf index))))
       (unless (= index size) (return))
-      ;; Everything went ok, we have a float
-      ;; XXX: Use FLOAT when implemented.
+      ;; Everything  went   ok,  we   have  a   float  XXX:   Use  FLOAT
+      ;; when implemented.
       (/ (* sign (expt 10.0 (* exponent-sign exponent)) number) divisor 1.0))))
 
 (defun !parse-integer (string junk-allow &optional (radix *read-base*))
@@ -598,7 +612,8 @@
   (funcall (if preserve-whitespace
                #'ls-read  ; TODO: READ-PRESERVING-WHITESPACE
                #'ls-read)
-           (make-string-stream (subseq string start (or end (length string)))) eof-error-p eof-value))
+           (make-string-input-stream string start (or end (length string)))
+           eof-error-p eof-value))
 
 #+jscl
 (defun read (&optional (stream *standard-input*) (eof-error-p t) (eof-value nil) (recursive-p nil))
