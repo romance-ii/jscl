@@ -14,6 +14,7 @@
 ;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
 
 (/debug "loading misc.lisp!")
+#-jscl (error "Don't build this file on the host")
 
 (defparameter *features* '(:jscl :common-lisp))
 
