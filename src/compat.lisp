@@ -35,14 +35,16 @@
 
 (defun j-reader (stream subchar arg)
   (declare (ignorable subchar arg))
-  (assert (char= #\: (read-char stream nil :eof)) nil "FFI descriptor must start with a semicolon.")
-  (let ((j-sequence ""))
-    (loop :for ch := (read-char stream nil #\Space)
-       :until (terminalp ch)
-       :do (setq j-sequence (concatenate 'string j-sequence
-                                         (if (char= #\: ch)
-                                             "." (string ch))))
-       :finally (return `(error ,(concat "#<Javascript FFI object "j-sequence ">"))))))
+  (assert (char= #\: (read-char stream nil :eof)) nil "FFI descriptor must start with a colon.")
+  (let ((descriptor (subseq (read-until stream #'terminalp) 1))
+        (subdescriptors nil))
+    (do* ((start 0 (1+ end))
+          (end (position #\: descriptor :start start)
+               (position #\: descriptor :start start)))
+         ((null end)
+          (push (subseq descriptor start) subdescriptors)
+          `(oget *root* ,@(reverse subdescriptors)))
+      (push (subseq descriptor start end) subdescriptors))))
 
 (set-dispatch-macro-character #\# #\J #'j-reader)
 
