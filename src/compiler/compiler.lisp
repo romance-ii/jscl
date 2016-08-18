@@ -1531,7 +1531,7 @@
 #+jscl (setf (symbol-function 'macroexpand-1) (symbol-function '!macroexpand-1))
 
 (defun convert-1 (sexp &optional multiple-value-p)
-  (multiple-value-bind (sexp expandedp) (macroexpand-1 sexp)
+  (multiple-value-bind (sexp expandedp) (!macroexpand-1 sexp)
     (when expandedp
       (return-from convert-1 (convert sexp multiple-value-p)))
     ;; The expression has been macroexpanded. Now compile it!
