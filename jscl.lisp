@@ -76,6 +76,7 @@
     ("read"          :both)
     ("conditions"    :both)
     ("backquote"     :both)
+    ("close"		:target)
     ("compiler"
      ("codegen"      :both)
      ("compiler"     :both))
