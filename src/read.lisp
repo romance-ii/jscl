@@ -77,7 +77,7 @@
 (defun !make-string-input-stream (string)
   (cons string 0))
 
-#+jscl (defun 'make-string-input-stream (s) (!make-string-input-stream s))
+#+jscl (defun'make-string-input-stream (s) (!make-string-input-stream s))
 
 (defun %peek-char (&optional (peek-type nil) (stream *standard-input*)
                              (eof-error-p t) (eof-value nil))
