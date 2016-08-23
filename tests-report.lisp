@@ -18,7 +18,7 @@
     (format t "~a test(s) passed unexpectedly.~%" *unexpected-passes*))
 
   (let (unbound)
-    (dolist (package '(:cl :jscl/ffi :jscl/xhr))
+    (dolist (package '( #-sbcl :cl :jscl/ffi :jscl/xhr))
       (when (find-package package)
         (do-external-symbols (symbol package)
           (unless (or (boundp symbol) (fboundp symbol))
