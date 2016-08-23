@@ -20,7 +20,7 @@
 
 (defpackage :jscl/ffi
   (:use :jscl)
-  (:export #:oget #:oget* #:oset #:oset* #:make-new #:new))
+  (:export #:oget #:oget* #:oset #:oset* #:make-new #:new #:*root*))
 
 (in-package :jscl)
 
