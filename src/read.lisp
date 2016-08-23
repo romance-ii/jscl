@@ -603,15 +603,21 @@
                (list 'quote (ls-read stream eof-error-p eof-value t)))
               ((char= ch #\grave_accent)
                (read-char stream nil nil)
+               (if (char= (peek-char nil stream nil nil) #\#)
+                   (warn "`# might be `#(vec) form, not yet supported;
+rewrite `#(v1 v2…) as (apply #'vector `(v1 v2…))"))
+               
                (list 'backquote (ls-read stream eof-error-p eof-value t)))
               ((char= ch #\")
                (read-char stream nil nil)
                (read-string stream))
               ((char= ch #\,)
                (read-char stream nil nil)
-               (if (eql (peek-char nil stream nil nil) #\@)
-                   (progn (read-char stream nil nil) (list 'unquote-splicing
-                                                           (ls-read stream eof-error-p eof-value t)))
+               (if (or (char= (peek-char nil stream nil nil) #\@)
+                       (char= (peek-char nil stream nil nil) #\.))
+                   (progn (read-char stream nil nil)
+                          (list 'unquote-splicing
+                                (ls-read stream eof-error-p eof-value t)))
                    (list 'unquote (ls-read stream eof-error-p eof-value t))))
               ((char= ch #\#)
                (read-sharp stream eof-error-p eof-value))
