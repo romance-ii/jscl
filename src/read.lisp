@@ -77,8 +77,7 @@
 (defun !make-string-input-stream (string)
   (cons string 0))
 
-#+jscl (setf (symbol-function 'make-string-input-stream)
-             (symbol-function '!make-string-input-stream))
+#+jscl (defun 'make-string-input-stream (s) (!make-string-input-stream s))
 
 (defun %peek-char (&optional (peek-type nil) (stream *standard-input*)
                              (eof-error-p t) (eof-value nil))
@@ -97,8 +96,11 @@
          (error "End of file in READ-CHAR"))
         (t eof-value)))
 
-#+jscl (setf (symbol-function 'peek-char) (symbol-function '%peek-char))
-#+jscl (setf (symbol-function 'read-char) (symbol-function '%read-char))
+#+jscl (defun peek-char  (&optional (peek-type nil) (stream *standard-input*)
+                                    (eof-error-p t) (eof-value nil))
+         (%peek-char peek-type stream eof-error-p eof-value))
+#+jscl (defun read-char (stream &optional (eof-error-p t) (eof-value nil))
+         (%read-char stream eof-error-p eof-value))
 
 
 (defun whitespacep (ch)
@@ -403,9 +405,10 @@
                                        (string-upcase (string ch))))))))
     result))
 
-;;; Parse a  string of  the form NAME,  PACKAGE:NAME or  PACKAGE::NAME and return  the name.  If the
-;;; string is of the form  1) or 3), but the symbol does not exist, it  will be created and interned
-;;; in that package.
+;;; Parse a string  of the form NAME, PACKAGE:NAME  or PACKAGE::NAME and
+;;; return the  name. If the  string is  of the form  1) or 3),  but the
+;;; symbol  does  not  exist,  it   will  be  created  and  interned  in
+;;; that package.
 (defun read-symbol (string)
   (let ((size (length string))
         package name internalp index)
