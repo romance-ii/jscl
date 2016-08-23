@@ -1453,6 +1453,11 @@
 (defun !macro-function (symbol)
   (unless (symbolp symbol)
     (error "`~S' is not a symbol." symbol))
+  #+sbcl
+  (when (eql symbol 'sb-int:quasiquote)
+    (return-from !macro-function 
+      (lambda (form)
+        (sb-impl::expand-quasiquote form nil))))
   (let ((b (lookup-in-lexenv symbol *environment* 'function)))
     (if (and b (eq (binding-type b) 'macro))
         (let ((expander (binding-value b)))
@@ -1530,7 +1535,7 @@
 
 #+jscl (setf (symbol-function 'macroexpand-1) (symbol-function '!macroexpand-1))
 
-(defun convert-1 (sexp &optional multiple-value-p)
+(defun convert-1 (sexp &optional multiple-value-p) 
   (multiple-value-bind (sexp expandedp) (!macroexpand-1 sexp)
     (when expandedp
       (return-from convert-1 (convert sexp multiple-value-p)))
