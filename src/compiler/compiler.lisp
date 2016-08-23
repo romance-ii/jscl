@@ -1533,7 +1533,7 @@
            (return ,(convert (car (last sexps)) *multiple-value-p*)))
         `(progn ,@(mapcar #'convert sexps)))))
 
-#+jscl (setf (symbol-function 'macroexpand-1) (symbol-function '!macroexpand-1))
+#+jscl (defun macroexpand-1 (form) (!macroexpand-1 form))
 
 (defun convert-1 (sexp &optional multiple-value-p) 
   (multiple-value-bind (sexp expandedp) (!macroexpand-1 sexp)
