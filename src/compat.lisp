@@ -43,7 +43,7 @@
                (position #\: descriptor :start start)))
          ((null end)
           (push (subseq descriptor start) subdescriptors)
-          `(oget *root* ,@(reverse subdescriptors)))
+          `(jscl/ffi::oget jscl/ffi::*root* ,@(reverse subdescriptors)))
       (push (subseq descriptor start end) subdescriptors))))
 
 (set-dispatch-macro-character #\# #\J #'j-reader)
