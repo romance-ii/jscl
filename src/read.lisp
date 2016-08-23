@@ -2,33 +2,36 @@
 
 ;; Copyright (C) 2012, 2013 David Vazquez Copyright (C) 2012 Raimon Grau
 
-;; JSCL is  free software:  you can  redistribute it  and/or modify it  under the  terms of  the GNU
-;; General Public  License as published  by the  Free Software Foundation,  either version 3  of the
-;; License, or (at your option) any later version.
+;; JSCL is free software: you can redistribute it and/or modify it under
+;; the terms of the GNU General  Public License as published by the Free
+;; Software Foundation,  either version  3 of the  License, or  (at your
+;; option) any later version.
 ;;
-;; JSCL is distributed  in the hope that it  will be useful, but WITHOUT ANY  WARRANTY; without even
-;; the implied warranty of MERCHANTABILITY or FITNESS  FOR A PARTICULAR PURPOSE. See the GNU General
-;; Public License for more details.
+;; JSCL is distributed  in the hope that it will  be useful, but WITHOUT
+;; ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+;; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+;; for more details.
 ;;
-;; You should have  received a copy of the GNU  General Public License along with JSCL.  If not, see
-;; <http://www.gnu.org/licenses/>.
+;; You should  have received a  copy of  the GNU General  Public License
+;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
 
 (in-package :jscl)
 (/debug "loading read.lisp!")
 
 ;;;; Reader
 
-;;; If it is not NIL,  we do not want to read the expression but just  ignore it. For example, it is
-;;; used in conditional reads #+.
+;;; If it  is not NIL, we  do not want  to read the expression  but just
+;;; ignore it. For example, it is used in conditional reads #+.
 (defvar *read-skip-p* nil)
 
-;;; The Lisp reader, parse strings and return Lisp  objects. The main entry points are `ls-read' and
-;;; `ls-read-from-string'.
+;;; The Lisp  reader, parse  strings and return  Lisp objects.  The main
+;;; entry points are `ls-read' and `ls-read-from-string'.
 
 ;;; #= / ## implementation
 
-;; For now  associations label->object are kept  in a plist  May be it  makes sense to use  a vector
-;; instead if speed is considered a problem with many labelled objects
+;; For now  associations label->object  are kept  in a  plist May  be it
+;; makes sense to use a vector  instead if speed is considered a problem
+;; with many labelled objects
 (defvar *labelled-objects* nil)
 
 (defun new-labelled-objects-table ()
@@ -88,7 +91,7 @@
 
 (defun %read-char (stream &optional (eof-error-p t) (eof-value nil))
   (cond ((< (cdr stream) (length (car stream)))
-       (prog1 (char (car stream) (cdr stream))
+         (prog1 (char (car stream) (cdr stream))
            (rplacd stream (1+ (cdr stream)))))
         (eof-error-p
          (error "End of file in READ-CHAR"))
@@ -281,16 +284,16 @@
               (read-char stream) ; discard U
               (cond ((char=      #\+ (peek-char nil stream nil nil))
                      (read-char stream nil nil) ; +
-              (let ((*read-base* 16))
-                (code-char (read-integer-from-stream stream))))
-             (t (let ((cname
+                     (let ((*read-base* 16))
+                       (code-char (read-integer-from-stream stream))))
+                    (t (let ((cname
                               (concatenate 'string "U" (string (read-char stream nil nil))
                                            (read-until stream #'terminalp))))
                          (let ((ch (name-char cname)))
                            (or ch (char cname 0)))))))
              (t (let ((cname
                        (concatenate 'string (string (read-char stream nil nil))
-                               (read-until stream #'terminalp))))
+                                    (read-until stream #'terminalp))))
                   (let ((ch (name-char cname)))
                     (or ch (char cname 0)))))))
       ((#\+ #\-)
@@ -600,15 +603,21 @@
                (list 'quote (ls-read stream eof-error-p eof-value t)))
               ((char= ch #\grave_accent)
                (read-char stream nil nil)
+               (if (char= (peek-char nil stream nil nil) #\#)
+                   (warn "`# might be `#(vec) form, not yet supported;
+rewrite `#(v1 v2…) as (apply #'vector `(v1 v2…))"))
+               
                (list 'backquote (ls-read stream eof-error-p eof-value t)))
               ((char= ch #\")
                (read-char stream nil nil)
                (read-string stream))
               ((char= ch #\,)
                (read-char stream nil nil)
-               (if (eql (peek-char nil stream nil nil) #\@)
-                   (progn (read-char stream nil nil) (list 'unquote-splicing
-                                                    (ls-read stream eof-error-p eof-value t)))
+               (if (or (char= (peek-char nil stream nil nil) #\@)
+                       (char= (peek-char nil stream nil nil) #\.))
+                   (progn (read-char stream nil nil)
+                          (list 'unquote-splicing
+                                                           (ls-read stream eof-error-p eof-value t)))
                    (list 'unquote (ls-read stream eof-error-p eof-value t))))
               ((char= ch #\#)
                (read-sharp stream eof-error-p eof-value))
