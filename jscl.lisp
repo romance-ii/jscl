@@ -18,6 +18,10 @@
   (:export #:bootstrap #:run-tests-in-host
            #:write-javascript-for-files #:compile-application))
 
+(defpackage :jscl/ffi
+  (:use :jscl)
+  (:export #:oget #:oget* #:oset #:oset* #:make-new #:new))
+
 (in-package :jscl)
 
 (defvar *base-directory*
