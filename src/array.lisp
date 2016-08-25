@@ -13,6 +13,8 @@
 ;; You should  have received a  copy of  the GNU General  Public License
 ;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
 
+(in-package :jscl)
+
 (/debug "loading array.lisp!")
 
 (defun upgraded-array-element-type (typespec &optional environment)
@@ -52,14 +54,14 @@
 (defun array-element-type (array)
   (unless (arrayp array)
     (error "~S is not an array." array))
-  (if (eq (oget array "stringp") 1)
+  (if (eq (jscl/ffi:oget array "stringp") 1)
       'character
-      (oget array "type")))
+      (jscl/ffi:oget array "type")))
 
 (defun array-dimensions (array)
   (unless (arrayp array)
     (error "~S is not an array." array))
-  (oget array "dimensions"))
+  (jscl/ffi:oget array "dimensions"))
 
 ;; TODO: Error checking
 (defun array-dimension (array axis)

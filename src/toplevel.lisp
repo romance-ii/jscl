@@ -300,8 +300,8 @@
 
 
 (if (find :node *features*)
-    (setq *root* (%js-vref "global"))
-    (setq *root* (%js-vref "window")))
+    (setq jscl/ffi:*root* (%js-vref "global"))
+    (setq jscl/ffi:*root* (%js-vref "window")))
 
 
 

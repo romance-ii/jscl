@@ -21,6 +21,10 @@
 ;;; Lisp world from scratch. This code  has to define enough language to
 ;;; the compiler to be able to run.
 
+(in-package :jscl)
+
+#+jscl (error "This should not be getting evaluated within JSCL.")
+#-jscl-xc (error "This should not be getting evaluated except during JSCL-XC.")
 (/debug "loading boot.lisp!")
 
 (eval-when (:compile-toplevel)
@@ -165,18 +169,25 @@
               (progn ,@body)
               (cond ,@(rest clausules))))))))
 
+(defun ensure-list (list-or-atom)
+  (if (listp list-or-atom) 
+      list-or-atom
+      (list list-or-atom)))
+
 (defmacro case (form &rest clausules)
   (let ((!form (gensym)))
     `(let ((,!form ,form))
        (cond
          ,@(mapcar (lambda (clausule)
-                     (destructuring-bind (keys &body body)
-                         clausule
-                       (if (or (eq keys 't) (eq keys 'otherwise))
-                           `(t nil ,@body)
-                           (let ((keys (if (listp keys) keys (list keys))))
-                             `((or ,@(mapcar (lambda (key) `(eql ,!form ',key)) keys))
-                               nil ,@body)))))
+                     (destructuring-bind (keys &body body) clausule
+                       (cond ((member keys '(t otherwise))
+                              `(t nil ,@body))
+                             ((listp keys)
+                              `((or ,@(mapcar (lambda (key)
+                                                `(eql ,!form ',key))
+                                              keys)) 
+                                nil ,@body))
+                             (t `(,keys nil ,@body)))))
                    clausules)))))
 
 (defmacro ecase (form &rest clausules)
@@ -208,7 +219,9 @@
     (t
      (let ((g (gensym)))
        `(let ((,g ,(car forms)))
-          (if ,g ,g (or ,@(cdr forms))))))))
+          (if ,g 
+              ,g
+              (or ,@(cdr forms))))))))
 
 (defmacro prog1 (form &body body)
   (let ((value (gensym)))
@@ -227,60 +240,56 @@
          (tagbody ,@forms)))))
 
 (defmacro psetq (&rest pairs)
-  (let (;; For each pair, we store here a list of the form
-        ;; (VARIABLE GENSYM VALUE).
+  (let (;;  For each pair,  we store here a  list of the  form (VARIABLE
+        ;; GENSYM VALUE).
         (assignments '()))
     (while t
       (cond
         ((null pairs) (return))
         ((null (cdr pairs))
-         (error "Odd paris in PSETQ"))
+         (error "Odd pairs in PSETQ"))
         (t
          (let ((variable (car pairs))
                (value (cadr pairs)))
-           (push `(,variable ,(gensym) ,value)  assignments)
+           (push (list variable (gensym (string variable)) value) 
+                 assignments)
            (setq pairs (cddr pairs))))))
     (setq assignments (reverse assignments))
     ;;
     `(let ,(mapcar #'cdr assignments)
-       (setq ,@(!reduce #'append (mapcar #'butlast assignments) nil)))))
+       (setq ,@(mapcan #'butlast assignments) nil))))
 
-(defmacro do (varlist endlist &body body)
+(defmacro do/do* (do/do* varlist endlist &body body)
   `(block nil
-     (let ,(mapcar (lambda (x) (if (symbolp x)
-                                   (list x nil)
-                                   (list (first x) (second x)))) varlist)
+     (,(ecase do/do* (do 'let) (do* 'let*))
+       ,(mapcar (lambda (x)
+                  (if (symbolp x)
+                      (list x nil)
+                      (list (first x) (second x)))) 
+                varlist)
        (while t
          (when ,(car endlist)
            (return (progn ,@(cdr endlist))))
          (tagbody ,@body)
          (psetq
-          ,@(apply #'append
-                   (mapcar (lambda (v)
-                             (and (listp v)
-                                  (consp (cddr v))
-                                  (list (first v) (third v))))
-                           varlist)))))))
+          ,@(mapcan (lambda (v)
+                      (and (listp v)
+                           (consp (cddr v))
+                           (list (first v) (third v))))
+                    varlist))))))
+
+(defmacro do (varlist endlist &body body)
+  (do/do* 'do varlist endlist body)  )
 
 (defmacro do* (varlist endlist &body body)
-  `(block nil
-     (let* ,(mapcar (lambda (x1) (if (symbolp x1)
-                                     (list x1 nil)
-                                     (list (first x1) (second x1)))) varlist)
-       (while t
-         (when ,(car endlist)
-           (return (progn ,@(cdr endlist))))
-         (tagbody ,@body)
-         (setq
-          ,@(apply #'append
-                   (mapcar (lambda (v)
-                             (and (listp v)
-                                  (consp (cddr v))
-                                  (list (first v) (third v))))
-                           varlist)))))))
+  (do/do* 'do* varlist endlist body))
 
 (defmacro declare (&rest declarations)
-  "Early DECLARE ignores everything."
+  "Early DECLARE ignores everything. This only exists so that during the
+  bootstrapping process,  we can have  declarations that SBCL  will read
+  and  they won't  make JSCL  choke. Once  the various  places in  which
+  DECLARE forms  are valid have  appropriate support to at  least ignore
+  them, this can be removed."
   nil)
 
 (defmacro assert (test &rest _)
@@ -289,14 +298,12 @@ Note, this will  still signal errors itself if it  actually is triggered
 before  princ-to-string is  available, but  it needs  to be  declared as
 a macro before  anything else gets loaded, and  currently the compiler's
 macro cache is so aggressive that it cannot be redefined."
-  #-jscl (declare (ignore _))
   `(unless ,test
      (error "Assertion failed: NOT ~s" ',test)))
 
-(defmacro check-type (var type &rest _)
+(defmacro check-type (place type &optional type-name)
   "Early/minimalist CHECK-TYPE using ETYPECASE"
-  #-jscl (declare (ignore _))
-  `(etypecase ,var (,type nil)))
+  `(etypecase ,place (,type nil)))
 
 (defmacro loop (&body body)
   `(while t ,@body))
@@ -308,8 +315,7 @@ macro cache is so aggressive that it cannot be redefined."
     (not (apply x args))))
 
 (defun constantly (x)
-  (lambda (&rest args)
-    (declare (ignore args))
+  (lambda (&rest)
     x))
 
 (defun code-char (x)

@@ -13,6 +13,8 @@
 ;; You should  have received a  copy of  the GNU General  Public License
 ;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
 
+(in-package :jscl)
+
 ;;; Plain Javascript  objects are  the natural  way to  implement Common
 ;;; Lisp hash tables. However, there  is a big differences betweent them
 ;;; which we need to work around. Javascript objects require the keys to
@@ -37,7 +39,7 @@
      (unless (in "$$jscl_id" x)
        (oset (format nil "$~d" *eq-hash-counter*) x "$$jscl_id")
        (incf *eq-hash-counter*))
-     (oget x "$$jscl_id"))))
+     (jscl/ffi:oget x "$$jscl_id"))))
 
 ;;; We do not have bignums, so eql is equivalent to eq.
 (defun eql-hash (x)
@@ -77,7 +79,7 @@
          (hash (funcall (cadr hash-table) key))
          (exists (in hash obj)))
     (if exists
-        (values (cdr (oget obj hash)) t)
+        (values (cdr (jscl/ffi:oget obj hash)) t)
         (values default nil))))
 
 (defun sethash (new-value key hash-table)
