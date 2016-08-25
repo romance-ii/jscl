@@ -13,6 +13,8 @@
 ;; You should  have received a  copy of  the GNU General  Public License
 ;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
 
+(in-package :jscl)
+
 (/debug "loading print.lisp!")
 
 ;;; HACK HACK — if an error  occurs during startup before toplevel binds
@@ -252,7 +254,7 @@ to streams."
          (write-string form stream)))
     ;; Functions
     (function
-     (let ((name #+jscl (oget form "fname")
+     (let ((name #+jscl (jscl/ffi:oget form "fname")
                  #-jscl nil))
        (if name
            (simple-format stream "#<FUNCTION ~a>" name)

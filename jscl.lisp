@@ -19,8 +19,8 @@
            #:write-javascript-for-files #:compile-application))
 
 (defpackage :jscl/ffi
-  (:use :jscl)
-  (:export #:oget #:oget* #:oset #:oset* #:make-new #:new #:*root*))
+  (:use :cl :jscl)
+  (:export #:oget #:oget* #:make-new #:new #:*root*))
 
 (in-package :jscl)
 
@@ -198,7 +198,7 @@
         (write-javascript-for-files files out))))
 
 (defun bootstrap (&optional verbose)
-  (let ((*features* (list* :jscl :jscl-xc *features*))
+  (let ((*features* (cons :jscl-xc *features*))
         (*package* (find-package "JSCL"))
         (*default-pathname-defaults* *base-directory*))
     (setq *environment* (make-lexenv))

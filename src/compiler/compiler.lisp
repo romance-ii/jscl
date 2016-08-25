@@ -511,11 +511,11 @@
          (setq pairs (cddr pairs)))))
     `(progn ,@result)))
 
-;;; Compilation of literals an object dumping
+;;; Compilation of literals and object dumping
 
-;;; BOOTSTRAP MAGIC: We record the macro definitions as lists during
-;;; the bootstrap. Once everything is compiled, we want to dump the
-;;; whole global environment to the output file to reproduce it in the
+;;; BOOTSTRAP MAGIC: We record the macro definitions as lists during the
+;;; bootstrap. Once  everything is compiled,  we want to dump  the whole
+;;; global  environment  to the  output  file  to  reproduce it  in  the
 ;;; run-time. However, the environment must contain expander functions
 ;;; rather than lists. We do not know how to dump function objects
 ;;; itself, so we mark the list definitions with this object and the
@@ -527,7 +527,7 @@
 ;;; this symbol.
 (defvar *magic-unquote-marker* (gensym "MAGIC-UNQUOTE"))
 
-#-jscl
+#-jscl-xc
 (setf (macro-function *magic-unquote-marker*)
       (lambda (form &optional environment)
         (declare (ignore environment))
@@ -1145,7 +1145,7 @@
   `(new (call-internal |Symbol| (call-internal |lisp_to_js| ,name))))
 
 (define-compilation symbol-name (x)
-  (convert `(oget ,x "name")))
+  (convert `(jscl/ffi:oget ,x "name")))
 
 (define-builtin set (symbol value)
   `(= (get ,symbol "value") ,value))
@@ -1341,7 +1341,7 @@
                     tmp))))))
 
 (define-raw-builtin oget (object key &rest keys)
-  `(call-internal |js_to_lisp| ,(convert `(oget* ,object ,key ,@keys))))
+  `(call-internal |js_to_lisp| ,(convert `(jscl/ffi:oget* ,object ,key ,@keys))))
 
 (define-raw-builtin oset (value object key &rest keys)
   (convert `(oset* (lisp-to-js ,value) ,object ,key ,@keys)))
@@ -1494,34 +1494,52 @@
     (t
      (values form nil))))
 
-(defun compile-funcall (function args)
-  (let* ((arglist (cons (if *multiple-value-p* '|values| '(internal |pv|))
-                        (mapcar #'convert args))))
-    (cond
-      ((translate-function function)
-       `(call ,(translate-function function) ,@arglist))
-      ((symbolp function)
+(defun compile-funcall/function (function arglist)
        (fn-info function :called t)
        ;; This code will work even if the symbol-function is unbound, as
        ;; it   is   represented   by   a  function   that   throws   the
        ;; expected error.
        `(method-call ,(convert `',function) "fvalue" ,@arglist))
-      ((and (consp function) (eq (car function) 'lambda))
+
+(defun compile-funcall/translate-function (function arglist)
+  `(call ,(translate-function function) ,@arglist))
+
+(defun compile-funcall/lambda (function arglist)
        `(call ,(convert `(function ,function)) ,@arglist))
-      ((and (consp function) (eq (car function) 'oget))
-       `(call-internal |js_to_lisp|
+
+(defun compile-funcall/oget (function args)
+  `(call-internal
+    |js_to_lisp|
                        (call ,(reduce (lambda (obj p)
                                         `(property ,obj (call-internal |xstring| ,p)))
                                       (mapcar #'convert (cdr function)))
                              ,@(mapcar (lambda (s)
                                          `(call-internal |lisp_to_js| ,(convert s)))
                                        args))))
-      ((consp function)
-       (error "Function designator ~s is not a lambda form not an oget; car is ~a :: ~a"
+
+(defun compile-funcall/error (function)
+  (error "Function designator ~s is not a lambda form nor an oget; car is ~a::~a"
               function
-              (symbol-package (car function)) (symbol-name (car function))))
-      (t
-       (error "Bad function designator `~S'" function)))))
+         (package-name (symbol-package (car function)))
+         (symbol-name (car function))))
+
+(defun compile-funcall (function args)
+  (let* ((arglist (cons (if *multiple-value-p* '|values| '(internal |pv|))
+                        (mapcar #'convert args)))) 
+    (cond
+      ((translate-function function)
+       (compile-funcall/translate-function function arglist))
+      ((and (symbolp function) (!macro-function function))
+       (error "Compiler error: Macro function was not expanded: ~s" function))
+      ((symbolp function)
+       (compile-funcall/function function arglist))
+      ((and (consp function) (eql (car function) 'lambda))
+       (compile-funcall/lambda function arglist))
+      ((and (consp function) (member (car function) '(jscl::oget jscl/ffi::oget)))
+       (compile-funcall/oget function args))
+      ((consp function)
+       (compile-funcall/error function))
+      (t (error "Bad function designator `~S'" function)))))
 
 (defun convert-block (sexps &optional return-last-p decls-allowed-p)
   (multiple-value-bind (sexps decls)
@@ -1535,7 +1553,31 @@
 
 #+jscl (defun macroexpand-1 (form) (!macroexpand-1 form))
 
-(defun convert-1 (sexp &optional multiple-value-p)
+(defun inline-builtin-p (name)
+  (and (gethash name *builtins*)
+       (not (claimp name 'function 'notinline))))
+
+(defun special-form-p (name)
+  (gethash name *compilations*))
+
+(defun compile-special-form (name args)
+  (let ((comp (gethash name *compilations*)))
+    (apply comp args)))
+
+(defun compile-builtin-function (name args)
+  (apply (gethash name *builtins*) args))
+
+(defun compile-sexp (sexp)
+  (let ((name (car sexp))
+        (args (cdr sexp)))
+    (cond
+      ((special-form-p name)
+       (compile-special-form name args))
+      ((inline-builtin-p name)
+       (compile-builtin-function name args))
+      (t (compile-funcall name args)))))
+
+(defun convert-1 (sexp &optional multiple-value-p) 
   (multiple-value-bind (sexp expandedp) (!macroexpand-1 sexp)
     (when expandedp
       (return-from convert-1 (convert sexp multiple-value-p)))
@@ -1553,22 +1595,12 @@
               `(get ,(convert `',sexp) "value"))
              (t
               (convert `(symbol-value ',sexp))))))
-        ((or (integerp sexp) (floatp sexp) (characterp sexp) (stringp sexp) (arrayp sexp))
+        ((or (integerp sexp) (floatp sexp)
+             (characterp sexp) (stringp sexp)
+             (arrayp sexp))
          (literal sexp))
         ((listp sexp)
-         (let ((name (car sexp))
-               (args (cdr sexp)))
-           (cond
-             ;; Special forms
-             ((gethash name *compilations*)
-              (let ((comp (gethash name *compilations*)))
-                (apply comp args)))
-             ;; Built-in functions
-             ((and (gethash name *builtins*)
-                   (not (claimp name 'function 'notinline)))
-              (apply (gethash name *builtins*) args))
-             (t
-              (compile-funcall name args)))))
+         (compile-sexp sexp))
         (t
          (error "How should I compile `~S'?" sexp))))))
 
@@ -1593,6 +1625,12 @@
   ;; Process as toplevel
   (let ((*convert-level* -1))
     (cond
+      ;; hack work-around for IN-PACKAGE not working
+      ((and (consp sexp)
+            (eq (car sexp) 'in-package)
+            (= 2 (length sexp)))
+       (setf *package* (find-package (second sexp)))
+       nil)
       ;; Non-empty toplevel progn
       ((and (consp sexp)
             (eq (car sexp) 'progn)

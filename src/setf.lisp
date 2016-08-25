@@ -12,12 +12,12 @@
 ;;
 ;; You should  have received a  copy of  the GNU General  Public License
 ;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
-
+(in-package :jscl)
 (/debug "loading setf!")
 
 ;;; Generalized references (SETF)
 
-(eval-when(:compile-toplevel :load-toplevel :execute)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (defvar *setf-expanders* nil)
   (defun !get-setf-expansion (place)
     (if (symbolp place)

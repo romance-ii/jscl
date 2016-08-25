@@ -15,6 +15,7 @@
 ;; You should  have received a  copy of  the GNU General  Public License
 ;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
 
+(in-package :jscl)
 (/debug "loading lambda-list.lisp!")
 
 
@@ -341,11 +342,11 @@
 ;;; defmacro to avoid a circularity. So just define the macro function
 ;;; explicitly.
 
-#-jscl
+#-jscl-xc
 (defmacro !destructuring-bind (lambda-list expression &body body)
   (apply #'!expand-destructuring-bind lambda-list expression body))
 
-#+jscl
+#+jscl-xc
 (eval-when (:compile-toplevel)
   (let ((macroexpander
          '#'(lambda (form &optional environment)

@@ -12,7 +12,7 @@
 ;;
 ;; You should  have received a  copy of  the GNU General  Public License
 ;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
-
+(in-package :jscl)
 (/debug "loading sequence.lisp!")
 
 (defun sequencep (thing)
@@ -26,7 +26,7 @@
     ((stringp seq)
      (string-length seq))
     ((arrayp seq)
-     (oget seq "length"))
+     (jscl/ffi:oget seq "length"))
     ((listp seq)
      (list-length seq))
     (t

@@ -13,6 +13,10 @@
 ;; You should  have received a  copy of  the GNU General  Public License
 ;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
 
+(in-package :jscl/ffi)
+
+#-jscl (error "Don't compile this file in the host compiler.")
+
 (/debug "loading ffi.lisp!")
 
 (defvar *root*)
@@ -52,3 +56,5 @@
 (%js-vset "eval_in_lisp"
           (lambda (form)
             (eval (read-from-string form))))
+
+(in-package :jscl)

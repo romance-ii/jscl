@@ -13,8 +13,11 @@
 ;; You should  have received a  copy of  the GNU General  Public License
 ;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
 
+(in-package :jscl)
+
 #-jscl (error "Don't compile this file on the host")
 (/debug "loading package.lisp!")
+
 
 (defvar *package-table*
   (%js-vref "packages"))
@@ -28,7 +31,7 @@
 (defun find-package (package-designator)
   (if (packagep package-designator)
       package-designator
-      (oget *package-table* (string package-designator))))
+      (jscl/ffi:oget *package-table* (string package-designator))))
 
 (defun delete-package (package-designator)
   ;; TODO: Signal  a correctlable  error in case  the package-designator
@@ -41,11 +44,11 @@
   (when (find-package name)
     (error "A package namded `~a' already exists." name))
   (let ((package (new)))
-    (setf (oget package "packageName") name)
-    (setf (oget package "symbols") (new))
-    (setf (oget package "exports") (new))
-    (setf (oget package "use") use)
-    (setf (oget *package-table* name) package)
+    (setf (jscl/ffi:oget package "packageName") name)
+    (setf (jscl/ffi:oget package "symbols") (new))
+    (setf (jscl/ffi:oget package "exports") (new))
+    (setf (jscl/ffi:oget package "use") use)
+    (setf (jscl/ffi:oget *package-table* name) package)
     package))
 
 (defun resolve-package-list (packages)
@@ -64,19 +67,19 @@
 
 (defun package-name (package-designator)
   (let ((package (find-package-or-fail package-designator)))
-    (oget package "packageName")))
+    (jscl/ffi:oget package "packageName")))
 
 (defun %package-symbols (package-designator)
   (let ((package (find-package-or-fail package-designator)))
-    (oget package "symbols")))
+    (jscl/ffi:oget package "symbols")))
 
 (defun package-use-list (package-designator)
   (let ((package (find-package-or-fail package-designator)))
-    (oget package "use")))
+    (jscl/ffi:oget package "use")))
 
 (defun %package-external-symbols (package-designator)
   (let ((package (find-package-or-fail package-designator)))
-    (oget package "exports")))
+    (jscl/ffi:oget package "exports")))
 
 (defvar *user-package*
   (make-package "CL-USER" :use (list (find-package "CL"))))
@@ -110,7 +113,7 @@
 
 
 (defun redefine-package (package use)
-  (setf (oget package "use") use)
+  (setf (jscl/ffi:oget package "use") use)
   package)
 
 (defun %defpackage (name use)
@@ -127,14 +130,14 @@
          (symbols (%package-symbols package)))
     (cond
       ((in name externals)
-       (values (oget externals name) :external))
+       (values (jscl/ffi:oget externals name) :external))
       ((in name symbols)
-       (values (oget symbols name) :internal))
+       (values (jscl/ffi:oget symbols name) :internal))
       (t
        (dolist (used (package-use-list package) (values nil nil))
          (let ((exports (%package-external-symbols used)))
            (when (in name exports)
-             (return (values (oget exports name) :inherited)))))))))
+             (return (values (jscl/ffi:oget exports name) :inherited)))))))))
 
 
 ;;; It is a function to call when  a symbol is interned. The function is
@@ -148,26 +151,26 @@
       (if foundp
           (values symbol foundp)
           (let ((symbols (%package-symbols package)))
-            (oget symbols name)
+            (jscl/ffi:oget symbols name)
             (let ((symbol (make-symbol name)))
-              (setf (oget symbol "package") package)
+              (setf (jscl/ffi:oget symbol "package") package)
               (when (eq package *keyword-package*)
-                (setf (oget symbol "value") symbol)
+                (setf (jscl/ffi:oget symbol "value") symbol)
                 (export (list symbol) package))
               (when *intern-hook*
                 (funcall *intern-hook* symbol))
-              (setf (oget symbols name) symbol)
+              (setf (jscl/ffi:oget symbols name) symbol)
               (values symbol nil)))))))
 
 (defun symbol-package (symbol)
   (unless (symbolp symbol)
     (error "`~S' is not a symbol." symbol))
-  (oget symbol "package"))
+  (jscl/ffi:oget symbol "package"))
 
 (defun export (symbols &optional (package *package*))
   (let ((exports (%package-external-symbols package)))
     (dolist (symb symbols t)
-      (setf (oget exports (symbol-name symb)) symb))))
+      (setf (jscl/ffi:oget exports (symbol-name symb)) symb))))
 
 (defun %map-external-symbols (function package)
   (map-for-in function (%package-external-symbols package)))
@@ -218,3 +221,4 @@
                       (pushnew symbol symbols :test #'eq))))
                 *package-table*)
     symbols))
+

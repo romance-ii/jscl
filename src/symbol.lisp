@@ -12,13 +12,15 @@
 ;;
 ;; You should  have received a  copy of  the GNU General  Public License
 ;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
+(in-package :jscl)
+#-jscl (error "Don't compile this file on the host compiler")
 
 (defun symbol-plist (x)
   (cond
     ((not (symbolp x))
      (error "`~a' is not a symbol." x))
     ((in "plist" x)
-     (oget* x "plist"))))
+     (jscl/ffi:oget* x "plist"))))
 
 (defun set-symbol-plist (new-value x)
   (unless (symbolp x )
