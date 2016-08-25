@@ -257,7 +257,7 @@
        (setq ,@(mapcan #'butlast assignments) nil))))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (defmacro do/do* (do/do* varlist endlist &body body)
+  (defun do/do* (do/do* varlist endlist &body body)
     `(block nil
        (,(ecase do/do* (do 'let) (do* 'let*))
          ,(mapcar (lambda (x)
