@@ -259,24 +259,25 @@
     `(let ,(mapcar #'cdr assignments)
        (setq ,@(mapcan #'butlast assignments) nil))))
 
-(defmacro do/do* (do/do* varlist endlist &body body)
-  `(block nil
-     (,(ecase do/do* (do 'let) (do* 'let*))
-       ,(mapcar (lambda (x)
-                  (if (symbolp x)
-                      (list x nil)
-                      (list (first x) (second x))))
-                varlist)
-       (while t
-         (when ,(car endlist)
-           (return (progn ,@(cdr endlist))))
-         (tagbody ,@body)
-         (psetq
-          ,@(mapcan (lambda (v)
-                      (and (listp v)
-                           (consp (cddr v))
-                           (list (first v) (third v))))
-                    varlist))))))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defmacro do/do* (do/do* varlist endlist &body body)
+    `(block nil
+       (,(ecase do/do* (do 'let) (do* 'let*))
+         ,(mapcar (lambda (x)
+                    (if (symbolp x)
+                        (list x nil)
+                        (list (first x) (second x))))
+                  varlist)
+         (while t
+           (when ,(car endlist)
+             (return (progn ,@(cdr endlist))))
+           (tagbody ,@body)
+           (psetq
+            ,@(mapcan (lambda (v)
+                        (and (listp v)
+                             (consp (cddr v))
+                             (list (first v) (third v))))
+                      varlist)))))))
 
 (defmacro do (varlist endlist &body body)
   (do/do* 'do varlist endlist body)  )
