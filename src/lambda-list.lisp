@@ -219,9 +219,9 @@
 ;;; Validate a list of keyword arguments.
 (defun validate-keyvars (list keyword-list &optional allow-other-keys)
   (let  (;; If  it is  non-NIL,  we have  to check  for unknown  keyword
-        ;; arguments in the list to signal an error in that case.
-        (allow-other-keys
-         (or allow-other-keys (keyword-lookup :allow-other-keys list))))
+         ;; arguments in the list to signal an error in that case.
+         (allow-other-keys
+          (or allow-other-keys (keyword-lookup :allow-other-keys list))))
     (unless allow-other-keys
       (do-keywords key value list
         (declare (ignore value))
@@ -233,7 +233,7 @@
       (unless (symbolp key)
         (error "Keyword argument `~S' is not a symbol." key))
       (unless (consp (cdr tail))
-        (error "Odd number of keyword arguments.")))))
+        (error "Odd number of keyword arguments; dangling ~s" tail)))))
 
 
 (defun !expand-destructuring-bind (lambda-list expression &rest body)
@@ -309,7 +309,9 @@
                              ;; to say, there is  no more arguments that
                              ;; we expect.
                              (cond
-                               (keywords (compute-pbindings pattern `(validate-keyvars ,chain ',keywords ,(lambda-list-allow-other-keys ll))))
+                               (keywords (compute-pbindings pattern
+                                                            `(validate-keyvars ,chain ',keywords 
+                                                                               ,(lambda-list-allow-other-keys ll))))
                                (restvar  (compute-pbindings pattern chain))
                                (t        (compute-pbindings pattern `(validate-max-args ,chain))))))
                        (when (lambda-list-keyvars ll)

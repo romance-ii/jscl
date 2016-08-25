@@ -257,10 +257,10 @@
     (setq assignments (reverse assignments))
     ;;
     `(let ,(mapcar #'cdr assignments)
-       (setq ,@(mapcan #'butlast assignments) nil))))
+       (setq ,@(mapcan #'butlast assignments)))))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (defun do/do* (do/do* varlist endlist body)
+  (defun do/do* (do/do* varlist endlist body) 
     `(block nil
        (,(ecase do/do* (do 'let) (do* 'let*))
          ,(mapcar (lambda (x)
@@ -272,12 +272,11 @@
            (when ,(car endlist)
              (return (progn ,@(cdr endlist))))
            (tagbody ,@body)
-           (psetq
-            ,@(mapcan (lambda (v)
-                        (and (listp v)
-                             (consp (cddr v))
-                             (list (first v) (third v))))
-                      varlist)))))))
+           (,(ecase do/do* (do 'psetq) (do* 'setq))
+             ,@(mapcan (lambda (v) 
+                         (and (listp v) (consp (cddr v))
+                              (list (first v) (third v))))
+                       varlist)))))))
 
 (defmacro do (varlist endlist &body body)
   (do/do* 'do varlist endlist body)  )

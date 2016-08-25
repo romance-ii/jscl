@@ -1607,6 +1607,14 @@
 (defun convert (sexp &optional multiple-value-p)
   (convert-1 sexp multiple-value-p))
 
+(defun !macroexpand (form)
+  (while t
+    (multiple-value-bind (new-form expandedp) (!macroexpand-1 form)
+      (if expandedp
+          (setq form new-form)
+          (return-from !macroexpand new-form)))))
+
+#+jscl (defun macroexpand (form) (!macroexpand form))
 
 (defvar *compile-print-toplevels* nil)
 
