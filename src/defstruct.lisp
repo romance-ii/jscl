@@ -12,7 +12,9 @@
 ;;
 ;; You should  have received a  copy of  the GNU General  Public License
 ;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
+
 (in-package :jscl)
+
 (/debug "loading defstruct.lisp!")
 
 ;; A very simple defstruct built on lists. It supports just slot with an
@@ -45,27 +47,27 @@
          (copy-list x))
        ;; Slot accessors
        ,@(with-collect
-          (let ((index 1))
-            (dolist (slot slot-descriptions)
-              (let* ((name (car slot))
-                     (accessor-name (intern (concat name-string "-" (string name)))))
-                (collect
-                    `(defun ,accessor-name (x)
-                       (unless (,predicate x)
-                         (error "The object `~S' is not of type `~S'" x ,name-string))
-                       (nth ,index x)))
-                ;; TODO: Implement this with  a higher level abstraction
-                ;; like defsetf or (defun (setf ..))
-                (collect
-                    `(define-setf-expander ,accessor-name (x)
-                       (let ((object (gensym))
-                             (new-value (gensym)))
-                         (values (list object)
-                                 (list x)
-                                 (list new-value)
-                                 `(progn
-                                    (rplaca (nthcdr ,',index ,object) ,new-value)
-                                    ,new-value)
-                                 `(,',accessor-name ,object)))))
-                (incf index)))))
+           (let ((index 1))
+             (dolist (slot slot-descriptions)
+               (let* ((name (car slot))
+                      (accessor-name (intern (concat name-string "-" (string name)))))
+                 (collect
+                     `(defun ,accessor-name (x)
+                        (unless (,predicate x)
+                          (error "The object `~S' is not of type `~S'" x ,name-string))
+                        (nth ,index x)))
+                 ;; TODO: Implement this with  a higher level abstraction
+                 ;; like defsetf or (defun (setf ..))
+                 (collect
+                     `(define-setf-expander ,accessor-name (x)
+                        (let ((object (gensym))
+                              (new-value (gensym)))
+                          (values (list object)
+                                  (list x)
+                                  (list new-value)
+                                  `(progn
+                                     (rplaca (nthcdr ,',index ,object) ,new-value)
+                                     ,new-value)
+                                  `(,',accessor-name ,object)))))
+                 (incf index)))))
        ',name)))

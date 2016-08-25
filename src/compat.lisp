@@ -35,6 +35,7 @@
 
 (defun j-reader (stream subchar arg)
   (declare (ignorable subchar arg))
+
   (assert (char= #\: (read-char stream nil :eof))
           nil "FFI descriptor must start with a colon.")
   (let ((descriptor (subseq (read-until stream #'terminalp) 0))
@@ -44,6 +45,7 @@
                (position #\: descriptor :start start)))
          ((null end)
           (push (subseq descriptor start) subdescriptors)
+
           `(lambda (&rest args)
              (apply (jscl/ffi::oget jscl/ffi::*root* ,@(reverse subdescriptors)) args)))
       (push (subseq descriptor start end) subdescriptors))))

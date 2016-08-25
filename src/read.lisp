@@ -102,7 +102,6 @@
 #+jscl (defun read-char (stream &optional (eof-error-p t) (eof-value nil))
          (%read-char stream eof-error-p eof-value))
 
-
 (defun whitespacep (ch)
   (or (char= ch #\space) (char= ch #\newline) (char= ch #\tab)))
 

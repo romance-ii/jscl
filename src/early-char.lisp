@@ -13,7 +13,9 @@
 ;;
 ;; You should  have received a  copy of  the GNU General  Public License
 ;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
+
 (in-package :jscl)
+
 (/debug "loading early-char.lisp!")
 
 ;; This list  comes from SBCL:  everything that's ALPHA-CHAR-P,  but not
