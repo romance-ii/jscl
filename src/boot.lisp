@@ -247,7 +247,7 @@
       (cond
         ((null pairs) (return))
         ((null (cdr pairs))
-         (error "Odd pairs in PSETQ"))
+         (error "Odd pairs in PSETQ; dangling ~s" pairs))
         (t
          (let ((variable (car pairs))
                (value (cadr pairs)))
