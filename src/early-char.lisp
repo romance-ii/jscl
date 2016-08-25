@@ -124,16 +124,18 @@
         (return-from alpha-char-p t)))
     nil))
 
-;; I made this list by running DIGIT-CHAR-P in SBCL on every codepoint up to CHAR-CODE-LIMIT,
-;; filtering on only those with SB-IMPL::UCD-GENERAL-CATEGORY 12 (Nd), and then grouping
-;; consecutive sets.  There's 37 spans of 10, plus 1 extra digit (6618).
+;; I made this  list by running DIGIT-CHAR-P in SBCL  on every codepoint
+;; up    to   CHAR-CODE-LIMIT,    filtering   on    only   those    with
+;; SB-IMPL::UCD-GENERAL-CATEGORY 12 (Nd),  and then grouping consecutive
+;; sets. There's 37 spans of 10, plus 1 extra digit (6618).
 (defconstant +unicode-zeroes+
   '(48 1632 1776 1984 2406 2534 2662 2790 2918 3046 3174 3302 3430 3664
     3792 3872 4160 4240 6112 6160 6470 6608 6784 6800 6992 7088 7232 7248
     42528 43216 43264 43472 43600 44016 65296 66720 120782)
   "Unicode codepoints which have Digit value 0, followed by 1, 2, ..., 9, as of Unicode 6.2")
 
-;; The "Digit value" of a (Unicode) character, or NIL, if it doesn't have one.
+;; The "Digit  value" of a  (Unicode) character,  or NIL, if  it doesn't
+;; have one.
 (defun unicode-digit-value (char)
   (let ((code (char-code char)))
     (dolist (z +unicode-zeroes+)

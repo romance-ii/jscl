@@ -41,8 +41,9 @@
 ;;; rules on pages  349-350 of the first edition (pages  528-529 of this
 ;;; second edition). It then optionally applies a code simplifier.
 
-;;; If the value of *BQ-SIMPLIFY* is non-NIL, then BACKQUOTE processing applies the code simplifier.
-;;; If the  value is NIL, then  the code resulting from  BACKQUOTE is exactly that  specified by the
+;;; If the value of *BQ-SIMPLIFY*  is non-NIL, then BACKQUOTE processing
+;;; applies the  code simplifier.  If the  value is  NIL, then  the code
+;;; resulting  from   BACKQUOTE  is   exactly  that  specified   by  the
 ;;; official rules.
 (defparameter *bq-simplify* t)
 
@@ -95,9 +96,8 @@
         ((eq (car x) *comma*) (cadr x))
         ((eq (car x) *comma-atsign*)
          (error ",@~S after `" (cadr x)))
-        ;; ((eq (car x) *comma-dot*)
-        ;;  ;; (error ",.~S after `" (cadr x))
-        ;;  (error "ill-formed"))
+        ;; ((eq (car x) *comma-dot*) ;;  (error ",.~S after `" (cadr x))
+        ;; (error "ill-formed"))
         (t (do ((p x (cdr p))
                 (q '() (cons (bracket (car p)) q)))
                ((atom p)
@@ -110,9 +110,8 @@
                              (nreconc q (list (cadr p))))))
              (when (eq (car p) *comma-atsign*)
                (error "Dotted ,@~S" p))
-             ;; (when (eq (car p) *comma-dot*)
-             ;;   ;; (error "Dotted ,.~S" p)
-             ;;   (error "Dotted"))
+             ;; (when (eq  (car p) *comma-dot*) ;;  (error "Dotted ,.~S"
+             ;; p) (error "Dotted"))
              ))))
 
 ;;; This implements the bracket operator of the formal rules.
@@ -123,13 +122,12 @@
          (list *bq-list* (cadr x)))
         ((eq (car x) *comma-atsign*)
          (cadr x))
-        ;; ((eq (car x) *comma-dot*)
-        ;;  (list *bq-clobberable* (cadr x)))
+        ;; ((eq (car x) *comma-dot*) (list *bq-clobberable* (cadr x)))
         (t (list *bq-list* (bq-process x)))))
 
-;;; This auxiliary function is like MAPCAR but has two extra
-;;; purposes: (1) it handles dotted lists; (2) it tries to make
-;;; the result share with the argument x as much as possible.
+;;; This auxiliary function  is like MAPCAR but has  two extra purposes:
+;;; (1) it handles  dotted lists; (2) it tries to  make the result share
+;;; with the argument x as much as possible.
 (defun maptree (fn x)
   (if (atom x)
       (funcall fn x)

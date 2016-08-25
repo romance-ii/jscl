@@ -392,7 +392,7 @@
         (last-escape nil))
     (dotimes (i (length s))
       (let ((ch (char s i)))
-        (cond 
+        (cond
           (last-escape
            (setf last-escape nil)
            (setf result (concatenate 'string result (string ch))))
@@ -400,7 +400,7 @@
            (setf last-escape t))
           ((char= ch #\:)
            (error "Too many colons in symbol-name `~a'" s))
-          (t (setf result (concatenate 'string result 
+          (t (setf result (concatenate 'string result
                                        (string-upcase (string ch))))))))
     result))
 
@@ -425,19 +425,19 @@
        (setq internalp t))
       ;; Package prefix
       (t
-       (if (zerop index) 
+       (if (zerop index)
            (setq package "KEYWORD")
            (setq package (string-upcase-noescaped (subseq string 0 index))))
        (incf index)
-       (when (char= (char string index) #\:) 
+       (when (char= (char string index) #\:)
          (setq internalp t)
          (incf index))
        (setq name (subseq string index))))
     ;; Canonalize symbol name and package
     (setq name (if (string= package "JS")
                    (setq name (unescape-token name))
-                   (setq name (string-upcase-noescaped name)))) 
-    (setq package (find-package-or-fail package)) 
+                   (setq name (string-upcase-noescaped name))))
+    (setq package (find-package-or-fail package))
     (if (or internalp
             (eq package (find-package "KEYWORD"))
             (eq package (find-package "JS")))
@@ -446,7 +446,7 @@
             (find-symbol name package)
           (if (eq external :external)
               symbol
-              (error "The symbol `~S' is not external in the package ~S." 
+              (error "The symbol `~S' is not external in the package ~S."
                      name package))))))
 
 (defun read-integer (string)
@@ -612,7 +612,7 @@
                (if (char= (peek-char nil stream nil nil) #\#)
                    (warn "`# might be `#(vec) form, not yet supported;
 rewrite `#(v1 v2…) as (apply #'vector `(v1 v2…))"))
-               
+
                (list 'backquote (ls-read stream eof-error-p eof-value t)))
               ((char= ch #\")
                (read-char stream nil nil)

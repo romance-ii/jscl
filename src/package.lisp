@@ -221,4 +221,3 @@
                       (pushnew symbol symbols :test #'eq))))
                 *package-table*)
     symbols))
-

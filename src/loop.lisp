@@ -16,4 +16,3 @@
 ;; Note, the simple (WHILE T &BODY) version is provided in boot.lisp
 
 (in-package :jscl)
-

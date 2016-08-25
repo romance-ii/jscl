@@ -39,7 +39,7 @@
   (assert (char= #\: (read-char stream nil :eof))
           nil "FFI descriptor must start with a colon.")
   (let ((descriptor (subseq (read-until stream #'terminalp) 0))
-        (subdescriptors nil)) 
+        (subdescriptors nil))
     (do* ((start 0 (1+ end))
           (end (position #\: descriptor :start start)
                (position #\: descriptor :start start)))

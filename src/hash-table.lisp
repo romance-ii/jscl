@@ -58,7 +58,8 @@
      (eql-hash x))))
 
 (defun equalp-hash (x)
-  ;; equalp is not implemented as predicate. So I am skipping this one by now.
+  ;; equalp is not  implemented as predicate. So I am  skipping this one
+  ;; by now.
   )
 
 
@@ -70,8 +71,8 @@
             ((eq test-fn #'eql)   #'eql-hash)
             ((eq test-fn #'equal) #'equal-hash)
             ((eq test-fn #'equalp) #'equalp-hash))))
-    ;; TODO: Replace list with a storage-vector and tag
-    ;; conveniently to implemnet `hash-table-p'.
+    ;; TODO: Replace list with a  storage-vector and tag conveniently to
+    ;; implemnet `hash-table-p'.
     `(hash-table ,hash-fn ,(new))))
 
 (defun gethash (key hash-table &optional default)
