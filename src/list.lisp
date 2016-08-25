@@ -229,6 +229,9 @@
                  (rplaca tail (cdar tail)))
                (collect (apply func elems))))))))
 
+(defun mapcan (func list &rest lists)
+  (reduce #'append (apply #'mapcar (list func list lists))))
+
 (defun mapn (func list)
   (with-collect
       (while list

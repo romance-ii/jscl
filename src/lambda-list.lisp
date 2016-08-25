@@ -231,7 +231,7 @@
       (unless (symbolp key)
         (error "Keyword argument `~S' is not a symbol." key))
       (unless (consp (cdr tail))
-        (error "Odd number of keyword arguments.")))))
+        (error "Odd number of keyword arguments; dangling ~s" tail)))))
 
 
 (defun !expand-destructuring-bind (lambda-list expression &rest body)
@@ -307,7 +307,9 @@
                              ;; to say, there is  no more arguments that
                              ;; we expect.
                              (cond
-                               (keywords (compute-pbindings pattern `(validate-keyvars ,chain ',keywords ,(lambda-list-allow-other-keys ll))))
+                               (keywords (compute-pbindings pattern
+                                                            `(validate-keyvars ,chain ',keywords 
+                                                                               ,(lambda-list-allow-other-keys ll))))
                                (restvar  (compute-pbindings pattern chain))
                                (t        (compute-pbindings pattern `(validate-max-args ,chain))))))
                        (when (lambda-list-keyvars ll)
