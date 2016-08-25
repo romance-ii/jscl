@@ -505,7 +505,7 @@
         ((null pairs)
          (return))
         ((null (cdr pairs))
-         (error "Odd pairs in SETQ"))
+         (error "Odd pairs in SETQ; dangling ~s" pairs))
         (t
          (collect-result (setq-pair (car pairs) (cadr pairs)))
          (setq pairs (cddr pairs)))))
