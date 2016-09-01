@@ -32,7 +32,7 @@
          '#'(lambda (form)
               (destructuring-bind (name args &body body)
                   form
-                (let* ((whole (gensym))
+                (let* ((whole (gensym "WHOLE-"))
                        (expander `(function
                                    (lambda (,whole)
                                     (block ,name
@@ -129,7 +129,7 @@
 ;; Basic macros
 
 (defmacro dolist ((var list &optional result) &body body)
-  (let ((g!list (gensym)))
+  (let ((g!list (gensym "DOLIST-LIST-")))
     (unless (symbolp var) (error "`~S' is not a symbol." var))
     `(block nil
        (let ((,g!list ,list)
@@ -141,7 +141,7 @@
          ,result))))
 
 (defmacro dotimes ((var count &optional result) &body body)
-  (let ((g!count (gensym)))
+  (let ((g!count (gensym "DOTIMES-COUNTER-")))
     (unless (symbolp var) (error "`~S' is not a symbol." var))
     `(block nil
        (let ((,var 0)
@@ -153,21 +153,26 @@
 
 (defmacro cond (&rest clausules)
   (unless (null clausules)
-    (destructuring-bind (condition &body body)
-        (first clausules)
-      (cond
-        ((eq condition t)
-         `(progn ,@body))
-        ((null body)
-         (let ((test-symbol (gensym)))
-           `(let ((,test-symbol ,condition))
-              (if ,test-symbol
-                  ,test-symbol
-                  (cond ,@(rest clausules))))))
-        (t
-         `(if ,condition
-              (progn ,@body)
-              (cond ,@(rest clausules))))))))
+    (let ((clause (first clausules))
+          (more (rest clausules)))
+      (when (atom clause)
+        (error "COND clause ~s is not a list" clause))
+      (destructuring-bind (condition &body body) clause
+        (cond 
+          ((eq condition t)
+           (when more
+             (warn "Unreachable: ~s" more))
+           `(progn ,@body))
+          ((endp body)
+           (let ((test-symbol (gensym "COND-TEST-")))
+             `(let ((,test-symbol ,condition))
+                (if ,test-symbol
+                    ,test-symbol
+                    ,(when more `(cond ,@more))))))
+          (t
+           `(if ,condition
+                (progn ,@body)
+                ,(when more `(cond ,@more)))))))))
 
 (defun ensure-list (list-or-atom)
   (if (listp list-or-atom)
@@ -175,7 +180,7 @@
       (list list-or-atom)))
 
 (defmacro case (form &rest clausules)
-  (let ((!form (gensym)))
+  (let ((!form (gensym "CASE-FORM-")))
     `(let ((,!form ,form))
        (cond
          ,@(mapcar (lambda (clausule)
@@ -191,7 +196,7 @@
                    clausules)))))
 
 (defmacro ecase (form &rest clausules)
-  (let ((g!form (gensym)))
+  (let ((g!form (gensym "ECASE-FORM-")))
     `(let ((,g!form ,form))
        (case ,g!form
          ,@(append
@@ -217,14 +222,14 @@
     ((null (cdr forms))
      (car forms))
     (t
-     (let ((g (gensym)))
+     (let ((g (gensym "OR-")))
        `(let ((,g ,(car forms)))
           (if ,g
               ,g
               (or ,@(cdr forms))))))))
 
 (defmacro prog1 (form &body body)
-  (let ((value (gensym)))
+  (let ((value (gensym "PROG1-")))
     `(let ((,value ,form))
        ,@body
        ,value)))
@@ -377,7 +382,7 @@ macro cache is so aggressive that it cannot be redefined."
   nil)
 
 (defmacro multiple-value-bind (variables value-from &body body)
-  `(multiple-value-call (lambda (&optional ,@variables &rest ,(gensym))
+  `(multiple-value-call (lambda (&optional ,@variables &rest ,(gensym "_"))
                           ,@body)
      ,value-from))
 
@@ -387,7 +392,7 @@ macro cache is so aggressive that it cannot be redefined."
 
 ;; Incorrect typecase, but used in NCONC.
 (defmacro typecase (x &rest clausules)
-  (let ((value (gensym)))
+  (let ((value (gensym "TYPECASE-VALUE-")))
     `(let ((,value ,x))
        (cond
          ,@(mapcar (lambda (c)
@@ -416,7 +421,7 @@ macro cache is so aggressive that it cannot be redefined."
                    clausules)))))
 
 (defmacro etypecase (x &rest clausules)
-  (let ((g!x (gensym)))
+  (let ((g!x (gensym "ETYPECASE-VALUE-")))
     `(let ((,g!x ,x))
        (typecase ,g!x
          ,@clausules

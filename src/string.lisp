@@ -120,9 +120,9 @@
                    #'char-equal #'char-lessp t nil t))
 
 (define-setf-expander char (string index)
-  (let ((g!string (gensym))
-        (g!index (gensym))
-        (g!value (gensym)))
+  (let ((g!string (gensym "STRING-"))
+        (g!index (gensym "INDEX-"))
+        (g!value (gensym "VALUE-")))
     (values (list g!string g!index)
             (list string index)
             (list g!value)

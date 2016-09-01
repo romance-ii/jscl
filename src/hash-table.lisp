@@ -92,10 +92,10 @@
 
 ;;; TODO: Please, implement (DEFUN (SETF foo) ...) syntax!
 (define-setf-expander gethash (key hash-table &optional defaults)
-  (let ((g!key (gensym))
-        (g!hash-table (gensym))
-        (g!defaults (gensym))
-        (g!new-value (gensym)))
+  (let ((g!key (gensym "KEY-"))
+        (g!hash-table (gensym "HASH-TABLE-"))
+        (g!defaults (gensym "DEFAULTS-"))
+        (g!new-value (gensym "NEW-VALUE-")))
     (values (list g!key g!hash-table g!defaults)            ; temporary variables
             (list key hash-table defaults)                  ; value forms
             (list g!new-value)                              ; store variables

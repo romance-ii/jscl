@@ -20,8 +20,8 @@
 ;;;; Various numeric functions and constants
 
 (macrolet ((def (operator initial-value)
-               (let ((init-sym   (gensym))
-                     (dolist-sym (gensym)))
+               (let ((init-sym   (gensym "INIT-"))
+                     (dolist-sym (gensym "DOLIST-")))
                  `(defun ,operator (&rest args)
                     (let ((,init-sym ,initial-value))
                       (dolist (,dolist-sym args)

@@ -60,8 +60,8 @@
                  ;; like defsetf or (defun (setf ..))
                  (collect
                      `(define-setf-expander ,accessor-name (x)
-                        (let ((object (gensym))
-                              (new-value (gensym)))
+                        (let ((object (gensym "OBJECT-"))
+                              (new-value (gensym "NEW-VALUE-")))
                           (values (list object)
                                   (list x)
                                   (list new-value)

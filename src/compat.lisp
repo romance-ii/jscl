@@ -15,6 +15,8 @@
 ;; You should  have received a  copy of  the GNU General  Public License
 ;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
 
+(in-package :jscl)
+
 ;;; Duplicate from boot.lisp by now
 (defmacro while (condition &body body)
   `(do ()
@@ -33,6 +35,15 @@
   ;; (write-line x)
   )
 
+(defun jscl/ffi-ignore (&rest _)
+  (declare (ignore _))
+  (error "JSCL/FFI only works within JSCL."))
+(mapc (lambda (s)
+        (setf (symbol-function s) #'jscl/ffi-ignore))
+      '(jscl/ffi::make-new jscl/ffi::oget jscl/ffi::oget* jscl/ffi::new))
+(define-symbol-macro jscl/ffi::*root*
+    (jscl/ffi-ignore 'jscl/ffi::*root*))
+
 (defun j-reader (stream subchar arg)
   (declare (ignorable subchar arg))
 
@@ -47,7 +58,7 @@
           (push (subseq descriptor start) subdescriptors)
 
           `(lambda (&rest args)
-             (apply (jscl/ffi::oget jscl/ffi::*root* ,@(reverse subdescriptors)) args)))
+             (apply (jscl/ffi::oget* jscl/ffi::*root* ,@(reverse subdescriptors)) args))) 
       (push (subseq descriptor start end) subdescriptors))))
 
 (defmacro with-sharp-j (&body body)

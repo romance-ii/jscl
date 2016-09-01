@@ -23,12 +23,14 @@
 ;;; It is  intended to  be used  with the new  compiler. However,  it is
 ;;; quite independent so it has been integrated early in JSCL.
 
-(/debug "loading compiler-codegen.lisp!")
+(in-package :jscl)
+
+(/debug "loading compiler/codegen.lisp!")
 
 
 (defvar *js-macros* nil)
 (defmacro define-js-macro (name lambda-list &body body)
-  (let ((form (gensym)))
+  (let ((form (gensym "FORM-")))
     `(push (cons ',name
                  (lambda (,form)
                    (block ,name
@@ -65,7 +67,7 @@
         (size (length string))
         (seen-single-quote nil)
         (seen-double-quote nil)
-        (skipper (gensym)))
+        (skipper (gensym "SKIPPER-")))
     (flet ((%js-escape-string (string escape-single-quote-p)
              (let ((output "")
                    (index 0))
