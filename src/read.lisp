@@ -91,21 +91,23 @@
       (setq ch (%peek-char stream)))))
 
 (defun terminalp (ch)
-  (or (null ch) (whitespacep ch) (char= #\" ch) (char= #\) ch) (char= #\( ch)))
+  (or (null ch) (whitespacep ch)
+      (find ch "(\")")))
 
 (defun read-until (stream func)
-  (let ((string "")
-        (ch))
-    (setq ch (%peek-char stream))
+  (let ((string (make-array 80 :element-type 'character
+                            :adjustable t :fill-pointer 0))
+        (ch (peek-char nil stream))) 
     (while (and ch (not (funcall func ch)))
-      (setq string (concat string (string ch)))
-      (%read-char stream)
-      (setq ch (%peek-char stream)))
+      #-jscl (vector-push-extend ch string 80)
+      #+jscl (setq string (concat string (string ch)))
+      (read-char stream)
+      (setq ch (peek-char nil stream)))
     string))
 
 (defun read-escaped-until (stream func)
   (let ((string "")
-        (ch (%peek-char stream))
+        (ch (peek-char nil stream))
         (multi-escape nil))
     (while (and ch (or multi-escape (not (funcall func ch))))
       (cond
@@ -114,15 +116,15 @@
              (setf multi-escape nil)
              (setf multi-escape t)))
         ((char= ch #\\)
-         (%read-char stream)
-         (setf ch (%peek-char stream))
+         (read-char stream)
+         (setf ch (peek-char nil stream))
          (setf string (concat string "\\" (string ch))))
         (t
          (if multi-escape
              (setf string (concat string "\\" (string ch)))
              (setf string (concat string (string ch))))))
-      (%read-char stream)
-      (setf ch (%peek-char stream)))
+      (read-char stream)
+      (setf ch (peek-char nil stream)))
     string))
 
 (defun skip-whitespaces-and-comments (stream)
