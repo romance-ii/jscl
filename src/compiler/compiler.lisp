@@ -125,6 +125,8 @@
 (defun %compile-defmacro (name lambda)
   (let ((binding (make-binding :name name :type 'macro :value lambda)))
     (push-to-lexenv binding  *environment* 'function))
+  #+sbcl (unless (sb-ext:package-locked-p (symbol-package name))
+           (setf (macro-function name) (eval lambda)))
   name)
 
 (defun global-binding (name type namespace)
@@ -1311,7 +1313,7 @@
 (define-builtin new ()
   '(object))
 
-(define-raw-builtin oget* (object key &rest keys)
+(define-raw-builtin jscl/ffi::oget* (object key &rest keys)
   `(selfcall
     (progn
       (var (tmp (property ,(convert object) (call-internal |xstring| ,(convert key)))))
@@ -1322,7 +1324,7 @@
                 keys))
     (return (if (=== tmp undefined) ,(convert nil) tmp))))
 
-(define-raw-builtin oset* (value object key &rest keys)
+(define-raw-builtin jscl/ffi::oset* (value object key &rest keys)
   (let ((keys (cons key keys)))
     `(selfcall
       (progn
@@ -1340,10 +1342,10 @@
                     ,(convert nil)
                     tmp))))))
 
-(define-raw-builtin oget (object key &rest keys)
+(define-raw-builtin jscl/ffi::oget (object key &rest keys)
   `(call-internal |js_to_lisp| ,(convert `(jscl/ffi:oget* ,object ,key ,@keys))))
 
-(define-raw-builtin oset (value object key &rest keys)
+(define-raw-builtin jscl/ffi::oset (value object key &rest keys)
   (convert `(oset* (lisp-to-js ,value) ,object ,key ,@keys)))
 
 (define-builtin js-null-p (x)
@@ -1467,12 +1469,10 @@
              (setq expander (gethash b *macroexpander-cache*)))
             ((listp expander)
              (let ((compiled (eval expander)))
-               ;; The    list    representation   are    useful    while
-               ;; bootstrapping, as  we can  dump the definition  of the
-               ;; macros easily,  but they are  slow because we  have to
-               ;; evaluate them and compile them  now and again. So, let
-               ;; us  replace the  list  representation  version of  the
-               ;; function with the compiled one.
+               ;; The  list representation  are  useful  while bootstrapping,  as  we  can dump  the
+               ;; definition of  the macros easily,  but they are slow  because we have  to evaluate
+               ;; them and compile  them now and again.  So, let us replace  the list representation
+               ;; version of the function with the compiled one.
                #+jscl (setf (binding-value b) compiled)
                #-jscl (setf (gethash b *macroexpander-cache*) compiled)
                (setq expander compiled))))
