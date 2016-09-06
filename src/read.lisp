@@ -81,7 +81,7 @@
          (rplacd stream (1+ (cdr stream))))))
 
 (defun whitespacep (ch)
-  (or (char= ch #\space) (char= ch #\newline) (char= ch #\tab)))
+  (find ch #(#\space #\return #\linefeed #\tab #\page)))
 
 (defun skip-whitespaces (stream)
   (let (ch)
