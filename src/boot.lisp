@@ -36,9 +36,8 @@
                                       (destructuring-bind ,args ,whole
                                         ,@body))))))
 
-                  ;; If we are  boostrapping JSCL, we need  to quote the
-                  ;; macroexpander, because the  macroexpander will need
-                  ;; to be dumped in the final environment somehow.
+                  ;; If we  are boostrapping JSCL, we  need to quote the  macroexpander, because the
+                  ;; macroexpander will need to be dumped in the final environment somehow.
                   (when (find :jscl-xc *features*)
                     (setq expander `(quote ,expander)))
 

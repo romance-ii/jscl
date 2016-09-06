@@ -269,7 +269,9 @@
 ;;; Run the tests in the host Lisp implementation. It is a quick way
 ;;; to improve the level of trust of the tests.
 (defun run-tests-in-host ()
-  (let ((*package* (find-package "JSCL"))
+  (load (make-pathname :name "tests" :type "lisp"
+                       :directory (pathname-directory #.(or *compile-file-pathname* *load-pathname*))))
+  (let ((*package* (find-package "JSCL/TEST"))
         (*default-pathname-defaults* *base-directory*))
     (load (source-pathname "tests.lisp" :directory nil))
     (let ((*use-html-output-p* nil))
