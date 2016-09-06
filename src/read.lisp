@@ -16,6 +16,7 @@
 ;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
 
 (in-package :jscl)
+
 (/debug "loading read.lisp!")
 
 ;;;; Reader
@@ -90,7 +91,7 @@
 
 (defun %read-char (stream &optional (eof-error-p t) (eof-value nil))
   (cond ((< (cdr stream) (length (car stream)))
-         (prog1 (char (car stream) (cdr stream))
+       (prog1 (char (car stream) (cdr stream))
            (rplacd stream (1+ (cdr stream)))))
         (eof-error-p
          (error "End of file in READ-CHAR"))
@@ -103,7 +104,7 @@
          (%read-char stream eof-error-p eof-value))
 
 (defun whitespacep (ch)
-  (or (char= ch #\space) (char= ch #\newline) (char= ch #\tab)))
+  (find ch #(#\space #\return #\linefeed #\tab #\page)))
 
 (defun skip-whitespaces (stream)
   (let (ch)
@@ -113,16 +114,18 @@
       (setq ch (peek-char nil stream nil nil)))))
 
 (defun terminalp (ch)
-  (or (null ch) (whitespacep ch) (char= #\" ch) (char= #\) ch) (char= #\( ch)))
+  (or (null ch) (whitespacep ch)
+      (find ch "(\")")))
 
 (defun read-until (stream func)
-  (let ((string "")
-        (ch))
-    (setq ch (peek-char nil stream nil nil))
+  (let ((string (make-array 80 :element-type 'character
+                            :adjustable t :fill-pointer 0))
+        (ch (peek-char nil stream))) 
     (while (and ch (not (funcall func ch)))
-      (setq string (concatenate 'string string (string ch)))
-      (read-char stream nil nil)
-      (setq ch (peek-char nil stream nil nil)))
+      #-jscl (vector-push-extend ch string 80)
+      #+jscl (setq string (concat string (string ch)))
+      (read-char stream)
+      (setq ch (peek-char nil stream)))
     string))
 
 (defun read-escaped-until (stream func)
@@ -285,16 +288,16 @@
               (read-char stream) ; discard U
               (cond ((char=      #\+ (peek-char nil stream nil nil))
                      (read-char stream nil nil) ; +
-                     (let ((*read-base* 16))
-                       (code-char (read-integer-from-stream stream))))
-                    (t (let ((cname
+              (let ((*read-base* 16))
+                (code-char (read-integer-from-stream stream))))
+             (t (let ((cname
                               (concatenate 'string "U" (string (read-char stream nil nil))
                                            (read-until stream #'terminalp))))
                          (let ((ch (name-char cname)))
                            (or ch (char cname 0)))))))
              (t (let ((cname
                        (concatenate 'string (string (read-char stream nil nil))
-                                    (read-until stream #'terminalp))))
+                               (read-until stream #'terminalp))))
                   (let ((ch (name-char cname)))
                     (or ch (char cname 0)))))))
       ((#\+ #\-)
@@ -394,7 +397,7 @@
       (let ((ch (char s i)))
         (cond
           (last-escape
-           (setf last-escape nil)
+              (setf last-escape nil)
            (setf result (concatenate 'string result (string ch))))
           ((char= ch #\\)
            (setf last-escape t))
@@ -531,8 +534,8 @@
             (setq exponent (+ (* exponent 10) value))
             (incf index))))
       (unless (= index size) (return))
-      ;; Everything  went   ok,  we   have  a   float  XXX:   Use  FLOAT
-      ;; when implemented.
+      ;; Everything went ok, we have a float
+      ;; XXX: Use FLOAT when implemented.
       (/ (* sign (expt 10.0 (* exponent-sign exponent)) number) divisor 1.0))))
 
 (defun !parse-integer (string junk-allow &optional (radix *read-base*))
@@ -623,7 +626,7 @@ rewrite `#(v1 v2…) as (apply #'vector `(v1 v2…))"))
                        (char= (peek-char nil stream nil nil) #\.))
                    (progn (read-char stream nil nil)
                           (list 'unquote-splicing
-                                (ls-read stream eof-error-p eof-value t)))
+                                                    (ls-read stream eof-error-p eof-value t)))
                    (list 'unquote (ls-read stream eof-error-p eof-value t))))
               ((char= ch #\#)
                (read-sharp stream eof-error-p eof-value))
