@@ -13,6 +13,8 @@
 
 ;;;; Compiler
 
+(in-package :jscl)
+
 (/debug "loading compiler.lisp!")
 
 ;;; Translate  the Lisp  code to  Javascript.  It will  compile  the special  forms. Some  primitive

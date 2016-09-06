@@ -20,8 +20,9 @@
 ;;; It is intended to be used with the new compiler. However, it is quite independent so it has been
 ;;; integrated early in JSCL.
 
-(/debug "loading compiler-codegen.lisp!")
+(in-package :jscl)
 
+(/debug "loading compiler/codegen.lisp!")
 
 (defvar *js-macros* nil)
 (defmacro define-js-macro (name lambda-list &body body)
