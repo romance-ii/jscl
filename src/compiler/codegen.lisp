@@ -24,7 +24,6 @@
 
 (/debug "loading compiler/codegen.lisp!")
 
-
 (defvar *js-macros* nil)
 (defmacro define-js-macro (name lambda-list &body body)
   (let ((form (gensym "FORM-")))
