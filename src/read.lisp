@@ -111,14 +111,16 @@
       (setq ch (peek-char nil stream nil nil)))))
 
 (defun terminalp (ch)
-  (or (null ch) (whitespacep ch) (char= #\" ch) (char= #\) ch) (char= #\( ch)))
+  (or (null ch) (whitespacep ch)
+      (find ch "(\")")))
 
 (defun read-until (stream func)
-  (let ((string "")
-        (ch))
-    (setq ch (peek-char nil stream nil nil))
+  (let ((string (make-array 80 :element-type 'character
+                            :adjustable t :fill-pointer 0))
+        (ch (peek-char nil stream nil nil))) 
     (while (and ch (not (funcall func ch)))
-      (setq string (concatenate 'string string (string ch)))
+      #-jscl (vector-push-extend ch string 80)
+      #+jscl (setq string (concatenate 'string string (string ch)))
       (read-char stream nil nil)
       (setq ch (peek-char nil stream nil nil)))
     string))
