@@ -24,6 +24,11 @@
   (:use :cl :jscl)
   (:export #:oget #:oget* #:make-new #:new #:*root*))
 
+#+sbcl (require 'bordeaux-threads)
+(defpackage jscl/test
+  (:use :cl #-jscl :bordeaux-threads)
+  (:export #:RUN))
+
 (in-package :jscl)
 
 (defvar *base-directory*
@@ -255,8 +260,7 @@
     ;; Tests
     (compile-application
      `(,(source-pathname "tests.lisp" :directory nil)
-        (jscl/tests::with-async
-          ,@(directory (source-pathname "*" :directory '(:relative "tests") :type "lisp")))
+        ,@(directory (source-pathname "*" :directory '(:relative "tests") :type "lisp"))
         ,(source-pathname "tests-report.lisp" :directory nil))
      (merge-pathnames "tests.js" *base-directory*))
 

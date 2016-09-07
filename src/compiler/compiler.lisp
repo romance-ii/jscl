@@ -1647,7 +1647,10 @@
     (cond
       ;; hack work-around for IN-PACKAGE not working
       ((and (consp sexp)
-            (eq (car sexp) 'in-package)
+            (eql (car sexp) 'defpackage))
+       (convert-toplevel sexp nil nil))
+      ((and (consp sexp)
+            (eql (car sexp) 'in-package)
             (= 2 (length sexp)))
        (setf *package* (find-package-or-fail (second sexp)))
        (format t "~&;;;; In package ~a…" (package-name *package*))
