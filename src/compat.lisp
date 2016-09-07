@@ -69,3 +69,12 @@
        (unwind-protect
             (progn ,@body)
          (setf *readtable* ,readtable-before)))))
+
+(defun read-#j ()
+  (set-dispatch-macro-character #\# #\J #'j-reader))
+
+(defun rational-float-p (rational)
+  (and (realp rational)
+       (let ((f (coerce rational 'double-float))) 
+         (and (= f rational)
+              f))))

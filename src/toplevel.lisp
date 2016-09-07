@@ -255,7 +255,6 @@
 
 (setq *package* *user-package*)
 
-
 (defun compilation-notice ()
   #.(multiple-value-bind (second minute hour date month year)
         (get-decoded-time)
@@ -272,7 +271,6 @@
            (string= (%js-typeof |phantom|) "undefined"))
   (push :node *features*))
 
-
 (defun welcome-message ()
   (format t "Welcome to ~a ~a (~a)~%~%"
           (lisp-implementation-type)
@@ -285,24 +283,25 @@
        (format nil "For more information, visit the project page at <a href=\"https://github.com/jscl-project/jscl\">GitHub</a>.~%~%")
        nil)))
 
-
 ;;; Basic *standard-output*  stream. This  will usually be  overriden by
 ;;; web or node REPL.
-;;;
-;;; TODO: Cache character  operation so they result in a  single call to
-;;; console.log.
 (setq *standard-output*
-      (vector 'stream
-              (lambda (ch)
-                (#j:console:log (string ch)))
-              (lambda (string)
-                (#j:console:log string))))
-
+      (let ((buffer ""))
+        (flet ((force-out ()
+                 (#j:console:log buffer)
+                 (setq buffer "")))
+          (vector 'stream
+                  (lambda (ch)
+                    (setq buffer (concat buffer ch))
+                    (when (member ch '(#\newline #\return #\page))
+                      (force-out)))
+                  (lambda (string)
+                    (force-out)
+                    (#j:console:log string))))))
 
 (if (find :node *features*)
     (setq jscl/ffi:*root* (%js-vref "global"))
     (setq jscl/ffi:*root* (%js-vref "window")))
-
 
 
 (defun require (name)

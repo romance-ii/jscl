@@ -17,7 +17,7 @@
 
 (defpackage :jscl
   (:use :cl #+sbcl :sb-gray)
-  (:export #:bootstrap #:run-tests-in-host
+  (:export #:bootstrap #:run-tests-in-host #:with-sharp-j #:read-#j
            #:write-javascript-for-files #:compile-application))
 
 (defpackage :jscl/ffi
@@ -44,7 +44,6 @@
                 (comma (position #\, line)))
             (return (string-trim '(#\newline #\" #\tab #\space)
                                  (subseq line (1+ colon) comma)))))))
-
 
 
 ;;; List of all  the source files that need to  be compiled, and whether
@@ -85,7 +84,6 @@
      ("compiler"     :both))
     ("documentation" :target)
     ("toplevel"      :target)))
-
 
 (defun source-pathname (filename &key (directory '(:relative "src")) (type nil) (defaults filename))
   (merge-pathnames
@@ -213,9 +211,8 @@
     (late-compile
      `(progn
         (setq *variable-counter* ,*variable-counter*)
-        (setq *gensym-counter* ,*gensym-counter*)))
-    (late-compile `(setq *literal-counter* ,*literal-counter*))))
-
+        (setq *gensym-counter* ,*gensym-counter*)
+        (setq *literal-counter* ,*literal-counter*)))))
 
 
 (defun write-javascript-for-files (files &optional (stream *standard-output*))
@@ -234,7 +231,6 @@
     (when shebang
       (format out "#!/usr/bin/env node~%"))
     (write-javascript-for-files files out)))
-
 
 
 (defun bootstrap (&optional verbose)
@@ -259,7 +255,8 @@
     ;; Tests
     (compile-application
      `(,(source-pathname "tests.lisp" :directory nil)
-        ,@(directory (source-pathname "*" :directory '(:relative "tests") :type "lisp"))
+        (jscl/tests::with-async
+          ,@(directory (source-pathname "*" :directory '(:relative "tests") :type "lisp")))
         ,(source-pathname "tests-report.lisp" :directory nil))
      (merge-pathnames "tests.js" *base-directory*))
 
@@ -272,17 +269,3 @@
                          (merge-pathnames "repl-node.js" *base-directory*)
                          :shebang t)))
 
-
-;;; Run the tests in the host Lisp  implementation. It is a quick way to
-;;; improve the level of trust of the tests.
-(defun run-tests-in-host ()
-  (load (make-pathname :name "tests" :type "lisp"
-                       :directory (pathname-directory #.(or *compile-file-pathname* *load-pathname*))))
-  (let ((*package* (find-package "JSCL/TEST"))
-        (*default-pathname-defaults* *base-directory*))
-    (load (source-pathname "tests.lisp" :directory nil))
-    (let ((*use-html-output-p* nil))
-      (declare (special *use-html-output-p*))
-      (dolist (input (directory "tests/*.lisp"))
-        (load input)))
-    (load "tests-report.lisp")))
