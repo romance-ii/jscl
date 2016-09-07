@@ -1652,7 +1652,7 @@
       ;; hack work-around for IN-PACKAGE not working
       ((and (consp sexp)
             (eql (car sexp) 'defpackage))
-       (convert-toplevel sexp nil nil))
+       (warn "DEFPACKAGE ~a will probably fail" (second sexp)))
       ((and (consp sexp)
             (eql (car sexp) 'in-package)
             (= 2 (length sexp)))
