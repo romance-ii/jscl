@@ -1,7 +1,3 @@
-(require 'bordeaux-threads)
-(defpackage jscl/test
-  (:use :cl #-jscl :bordeaux-threads)
-  (:export #:RUN))
 (in-package :jscl/test)
 
 (defparameter *total-tests* 0)
@@ -14,7 +10,7 @@
 (defvar *use-html-output-p* t)
 (defvar *timestamp* nil)
 
-(defvar *async-threads*)
+(defvar *async-threads* nil)
 
 (defvar *sync*
   #+jscl nil
@@ -66,10 +62,10 @@
    (sync-incf *total-tests*)))
 
 (defmacro test (condition)
-  `(async (test-fn ,condition ',condition)))
+  `(test-fn ,condition ',condition))
 
 (defmacro expected-failure (condition)
-  `(async (expected-failure-fn (async ,condition) ',condition)))
+  `(expected-failure-fn (async ,condition) ',condition))
 
 (defmacro test-equal (form value)
   `(test (equal ,form ,value)))
@@ -90,5 +86,5 @@
         (*package* (find-package :JSCL/TEST)))
     (declare (special *use-html-output-p*))
     (with-async (dolist (input (directory "tests/*.lisp"))
-                  (load input)))
+                  (async (load input))))
     (load "tests-report.lisp")))
