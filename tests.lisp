@@ -1,5 +1,7 @@
+(require 'bordeaux-threads)
 (defpackage jscl/test
-  (:use :cl))
+  (:use :cl #-jscl :bordeaux-threads)
+  (:export #:RUN))
 (in-package :jscl/test)
 
 (defparameter *total-tests* 0)
@@ -12,44 +14,62 @@
 (defvar *use-html-output-p* t)
 (defvar *timestamp* nil)
 
+(defvar *async-threads*)
+
+(defvar *sync*
+  #+jscl nil
+  #-jscl (make-lock "Test results asynchronous lock"))
+
+(defmacro sync-incf (place)
+  #+jscl `(incf ,place)
+  #-jscl
+  `(with-lock-held (*sync*)
+     (incf ,place)))
+
+(defmacro with-async (&body body)
+  #+jscl (cons 'progn body)
+  #-jscl
+  `(let (*async-threads*)
+     (prog1 (progn ,@body)
+       (dolist (thread *async-threads*)
+         (join-thread thread)))
+     ))
+
 (defmacro async (&body body)
   #+jscl `(#j:setTimeout (lambda () ,@body))
-  #-jscl `(progn ,@body))
+  #-jscl `(push (make-thread
+                 (lambda ()
+                   ,@body)
+                 :name "JSCL/Test Async thread")
+                *async-threads*))
 
-(defun test-fn (condition form)
+(defun test-fn (successp form)
   (async
    (cond
-     (condition
-      (format t "Test `~S' passed~%" form)
-      (incf *passed-tests*))
+     (successp
+      (sync-incf *passed-tests*))
      (t
-      (if *use-html-output-p*
-          (format t "<font color='red'>Test `~S' failed.</font>~%" form)
-          (format t "Test `~S' failed.~%" form))
-      (push (list form :failed) *failed-tests-details*)
-      (incf *failed-tests*)))
-   (incf *total-tests*)))
+      (with-lock-held (*sync*)
+        (push (list form :failed) *failed-tests-details*))
+      (sync-incf *failed-tests*)))
+   (sync-incf *total-tests*)))
 
-(defun expected-failure-fn (condition form)
+(defun expected-failure-fn (successp form)
   (async
    (cond
-     (condition
-      (if *use-html-output-p*
-          (format t "<font color='orange'>Test `~S' passed unexpectedly!</font>~%" form)
-          (format t "Test `~S' passed unexpectedly!~%" form))
-      (incf *unexpected-passes*))
+     (successp
+      (sync-incf *unexpected-passes*))
      (t
-      (format t "Test `~S' failed expectedly.~%" form)
-      (push (list form :failed-expected) *failed-tests-details*)
-      (incf *expected-failures*)))
-   (incf *total-tests*)))
-
+      (with-lock-held (*sync*)
+        (push (list form :failed-expected) *failed-tests-details*))
+      (sync-incf *expected-failures*)))
+   (sync-incf *total-tests*)))
 
 (defmacro test (condition)
-  `(test-fn ,condition ',condition))
+  `(async (test-fn ,condition ',condition)))
 
 (defmacro expected-failure (condition)
-  `(expected-failure-fn ,condition ',condition))
+  `(async (expected-failure-fn (async ,condition) ',condition)))
 
 (defmacro test-equal (form value)
   `(test (equal ,form ,value)))
@@ -57,3 +77,18 @@
 (setq *timestamp* (get-internal-real-time))
 
 (terpri)
+
+;;; Run the tests in the host Lisp  implementation. It is a quick way to
+;;; improve the level of trust of the tests.
+(defun run ()
+  (load (make-pathname
+         :name "tests" :type "lisp"
+         :directory (pathname-directory #.(or *compile-file-pathname*
+                                              *load-pathname*))))
+  (let ((*default-pathname-defaults* jscl::*base-directory*)
+        (*use-html-output-p* nil)
+        (*package* (find-package :JSCL/TEST)))
+    (declare (special *use-html-output-p*))
+    (with-async (dolist (input (directory "tests/*.lisp"))
+                  (load input)))
+    (load "tests-report.lisp")))

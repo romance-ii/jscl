@@ -6,16 +6,17 @@
 ;; General Public  License as published  by the  Free Software Foundation,  either version 3  of the
 ;; License, or (at your option) any later version.
 ;;
-;; JSCL is distributed  in the hope that it  will be useful, but WITHOUT ANY  WARRANTY; without even
-;; the implied warranty of MERCHANTABILITY or FITNESS  FOR A PARTICULAR PURPOSE. See the GNU General
-;; Public License for more details.
+;; JSCL is distributed  in the hope that it will  be useful, but WITHOUT
+;; ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+;; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+;; for more details.
 ;;
-;; You should have  received a copy of the GNU  General Public License along with JSCL.  If not, see
-;; <http://www.gnu.org/licenses/>.
+;; You should  have received a  copy of  the GNU General  Public License
+;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
 
 (defpackage :jscl
   (:use :cl #+sbcl :sb-gray)
-  (:export #:bootstrap #:run-tests-in-host
+  (:export #:bootstrap #:run-tests-in-host #:with-sharp-j #:read-#j
            #:write-javascript-for-files #:compile-application))
 
 (defpackage :jscl/ffi
@@ -41,7 +42,6 @@
                 (comma (position #\, line)))
             (return (string-trim '(#\newline #\" #\tab #\space)
                                  (subseq line (1+ colon) comma)))))))
-
 
 
 ;;; List of all the source files that need to  be compiled, and whether they are to be compiled just
@@ -124,9 +124,9 @@
 
 (defun read-whole-file (filename)
   (with-open-file (in filename)
-    ;; FILE-LENGTH is  in bytes, not  characters. UTF-8 characters will  yield a shorter  read, with
-    ;; trailing  #\NULL bytes,  unless  we initialize  to  spaces. It's  a hack,  but  it's a  cheap
-    ;; enough one.
+    ;; FILE-LENGTH is  in bytes,  not characters. UTF-8  characters will
+    ;; yield  a shorter  read,  with trailing  #\NULL  bytes, unless  we
+    ;; initialize to spaces. It's a hack, but it's a cheap enough one.
     (let ((seq (make-string (file-length in) :initial-element #\space)))
       (read-sequence seq in)
       seq)))
@@ -196,20 +196,19 @@
   (flet ((late-compile (form)
            (let ((*standard-output* stream))
              (write-string (compile-toplevel form)))))
-    ;; We assume that environments have a friendly list representation
+    ;; We assume  that environments have a  friendly list representation
     ;; for the compiler and it can be dumped.
     (dolist (b (lexenv-function *environment*))
       (when (eq (binding-type b) 'macro)
         (setf (binding-value b) `(,*magic-unquote-marker* ,(binding-value b)))))
     (late-compile `(setq *environment* ',*environment*))
-    ;; Set some counter variable properly, so user compiled code will
+    ;; Set some  counter variable properly,  so user compiled  code will
     ;; not collide with the compiler itself.
     (late-compile
      `(progn
         (setq *variable-counter* ,*variable-counter*)
-        (setq *gensym-counter* ,*gensym-counter*)))
-    (late-compile `(setq *literal-counter* ,*literal-counter*))))
-
+        (setq *gensym-counter* ,*gensym-counter*)
+        (setq *literal-counter* ,*literal-counter*)))))
 
 
 (defun write-javascript-for-files (files &optional (stream *standard-output*))
@@ -252,7 +251,8 @@
     ;; Tests
     (compile-application
      `(,(source-pathname "tests.lisp" :directory nil)
-        ,@(directory (source-pathname "*" :directory '(:relative "tests") :type "lisp"))
+        (jscl/tests::with-async
+            ,@(directory (source-pathname "*" :directory '(:relative "tests") :type "lisp")))
         ,(source-pathname "tests-report.lisp" :directory nil))
      (merge-pathnames "tests.js" *base-directory*))
 
@@ -264,18 +264,3 @@
     (compile-application (list (source-pathname "repl.lisp" :directory '(:relative "repl-node")))
                          (merge-pathnames "repl-node.js" *base-directory*)
                          :shebang t)))
-
-
-;;; Run the tests in the host Lisp implementation. It is a quick way
-;;; to improve the level of trust of the tests.
-(defun run-tests-in-host ()
-  (load (make-pathname :name "tests" :type "lisp"
-                       :directory (pathname-directory #.(or *compile-file-pathname* *load-pathname*))))
-  (let ((*package* (find-package "JSCL/TEST"))
-        (*default-pathname-defaults* *base-directory*))
-    (load (source-pathname "tests.lisp" :directory nil))
-    (let ((*use-html-output-p* nil))
-      (declare (special *use-html-output-p*))
-      (dolist (input (directory "tests/*.lisp"))
-        (load input)))
-    (load "tests-report.lisp")))
