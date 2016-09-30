@@ -105,6 +105,7 @@
 (defmacro defpackage (package &rest options)
   (destructuring-bind (use exports)
       (defpackage/parse-options options)
+    (warn "Expanding DEFPACKAGE for ~a" package)
     `(progn
        (eval-when (:load-toplevel :execute)
          (%defpackage ',(string package) ',use)
