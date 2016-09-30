@@ -59,8 +59,8 @@
           (return-from escape-symbol-name-p t))))
     dots-only))
 
-;;; Return T if the  specified string can be read as  a number In case such a string  is the name of
-;;; a symbol then escaping is required when printing to ensure correct reading.
+;;; Return T if the specified  string can be read as a number. If case such  a string is the name of
+;;; a symbol, then escaping is required when printing to ensure correct reading.
 (defun potential-number-p (string)
   ;; The four rules for being a potential number are described in 2.3.1.1 Potential Numbers as Token
   ;;
@@ -196,6 +196,70 @@ to streams."
           (write-char char stream)))))
 
 
+(defun write-symbol (symbol stream)
+  (let ((name (symbol-name symbol))
+        (package (symbol-package symbol)))
+    ;; Check if the symbol is accesible from the current package. It is true even if the symbol's
+    ;; home package is not the current package, because it could be inherited.
+    (if (eq symbol (find-symbol (symbol-name symbol)))
+        (write-string (escape-token (symbol-name symbol)) stream)
+        ;; Symbol is not accesible from *PACKAGE*, so  let us prefix the symbol with the optional
+        ;; package or uninterned mark.
+        (progn
+          (cond
+            ((null package) (write-char #\# stream))
+            ((eq package (find-package "KEYWORD")))
+            (t (write-string (escape-token (package-name package)) stream)))
+          (write-char #\: stream)
+          (when package
+            (multiple-value-bind (symbol type)
+                (find-symbol name package)
+              (declare (ignorable symbol))
+              (when (eq type :internal)
+                (write-char #\: stream))))
+          (write-string (escape-token name) stream)))))
+
+(defun write-character-literal (character stream)
+  (write-string "#\\" stream)
+  (if (or (char= #\space character) (not (graphic-char-p character)))
+      (write-string (char-name character) stream)
+      (write-char character stream)))
+
+(defun write-list-literal (form stream)
+  (write-char #\( stream)
+  (unless (null form)
+    (write-aux (car form) stream known-objects object-ids)
+    (do ((tail (cdr form) (cdr tail)))
+        ;; Stop on symbol OR if the object is already known when we accept circular printing.
+        ((or (atom tail)
+             (and *print-circle*
+                  (let* ((ix (or (position tail known-objects) 0))
+                         (id (aref object-ids ix)))
+                    (not (zerop id)))))
+         (unless (null tail)
+           (write-string " . " stream)
+           (write-aux tail stream known-objects object-ids)))
+      (write-char #\space stream)
+      (write-aux (car tail) stream known-objects object-ids)))
+  (write-char #\) stream))
+
+(defun write-vector-literal (form stream)
+  (write-string "#(" stream)
+  (when (plusp (length form))
+    (write-aux (aref form 0) stream known-objects object-ids)
+    (do ((i 1 (1+ i)))
+        ((= i (length form)))
+      (write-char #\space stream)
+      (write-aux (aref form i) stream known-objects object-ids)))
+  (write-char #\) stream))
+
+(defun write-function-reference (form stream)
+  (let ((name #+jscl (jscl/ffi:oget form "fname")
+              #-jscl nil))
+    (if name
+        (simple-format stream "#<FUNCTION ~a>" name)
+        (write-string "#<FUNCTION>" stream))))
+
 (defun write-aux (form stream known-objects object-ids)
   (when *print-circle*
     (let* ((ix (or (position form known-objects) 0))
@@ -208,92 +272,19 @@ to streams."
          (simple-format stream "#~d#" (- id))
          (return-from write-aux)))))
   (typecase form
-    ;; NIL
-    (null
-     (write-string "NIL" stream))
-    ;; Symbols
-    (symbol
-     (let ((name (symbol-name form))
-           (package (symbol-package form)))
-       ;; Check if the symbol is accesible from the current package. It is true even if the symbol's
-       ;; home package is not the current package, because it could be inherited.
-       (if (eq form (find-symbol (symbol-name form)))
-           (write-string (escape-token (symbol-name form)) stream)
-           ;; Symbol is not accesible from *PACKAGE*, so  let us prefix the symbol with the optional
-           ;; package or uninterned mark.
-           (progn
-             (cond
-               ((null package) (write-char #\# stream))
-               ((eq package (find-package "KEYWORD")))
-               (t (write-string (escape-token (package-name package)) stream)))
-             (write-char #\: stream)
-             (when package
-               (multiple-value-bind (symbol type)
-                   (find-symbol name package)
-                 (declare (ignorable symbol))
-                 (when (eq type :internal)
-                   (write-char #\: stream))))
-             (write-string (escape-token name) stream)))))
-
-    ;; Integers
-    (integer
-     (write-integer form stream))
-    ;; Floats
-    (float
-     (write-string (float-to-string form) stream))
-    ;; Characters
-    (character
-     (write-string "#\\" stream)
-     (if (or (char= #\space form) (not (graphic-char-p form)))
-         (write-string (char-name form) stream)
-         (write-char form stream)))
-    ;; Strings
-    (string
-     (if *print-escape*
-         (write-string (lisp-escape-string form) stream)
-         (write-string form stream)))
-    ;; Functions
-    (function
-     (let ((name #+jscl (jscl/ffi:oget form "fname")
-                 #-jscl nil))
-       (if name
-           (simple-format stream "#<FUNCTION ~a>" name)
-           (write-string "#<FUNCTION>" stream))))
-    ;; Lists
-    (list
-     (write-char #\( stream)
-     (unless (null form)
-       (write-aux (car form) stream known-objects object-ids)
-       (do ((tail (cdr form) (cdr tail)))
-           ;; Stop on symbol OR if the object is already known when we accept circular printing.
-           ((or (atom tail)
-                (and *print-circle*
-                     (let* ((ix (or (position tail known-objects) 0))
-                            (id (aref object-ids ix)))
-                       (not (zerop id)))))
-            (unless (null tail)
-              (write-string " . " stream)
-              (write-aux tail stream known-objects object-ids)))
-         (write-char #\space stream)
-         (write-aux (car tail) stream known-objects object-ids)))
-     (write-char #\) stream))
-    ;; Vectors
-    (vector
-     (write-string "#(" stream)
-     (when (plusp (length form))
-       (write-aux (aref form 0) stream known-objects object-ids)
-       (do ((i 1 (1+ i)))
-           ((= i (length form)))
-         (write-char #\space stream)
-         (write-aux (aref form i) stream known-objects object-ids)))
-     (write-char #\) stream))
-    ;; Packages
-    (package
-     (simple-format stream "#<PACKAGE ~a>" (package-name form)))
-    ;; Others
-    (otherwise
-     (simple-format stream "#<JS-OBJECT ~a>" (#j:String form)))))
-
+    (null (write-string "NIL" stream))
+    (symbol (write-symbol form stream))
+    (integer (write-integer form stream))
+    (float (write-string (float-to-string form) stream))
+    (character (write-character-literal form stream))
+    (string (if *print-escape*
+                (write-string (lisp-escape-string form) stream)
+                (write-string form stream)))
+    (function (write-function-reference form stream))
+    (list (write-list-literal form stream))
+    (vector (write-vector-literal form stream))
+    (package (simple-format stream "#<PACKAGE ~a>" (package-name form)))
+    (t (simple-format stream "#<JS-OBJECT ~a>" (#j:String form)))))
 
 (defun output-stream-designator (x)
   ;; TODO: signal error if X is not a stream designator
