@@ -170,8 +170,8 @@
 
 (defun !compile-file/progress (in source)
   (format t (concat
-             (make-string 4 :initial-element #\Backspace)
-             "~[   ~:;~:*~2d%~]… ")
+             (make-string 5 :initial-element #\Backspace)
+             "⋅~[   ~:;~:*~2d%~]… ")
           (round (* 100
                     (/ (stream-file-position in)
                        (length source))))))
@@ -199,7 +199,8 @@
            :report (lambda (s)
                      (format s "Retry compiling ~a in JSCL" (enough-namestring filename)))
            (go top))))
-     (format t " Done.")))
+     (princ (make-string 5 :initial-element #\Backspace))
+     (princ " Done.")))
 
 (defun dump-global-environment (stream)
   (flet ((late-compile (form)
