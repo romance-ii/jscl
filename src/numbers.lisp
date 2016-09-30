@@ -138,4 +138,6 @@
         (t
          (apply #'lcm (lcm (first integers) (second integers)) (nthcdr 2 integers)))))
 
-(defun rational-float-p (rational) nil)
+(defun rational-float-p (rational)
+  nil)
+
