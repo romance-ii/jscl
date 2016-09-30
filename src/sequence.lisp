@@ -1,16 +1,19 @@
 ;;; sequence.lisp
 
-;; JSCL is  free software:  you can  redistribute it  and/or modify it  under the  terms of  the GNU
-;; General Public  License as published  by the  Free Software Foundation,  either version 3  of the
-;; License, or (at your option) any later version.
+;; JSCL is free software: you can redistribute it and/or modify it under
+;; the terms of the GNU General  Public License as published by the Free
+;; Software Foundation,  either version  3 of the  License, or  (at your
+;; option) any later version.
 ;;
-;; JSCL is distributed  in the hope that it  will be useful, but WITHOUT ANY  WARRANTY; without even
-;; the implied warranty of MERCHANTABILITY or FITNESS  FOR A PARTICULAR PURPOSE. See the GNU General
-;; Public License for more details.
+;; JSCL is distributed  in the hope that it will  be useful, but WITHOUT
+;; ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+;; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+;; for more details.
 ;;
-;; You should have  received a copy of the GNU  General Public License along with JSCL.  If not, see
-;; <http://www.gnu.org/licenses/>.
+;; You should  have received a  copy of  the GNU General  Public License
+;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
 
+(in-package :jscl)
 (/debug "loading sequence.lisp!")
 
 (defun sequencep (thing)
@@ -24,7 +27,7 @@
     ((stringp seq)
      (string-length seq))
     ((arrayp seq)
-     (oget seq "length"))
+     (jscl/ffi:oget seq "length"))
     ((listp seq)
      (list-length seq))
     (t
@@ -428,7 +431,7 @@
      (t (not-seq-error sequence2)))
    sequence1 sequence2 args))
 
-(defparameter *iterator-done* (gensym))
+(defparameter *iterator-done* (gensym "ITERATOR-DONE-"))
 
 (defun make-list-iterator (the-list)
   (let ((tail the-list))

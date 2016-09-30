@@ -1,25 +1,29 @@
 ;;; setf.lisp ---
 
-;; JSCL is  free software:  you can  redistribute it  and/or modify it  under the  terms of  the GNU
-;; General Public  License as published  by the  Free Software Foundation,  either version 3  of the
-;; License, or (at your option) any later version.
+;; JSCL is free software: you can redistribute it and/or modify it under
+;; the terms of the GNU General  Public License as published by the Free
+;; Software Foundation,  either version  3 of the  License, or  (at your
+;; option) any later version.
 ;;
-;; JSCL is distributed  in the hope that it  will be useful, but WITHOUT ANY  WARRANTY; without even
-;; the implied warranty of MERCHANTABILITY or FITNESS  FOR A PARTICULAR PURPOSE. See the GNU General
-;; Public License for more details.
+;; JSCL is distributed  in the hope that it will  be useful, but WITHOUT
+;; ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+;; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+;; for more details.
 ;;
-;; You should have  received a copy of the GNU  General Public License along with JSCL.  If not, see
-;; <http://www.gnu.org/licenses/>.
+;; You should  have received a  copy of  the GNU General  Public License
+;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
+
+(in-package :jscl)
 
 (/debug "loading setf!")
 
 ;;; Generalized references (SETF)
 
-(eval-when(:compile-toplevel :load-toplevel :execute)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (defvar *setf-expanders* nil)
   (defun !get-setf-expansion (place)
     (if (symbolp place)
-        (let ((value (gensym)))
+        (let ((value (gensym "VALUE-")))
           (values nil
                   nil
                   `(,value)
@@ -36,7 +40,7 @@
 (defmacro define-setf-expander (access-fn lambda-list &body body)
   (unless (symbolp access-fn)
     (error "ACCESS-FN `~S' must be a symbol." access-fn))
-  (let ((g!args (gensym)))
+  (let ((g!args (gensym "ARGS-")))
     `(eval-when (:compile-toplevel :load-toplevel :execute)
        (push (cons ',access-fn (lambda (&rest ,g!args)
                                  (destructuring-bind ,lambda-list ,g!args
@@ -48,10 +52,10 @@
 (defmacro short-defsetf (access-fn update-fn &optional documentation)
   (declare (ignore documentation))
   `(define-setf-expander ,access-fn (&rest args)
-     (let ((g!new (gensym))
+     (let ((g!new (gensym "NEW-"))
            (g!args (mapcar (lambda (s)
                              (declare (ignore s))
-                             (gensym))
+                             (gensym "ARG-"))
                            args)))
        (values g!args
                args
@@ -108,7 +112,7 @@
 (defmacro incf (place &optional (delta 1))
   (multiple-value-bind (dummies vals newval setter getter)
       (!get-setf-expansion place)
-    (let ((d (gensym)))
+    (let ((d (gensym "DELTA-")))
       `(let* (,@(mapcar #'list dummies vals)
               (,d ,delta)
                 (,(car newval) (+ ,getter ,d))
@@ -118,7 +122,7 @@
 (defmacro decf (place &optional (delta 1))
   (multiple-value-bind (dummies vals newval setter getter)
       (!get-setf-expansion place)
-    (let ((d (gensym)))
+    (let ((d (gensym "DELTA-")))
       `(let* (,@(mapcar #'list dummies vals)
               (,d ,delta)
                 (,(car newval) (- ,getter ,d))
@@ -128,7 +132,7 @@
 (defmacro push (x place)
   (multiple-value-bind (dummies vals newval setter getter)
       (!get-setf-expansion place)
-    (let ((g (gensym)))
+    (let ((g (gensym "VALUE-")))
       `(let* ((,g ,x)
               ,@(mapcar #'list dummies vals)
               (,(car newval) (cons ,g ,getter))
@@ -138,7 +142,7 @@
 (defmacro pop (place)
   (multiple-value-bind (dummies vals newval setter getter)
       (!get-setf-expansion place)
-    (let ((head (gensym)))
+    (let ((head (gensym "HEAD-")))
       `(let* (,@(mapcar #'list dummies vals)
               (,head ,getter)
                 (,(car newval) (cdr ,head))
@@ -150,8 +154,8 @@
   (declare (ignore key test test-not))
   (multiple-value-bind (dummies vals newval setter getter)
       (!get-setf-expansion place)
-    (let ((g (gensym))
-          (v (gensym)))
+    (let ((g (gensym "VALUE-"))
+          (v (gensym "V-")))
       `(let* ((,g ,x)
               ,@(mapcar #'list dummies vals)
               ,@(cdr newval)
