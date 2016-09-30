@@ -1588,7 +1588,9 @@
       (progn
         (warn "Failed to macroexpand ~s ~% in ~s"
               (car sexp) sexp)
-        (list 'error (format nil "Failed compilation of ~s" sexp)))
+        (if (!macro-function (car sexp))
+            (!macroexpand-1 sexp)
+            (list 'error (format nil "Failed compilation of ~s" sexp))))
       sexp))
 
 (defun object-evaluates-to-itself-p (object)
