@@ -111,7 +111,10 @@
          (%defpackage ',(string package) ',use)
          ,@(map 'list (lambda (sym) (list 'export sym)) exports))
        (eval-when (:compile-toplevel)
-         (make-package ',(string package) :use ',use)))))
+         (make-package ',(string package) :use ',use))
+       ,@(mapcar (lambda (symbol)
+                   (export (intern (symbol-name symbol) package)))
+                 exports))))
 
 
 (defun redefine-package (package use)
