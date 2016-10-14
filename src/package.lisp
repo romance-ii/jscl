@@ -107,7 +107,10 @@
                      `(export (intern ,(string symbol) (find-package ,(string package)))))
                    exports))
        (eval-when (:compile-toplevel)
-         (make-package ',(string package) :use ',use)))))
+         (make-package ',(string package) :use ',use))
+       ,@(mapcar (lambda (symbol)
+                   (export (intern (symbol-name symbol) package)))
+                 exports))))
 
 
 (defun redefine-package (package use)
