@@ -29,6 +29,9 @@
   (:use :cl #-jscl :bordeaux-threads)
   (:export #:RUN))
 
+(defpackage :jscl/ffi
+  (:use :jscl))
+
 (in-package :jscl)
 
 (defvar *base-directory*
