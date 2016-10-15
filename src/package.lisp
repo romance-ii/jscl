@@ -128,7 +128,6 @@
         (redefine-package package use)
         (make-package name :use use))))
 
-
 (defun find-symbol (name &optional (package *package*))
   (let* ((package (find-package-or-fail package))
          (externals (%package-external-symbols package))
