@@ -1,4 +1,4 @@
-                                        ; Tests  for  conditional  forms
+;; Tests  for  conditional  forms
                                         ; Boolean operators
 (test (eql (and nil 1) nil))
 (test (=   (and 1   2)   2))
@@ -8,7 +8,7 @@
 
                                         ; COND
 (test (eql nil (cond)))
-(test (=   1   (cond (1))))
+(test (=   1   (cond (1)))) 
 (test (= 1
          (let ((x 0))
            (cond ((incf x))))))

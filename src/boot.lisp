@@ -2,22 +2,29 @@
 
 ;; Copyright (C) 2012, 2013 David Vazquez Copyright (C) 2012 Raimon Grau
 
-;; JSCL is  free software:  you can  redistribute it  and/or modify it  under the  terms of  the GNU
-;; General Public  License as published  by the  Free Software Foundation,  either version 3  of the
-;; License, or (at your option) any later version.
+;; JSCL is free software: you can redistribute it and/or modify it under
+;; the terms of the GNU General  Public License as published by the Free
+;; Software Foundation,  either version  3 of the  License, or  (at your
+;; option) any later version.
 ;;
-;; JSCL is distributed  in the hope that it  will be useful, but WITHOUT ANY  WARRANTY; without even
-;; the implied warranty of MERCHANTABILITY or FITNESS  FOR A PARTICULAR PURPOSE. See the GNU General
-;; Public License for more details.
+;; JSCL is distributed  in the hope that it will  be useful, but WITHOUT
+;; ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+;; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+;; for more details.
 ;;
-;; You should have  received a copy of the GNU  General Public License along with JSCL.  If not, see
-;; <http://www.gnu.org/licenses/>.
+;; You should  have received a  copy of  the GNU General  Public License
+;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
 
-;;; This code is executed when JSCL compiles  this file itself. The compiler provides compilation of
-;;; some special forms, as well as funcalls and  macroexpansion, but no functions. So, we define the
-;;; Lisp world  from scratch. This  code has to  define enough language to  the compiler to  be able
-;;; to run.
+;;; This  code  is  executed  when   JSCL  compiles  this  file  itself.
+;;; The compiler provides compilation of  some special forms, as well as
+;;; funcalls and  macroexpansion, but  no functions.  So, we  define the
+;;; Lisp world from scratch. This code  has to define enough language to
+;;; the compiler to be able to run.
 
+(in-package :jscl)
+
+#+jscl (error "This should not be getting evaluated within JSCL.")
+#-jscl-xc (error "This should not be getting evaluated except during JSCL-XC.")
 (/debug "loading boot.lisp!")
 
 (eval-when (:compile-toplevel)
@@ -25,15 +32,16 @@
          '#'(lambda (form)
               (destructuring-bind (name args &body body)
                   form
-                (let* ((whole (gensym))
+                (let* ((whole (gensym "WHOLE-"))
                        (expander `(function
                                    (lambda (,whole)
                                     (block ,name
                                       (destructuring-bind ,args ,whole
                                         ,@body))))))
 
-                  ;; If we  are boostrapping JSCL, we  need to quote the  macroexpander, because the
-                  ;; macroexpander will need to be dumped in the final environment somehow.
+                  ;; If we are  boostrapping JSCL, we need  to quote the
+                  ;; macroexpander, because the  macroexpander will need
+                  ;; to be dumped in the final environment somehow.
                   (when (find :jscl-xc *features*)
                     (setq expander `(quote ,expander)))
 
@@ -121,7 +129,7 @@
 ;; Basic macros
 
 (defmacro dolist ((var list &optional result) &body body)
-  (let ((g!list (gensym)))
+  (let ((g!list (gensym "DOLIST-LIST-")))
     (unless (symbolp var) (error "`~S' is not a symbol." var))
     `(block nil
        (let ((,g!list ,list)
@@ -133,7 +141,7 @@
          ,result))))
 
 (defmacro dotimes ((var count &optional result) &body body)
-  (let ((g!count (gensym)))
+  (let ((g!count (gensym "DOTIMES-COUNTER-")))
     (unless (symbolp var) (error "`~S' is not a symbol." var))
     `(block nil
        (let ((,var 0)
@@ -145,38 +153,50 @@
 
 (defmacro cond (&rest clausules)
   (unless (null clausules)
-    (destructuring-bind (condition &body body)
-        (first clausules)
-      (cond
-        ((eq condition t)
-         `(progn ,@body))
-        ((null body)
-         (let ((test-symbol (gensym)))
-           `(let ((,test-symbol ,condition))
-              (if ,test-symbol
-                  ,test-symbol
-                  (cond ,@(rest clausules))))))
-        (t
-         `(if ,condition
-              (progn ,@body)
-              (cond ,@(rest clausules))))))))
+    (let ((clause (first clausules))
+          (more (rest clausules)))
+      (when (atom clause)
+        (error "COND clause ~s is not a list" clause))
+      (destructuring-bind (condition &body body) clause
+        (cond 
+          ((eq condition t)
+           (when more
+             (warn "Unreachable: ~s" more))
+           `(progn ,@body))
+          ((endp body)
+           (let ((test-symbol (gensym "COND-TEST-")))
+             `(let ((,test-symbol ,condition))
+                (if ,test-symbol
+                    ,test-symbol
+                    ,(when more `(cond ,@more))))))
+          (t
+           `(if ,condition
+                (progn ,@body)
+                ,(when more `(cond ,@more)))))))))
+
+(defun ensure-list (list-or-atom)
+  (if (listp list-or-atom)
+      list-or-atom
+      (list list-or-atom)))
 
 (defmacro case (form &rest clausules)
-  (let ((!form (gensym)))
+  (let ((!form (gensym "CASE-FORM-")))
     `(let ((,!form ,form))
        (cond
          ,@(mapcar (lambda (clausule)
-                     (destructuring-bind (keys &body body)
-                         clausule
-                       (if (or (eq keys 't) (eq keys 'otherwise))
-                           `(t nil ,@body)
-                           (let ((keys (if (listp keys) keys (list keys))))
-                             `((or ,@(mapcar (lambda (key) `(eql ,!form ',key)) keys))
-                               nil ,@body)))))
+                     (destructuring-bind (keys &body body) clausule
+                       (cond ((member keys '(t otherwise))
+                              `(t nil ,@body))
+                             ((listp keys)
+                              `((or ,@(mapcar (lambda (key)
+                                                `(eql ,!form ',key))
+                                              keys))
+                                nil ,@body))
+                             (t `(,keys nil ,@body)))))
                    clausules)))))
 
 (defmacro ecase (form &rest clausules)
-  (let ((g!form (gensym)))
+  (let ((g!form (gensym "ECASE-FORM-")))
     `(let ((,g!form ,form))
        (case ,g!form
          ,@(append
@@ -202,12 +222,14 @@
     ((null (cdr forms))
      (car forms))
     (t
-     (let ((g (gensym)))
+     (let ((g (gensym "OR-")))
        `(let ((,g ,(car forms)))
-          (if ,g ,g (or ,@(cdr forms))))))))
+          (if ,g
+              ,g
+              (or ,@(cdr forms))))))))
 
 (defmacro prog1 (form &body body)
-  (let ((value (gensym)))
+  (let ((value (gensym "PROG1-")))
     `(let ((,value ,form))
        ,@body
        ,value)))
@@ -223,60 +245,56 @@
          (tagbody ,@forms)))))
 
 (defmacro psetq (&rest pairs)
-  (let (;; For each pair, we store here a list of the form
-        ;; (VARIABLE GENSYM VALUE).
+  (let (;;  For  each pair, we store  here a list of  the form (VARIABLE
+        ;;  GENSYM VALUE).
         (assignments '()))
     (while t
       (cond
         ((null pairs) (return))
         ((null (cdr pairs))
-         (error "Odd paris in PSETQ"))
+         (error "Odd pairs in PSETQ; dangling ~s" pairs))
         (t
          (let ((variable (car pairs))
                (value (cadr pairs)))
-           (push `(,variable ,(gensym) ,value)  assignments)
+           (push (list variable (gensym (string variable)) value)
+                 assignments)
            (setq pairs (cddr pairs))))))
     (setq assignments (reverse assignments))
     ;;
     `(let ,(mapcar #'cdr assignments)
-       (setq ,@(!reduce #'append (mapcar #'butlast assignments) nil)))))
+       (setq ,@(mapcan #'butlast assignments)))))
+
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defun do/do* (do/do* varlist endlist body) 
+    `(block nil
+       (,(ecase do/do* (do 'let) (do* 'let*))
+         ,(mapcar (lambda (x)
+                    (if (symbolp x)
+                        (list x nil)
+                        (list (first x) (second x))))
+                  varlist)
+         (while t
+           (when ,(car endlist)
+             (return (progn ,@(cdr endlist))))
+           (tagbody ,@body)
+           (,(ecase do/do* (do 'psetq) (do* 'setq))
+             ,@(mapcan (lambda (v) 
+                         (and (listp v) (consp (cddr v))
+                              (list (first v) (third v))))
+                       varlist)))))))
 
 (defmacro do (varlist endlist &body body)
-  `(block nil
-     (let ,(mapcar (lambda (x) (if (symbolp x)
-                                   (list x nil)
-                                   (list (first x) (second x)))) varlist)
-       (while t
-         (when ,(car endlist)
-           (return (progn ,@(cdr endlist))))
-         (tagbody ,@body)
-         (psetq
-          ,@(apply #'append
-                   (mapcar (lambda (v)
-                             (and (listp v)
-                                  (consp (cddr v))
-                                  (list (first v) (third v))))
-                           varlist)))))))
+  (do/do* 'do varlist endlist body)  )
 
 (defmacro do* (varlist endlist &body body)
-  `(block nil
-     (let* ,(mapcar (lambda (x1) (if (symbolp x1)
-                                     (list x1 nil)
-                                     (list (first x1) (second x1)))) varlist)
-       (while t
-         (when ,(car endlist)
-           (return (progn ,@(cdr endlist))))
-         (tagbody ,@body)
-         (setq
-          ,@(apply #'append
-                   (mapcar (lambda (v)
-                             (and (listp v)
-                                  (consp (cddr v))
-                                  (list (first v) (third v))))
-                           varlist)))))))
+  (do/do* 'do* varlist endlist body))
 
 (defmacro declare (&rest declarations)
-  "Early DECLARE ignores everything."
+  "Early DECLARE ignores everything. This only exists so that during the
+ bootstrapping process,  we can have  declarations that SBCL  will read
+ and  they won't  make JSCL  choke. Once  the various  places in  which
+ DECLARE forms  are valid have  appropriate support to at  least ignore
+ them, this can be removed."
   nil)
 
 (defmacro assert (test &rest _)
@@ -285,14 +303,12 @@ Note, this will  still signal errors itself if it  actually is triggered
 before  princ-to-string is  available, but  it needs  to be  declared as
 a macro before  anything else gets loaded, and  currently the compiler's
 macro cache is so aggressive that it cannot be redefined."
-  #-jscl (declare (ignore _))
   `(unless ,test
      (error "Assertion failed: NOT ~s" ',test)))
 
-(defmacro check-type (var type &rest _)
+(defmacro check-type (place type &optional type-name)
   "Early/minimalist CHECK-TYPE using ETYPECASE"
-  #-jscl (declare (ignore _))
-  `(etypecase ,var (,type nil)))
+  `(etypecase ,place (,type nil)))
 
 (defmacro loop (&body body)
   `(while t ,@body))
@@ -304,8 +320,7 @@ macro cache is so aggressive that it cannot be redefined."
     (not (apply x args))))
 
 (defun constantly (x)
-  (lambda (&rest args)
-    (declare (ignore args))
+  (lambda (&rest)
     x))
 
 (defun code-char (x)
@@ -367,7 +382,7 @@ macro cache is so aggressive that it cannot be redefined."
   nil)
 
 (defmacro multiple-value-bind (variables value-from &body body)
-  `(multiple-value-call (lambda (&optional ,@variables &rest ,(gensym))
+  `(multiple-value-call (lambda (&optional ,@variables &rest ,(gensym "_"))
                           ,@body)
      ,value-from))
 
@@ -377,36 +392,36 @@ macro cache is so aggressive that it cannot be redefined."
 
 ;; Incorrect typecase, but used in NCONC.
 (defmacro typecase (x &rest clausules)
-  (let ((value (gensym)))
+  (let ((value (gensym "TYPECASE-VALUE-")))
     `(let ((,value ,x))
        (cond
          ,@(mapcar (lambda (c)
                      (if (find (car c) '(t otherwise))
                          `(t ,@(rest c))
                          `((,(ecase (car c)
-                                    (number 'numberp)
-                                    (integer 'integerp)
-                                    (cons 'consp)
-                                    (list 'listp)
-                                    (vector 'vectorp)
-                                    (character 'characterp)
-                                    (sequence 'sequencep)
-                                    (symbol 'symbolp)
-                                    (keyword 'keywordp)
-                                    (function 'functionp)
-                                    (float 'floatp)
-                                    (array 'arrayp)
-                                    (string 'stringp)
-                                    (atom 'atom)
-                                    (null 'null)
-                                    (package 'packagep))
+                               (number 'numberp)
+                               (integer 'integerp)
+                               (cons 'consp)
+                               (list 'listp)
+                               (vector 'vectorp)
+                               (character 'characterp)
+                               (sequence 'sequencep)
+                               (symbol 'symbolp)
+                               (keyword 'keywordp)
+                               (function 'functionp)
+                               (float 'floatp)
+                               (array 'arrayp)
+                               (string 'stringp)
+                               (atom 'atom)
+                               (null 'null)
+                               (package 'packagep))
                              ,value)
                            ,@(or (rest c)
                                  (list nil)))))
                    clausules)))))
 
 (defmacro etypecase (x &rest clausules)
-  (let ((g!x (gensym)))
+  (let ((g!x (gensym "ETYPECASE-VALUE-")))
     `(let ((,g!x ,x))
        (typecase ,g!x
          ,@clausules
@@ -449,3 +464,4 @@ macro cache is so aggressive that it cannot be redefined."
 (defvar *print-radix* nil)
 (defvar *print-base* 10)
 (defvar *read-base* 10)
+(defvar *read-eval* t)

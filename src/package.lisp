@@ -89,14 +89,19 @@
   `(eval-when (:compile-toplevel :load-toplevel :execute)
      (setq *package* (find-package-or-fail ',string-designator))))
 
-(defmacro defpackage (package &rest options)
+(defun defpackage/parse-options (options)
   (let (use exports)
     (dolist (option options)
       (ecase (car option)
         (:use
          (setf use (append use (cdr option))))
         (:export
-         (setf exports (append exports (cdr option))))))
+         (setf exports (append use (cdr option))))))
+    (list use exports)))
+
+(defmacro defpackage (package &rest options)
+  (destructuring-bind (use exports)
+      (defpackage/parse-options options)
     `(progn
        (eval-when (:load-toplevel :execute)
          (%defpackage ',(string package) ',use)
@@ -106,8 +111,9 @@
        (eval-when (:compile-toplevel)
          (make-package ',(string package) :use ',use)))))
 
+
 (defun redefine-package (package use)
-  (setf (oget package "use") use)
+  (setf (jscl/ffi:oget package "use") use)
   package)
 
 (defun %defpackage (name use)
@@ -117,20 +123,22 @@
         (redefine-package package use)
         (make-package name :use use))))
 
+
 (defun find-symbol (name &optional (package *package*))
   (let* ((package (find-package-or-fail package))
          (externals (%package-external-symbols package))
          (symbols (%package-symbols package)))
     (cond
       ((in name externals)
-       (values (oget externals name) :external))
+       (values (jscl/ffi:oget externals name) :external))
       ((in name symbols)
-       (values (oget symbols name) :internal))
+       (values (jscl/ffi:oget symbols name) :internal))
       (t
        (dolist (used (package-use-list package) (values nil nil))
          (let ((exports (%package-external-symbols used)))
            (when (in name exports)
-             (return (values (oget exports name) :inherit)))))))))
+             (return (values (jscl/ffi:oget exports name) :inherited)))))))))
+
 
 ;;; It is a function to call when a symbol is interned. The function
 ;;; is invoked with the already interned symbol as argument.
@@ -143,26 +151,26 @@
       (if foundp
           (values symbol foundp)
           (let ((symbols (%package-symbols package)))
-            (oget symbols name)
+            (jscl/ffi:oget symbols name)
             (let ((symbol (make-symbol name)))
-              (setf (oget symbol "package") package)
+              (setf (jscl/ffi:oget symbol "package") package)
               (when (eq package *keyword-package*)
-                (setf (oget symbol "value") symbol)
+                (setf (jscl/ffi:oget symbol "value") symbol)
                 (export (list symbol) package))
               (when *intern-hook*
                 (funcall *intern-hook* symbol))
-              (setf (oget symbols name) symbol)
+              (setf (jscl/ffi:oget symbols name) symbol)
               (values symbol nil)))))))
 
 (defun symbol-package (symbol)
   (unless (symbolp symbol)
     (error "`~S' is not a symbol." symbol))
-  (oget symbol "package"))
+  (jscl/ffi:oget symbol "package"))
 
 (defun export (symbols &optional (package *package*))
   (let ((exports (%package-external-symbols package)))
     (dolist (symb symbols t)
-      (setf (oget exports (symbol-name symb)) symb))))
+      (setf (jscl/ffi:oget exports (symbol-name symb)) symb))))
 
 (defun %map-external-symbols (function package)
   (map-for-in function (%package-external-symbols package)))

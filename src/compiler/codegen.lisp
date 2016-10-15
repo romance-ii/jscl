@@ -2,30 +2,35 @@
 
 ;; Copyright (C) 2013, 2014 David Vazquez
 
-;; JSCL is  free software:  you can  redistribute it  and/or modify it  under the  terms of  the GNU
-;; General Public  License as published  by the  Free Software Foundation,  either version 3  of the
-;; License, or (at your option) any later version.
+;; JSCL is free software: you can redistribute it and/or modify it under
+;; the terms of the GNU General  Public License as published by the Free
+;; Software Foundation,  either version  3 of the  License, or  (at your
+;; option) any later version.
 ;;
-;; JSCL is distributed  in the hope that it  will be useful, but WITHOUT ANY  WARRANTY; without even
-;; the implied warranty of MERCHANTABILITY or FITNESS  FOR A PARTICULAR PURPOSE. See the GNU General
-;; Public License for more details.
+;; JSCL is distributed  in the hope that it will  be useful, but WITHOUT
+;; ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+;; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+;; for more details.
 ;;
-;; You should have  received a copy of the GNU  General Public License along with JSCL.  If not, see
-;; <http://www.gnu.org/licenses/>.
+;; You should  have received a  copy of  the GNU General  Public License
+;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
 
 
-;;; This code  generator takes  as input  a S-expression  representation of  the Javascript  AST and
-;;; generates Javascript code without redundant syntax constructions like extra parenthesis.
+;;; This code generator takes as  input a S-expression representation of
+;;; the Javascript  AST and generates Javascript  code without redundant
+;;; syntax constructions like extra parenthesis.
 ;;;
-;;; It is intended to be used with the new compiler. However, it is quite independent so it has been
-;;; integrated early in JSCL.
+;;; It is  intended to  be used  with the new  compiler. However,  it is
+;;; quite independent so it has been integrated early in JSCL.
 
-(/debug "loading compiler-codegen.lisp!")
+(in-package :jscl)
+
+(/debug "loading compiler/codegen.lisp!")
 
 
 (defvar *js-macros* nil)
 (defmacro define-js-macro (name lambda-list &body body)
-  (let ((form (gensym)))
+  (let ((form (gensym "FORM-")))
     `(push (cons ',name
                  (lambda (,form)
                    (block ,name
@@ -62,71 +67,69 @@
         (size (length string))
         (seen-single-quote nil)
         (seen-double-quote nil)
-        (skipper (gensym)))
+        (skipper (gensym "SKIPPER-")))
     (flet ((%js-escape-string (string escape-single-quote-p)
              (let ((output "")
                    (index 0))
-               (while (< index size)
-                 (let ((ch (char string index)))
-                   (cond
-                     ((char= ch #\\)
-                      (setq output (concat output "\\")))
-                     ((and escape-single-quote-p (char= ch #\apostrophe))
-                      (setq output (concat output "\\")))
-                     ((char= ch #\newline)
-                      (setq output (concat output "\\"))
-                      (setq ch #\n))
-                     ((char= ch #\return)
-                      (setq output (concat output "\\"))
-                      (setq ch #\r))
-                     ((char= ch #\tab)
-                      (setq output (concat output "\\"))
-                      (setq ch #\t))
-                     ((char= ch #\page)
-                      (setq output (concat output "\\"))
-                      (setq ch #\f))
-                     ((char= ch #\backspace)
-                      (setq output (concat output "\\"))
-                      (setq ch #\b))
-                     ((char= ch #\null)
-                      (setq output (concat output "\\"))
-                      (setq ch #\0))
-                     ((or (<= 1 (char-code ch) 26))
-                      (setq output (concat output "\\c"
-                                           (string (code-char (+ (char-code #\A) -1 (char-code ch))))))
-                      (setq ch skipper))
-                     ((<= 27 (char-code ch) 31)
-                      (setq output (concat output "\\x" (integer-to-string (char-code ch) 16)))
-                      (setq ch skipper))
-                     ((<= 127 (char-code ch) 159)
-                      (let ((s (integer-to-string (char-code ch) 16)))
-                        (setq output (concat output "\\u"
-                                             (make-string (- 4 (length s)) :initial-element #\0)
-                                             s)))
-                      (setq ch skipper)))
-                   (unless (eq ch skipper)
-                     (setq output (concat output (string ch)))))
-                 (incf index))
+               (labels
+                   ((add (stuff)
+                      (setq output (concat output
+                                           (etypecase stuff
+                                             (character (string stuff))
+                                             (vector stuff)))))
+                    (backslash (char)
+                      (add (vector #\\ char))))
+                 (while (< index size)
+                   (let ((ch (char string index)))
+                     (case ch
+                       (#\apostrophe
+                        (if escape-single-quote-p
+                            (backslash #\apostrophe)
+                            (add #\apostrophe)))
+                       (#\\ (backslash #\\))
+                       (#\newline (backslash #\n))
+                       (#\return (backslash #\r))
+                       (#\tab (backslash #\t))
+                       (#\page (backslash #\f))
+                       (#\backspace (backslash #\b))
+                       (#\null (backslash #\0))
+                       (otherwise
+                        (cond
+                          ((<= 1 (char-code ch) 26)
+                           (add "\\c")
+                           (add (code-char (+ (char-code #\A)
+                                              -1
+                                              (char-code ch)))))
+                          ((<= 27 (char-code ch) 31)
+                           (add "\\x")
+                           (add (integer-to-string (char-code ch) 16)))
+                          ((<= 127 (char-code ch) 159)
+                           (let ((s (integer-to-string (char-code ch) 16)))
+                             (add "\\u")
+                             (add (make-string (- 4 (length s))
+                                               :initial-element #\0))
+                             (add s)))
+                          (t (add ch))))))
+                   (incf index)))
                output)))
-      ;; First, scan the string for single/double quotes
-      (while (< index size)
-        (let ((ch (char string index)))
-          (when (char= ch #\apostrophe)
-            (setq seen-single-quote t))
-          (when (char= ch #\")
-            (setq seen-double-quote t)))
-        (incf index))
-      ;; Then pick the appropriate way to escape the quotes
+      ;; First, scan the string for single/double quotes 
       (cond
-        ((not seen-single-quote)
-         (concat "'"   (%js-escape-string string nil) "'"))
-        ((not seen-double-quote)
-         (concat "\""  (%js-escape-string string nil) "\""))
-        (t (concat "'" (%js-escape-string string t)   "'"))))))
+        ((not (find #\apostrophe string))
+         (concat #(#\apostrophe) 
+                 (%js-escape-string string nil)
+                 #(#\apostrophe)))
+        ((not (find #\" string))
+         (concat #(#\")  
+                 (%js-escape-string string nil)
+                 #(#\")))
+        (t
+         (concat #(#\apostrophe)
+                 (%js-escape-string string t)
+                 #(#\apostrophe)))))))
 
 
-(defun js-format (fmt &rest args)
-  (apply #'format *js-output* fmt args))
+      (defun js-format (fmt &rest args)
+        (apply #'format *js-output* fmt args))
 
 ;;; Check if STRING-DESIGNATOR is  valid as a Javascript identifier. It returns  a couple of values.
 ;;; The identifier itself as a string and a boolean value with the result of this check.
