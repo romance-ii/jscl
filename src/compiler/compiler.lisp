@@ -1594,7 +1594,8 @@
       (floatp object)
       (characterp object)
       (stringp object)
-      (arrayp object)))
+      (arrayp object)
+      (pathnamep object)))
 
 (defun convert-1 (sexp &optional multiple-value-p)
   (multiple-value-bind (sexp expandedp) (!macroexpand-1 sexp)
