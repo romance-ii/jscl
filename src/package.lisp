@@ -16,7 +16,6 @@
 #-jscl (error "Don't compile this file on the host")
 (/debug "loading package.lisp!")
 
-
 (defvar *package-table*
   (%js-vref "packages"))
 
@@ -109,10 +108,12 @@
     `(progn
        (eval-when (:load-toplevel :execute)
          (%defpackage ',(string package) ',use)
-         ,@(map 'list (lambda (sym) (list 'export sym)) exports))
+         ,@(mapcar (lambda (symbol)
+                     `(export (intern ,(string symbol) (find-package ,(string package)))))
+                   exports))
        (eval-when (:compile-toplevel)
          (make-package ',(string package) :use ',use))
-       ,@(mapcar (lambda (symbol)
+         ,@(mapcar (lambda (symbol)
                    (export (intern (symbol-name symbol) package)))
                  exports))))
 

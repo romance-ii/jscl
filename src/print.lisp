@@ -22,9 +22,9 @@
 (setq *standard-output*
       (vector 'stream
               (lambda (ch)
-                ((jscl::oget (%js-vref "global") "console" "error") (string ch)))
+                ((jscl/ffi::oget (%js-vref "global") "console" "error") (string ch)))
               (lambda (string)
-                ((jscl::oget (%js-vref "global") "console" "error") string))))
+                ((jscl/ffi::oget (%js-vref "global") "console" "error") string))))
 
 ;;; Printer
 
