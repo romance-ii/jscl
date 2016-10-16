@@ -575,6 +575,7 @@
   (cond
     ((integerp sexp) sexp)
     ((floatp sexp) sexp)
+    ((pathnamep sexp) sexp)
     ((characterp sexp) (string sexp))
     (t
      (or (cdr (assoc sexp *literal-table* :test #'eql))
