@@ -89,6 +89,7 @@
   `(eval-when (:compile-toplevel :load-toplevel :execute)
      (setq *package* (find-package-or-fail ',string-designator))))
 
+(eval-when (:compile-toplevel :execute)
 (defun defpackage/parse-options (options)
   (let (use exports)
     (dolist (option options)
@@ -97,7 +98,7 @@
          (setf use (append use (cdr option))))
         (:export
          (setf exports (append use (cdr option))))))
-    (list use exports)))
+    (list use exports))))
 
 (defmacro defpackage (package &rest options)
   (destructuring-bind (use exports)
