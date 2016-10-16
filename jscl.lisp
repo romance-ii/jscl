@@ -58,13 +58,15 @@
                                  (subseq line (1+ colon) comma)))))))
 
 
-
-;;; List of all the source files that need to  be compiled, and whether they are to be compiled just
-;;; by the  host, by  the target  JSCL, or  by both.  All files  have a  `.lisp' extension,  and are
-;;; relative to src/ Subdirectories are indicated by the presence of a list rather than a keyword in
-;;; the second element  of the list. For  example, this list: (("foo" :target)  ("bar" ("baz" :host)
-;;; ("quux"  :both))) Means  that src/foo.lisp  and  src/bar/quux.lisp need  to be  compiled in  the
-;;; target, and that src/bar/baz.lisp and src/bar/quux.lisp need to be compiled in the host
+;;; List of all  the source files that need to  be compiled, and whether
+;;; they are to be compiled just by  the host, by the target JSCL, or by
+;;; both. All files  have a `.lisp' extension, and are  relative to src/
+;;; Subdirectories are indicated  by the presence of a  list rather than
+;;; a keyword in the second element of the list. For example, this list:
+;;; (("foo" :target)  ("bar" ("baz"  :host) ("quux" :both)))  Means that
+;;; src/foo.lisp  and  src/bar/quux.lisp  need  to be  compiled  in  the
+;;; target, and  that src/bar/baz.lisp and src/bar/quux.lisp  need to be
+;;; compiled in the host
 (defvar *source*
   '(("boot"          :target)
     ("early-char"    :target)
@@ -94,7 +96,6 @@
      ("compiler"     :both))
     ("documentation" :target)
     ("toplevel"      :target)))
-
 
 (defun source-pathname (filename &key (directory '(:relative "src")) (type nil) (defaults filename))
   (merge-pathnames
@@ -160,33 +161,67 @@
          (find-if (complement #'possibly-valid-js-p) compilation)
          form in compilation))
 
+(defun !compile-file/form (form in out)
+  (let ((compilation (compile-toplevel form)))
+    (if (possibly-valid-js-p compilation)
+        (when (plusp (length compilation))
+          (write-string compilation out))
+        (complain-about-illegal-chars form in compilation))))
+
+(defmacro with-compile-file-bindings ((filename) &body body)
+  `(let* ((*compiling-file* t)
+          (*compile-print-toplevels* print)
+          (*package* *package*)
+          (source (read-whole-file ,filename))
+          (in (make-string-input-stream source))
+          (form-count 0)
+          last-form)
+     ,@body))
+
+(defun !compile-file/progress (in source)
+  (format t (concat
+             (make-string 4 :initial-element #\Backspace)
+             "~[    ~:;~:* ~2d%~]… ")
+          (round (* 100
+                    (/ (stream-file-position in)
+                       (length source))))))
+
 (defun !compile-file (filename out &key print)
-  (let ((*compiling-file* t)
-        (*compile-print-toplevels* print)
-        (*package* *package*))
-    (let ((in (make-string-stream (read-whole-file filename))))
-      (format t "Compiling ~a...~%" (enough-namestring filename))
+  (tagbody top
+     (with-compile-file-bindings (filename)
+       (restart-case
+           (progn
+             (format t "Compiling ~a...~%    " (enough-namestring filename))
+             (handler-case
       (loop
-         with eof-mark = (gensym)
-         for form = (ls-read in nil eof-mark)
-         until (eq form eof-mark)
-         do (let ((compilation (compile-toplevel form)))
-              (if (possibly-valid-js-p compilation)
-                  (when (plusp (length compilation))
-                    (write-string compilation out))
-                  (complain-about-illegal-chars form in compilation)))))))
+                    with eof = (gensym)
+                    for form = (read in nil eof)
+                    until (eq form eof)
+                    do (!compile-file/progress in source)
+                    do (!compile-file/form form in out)
+                    do (setf last-form form)
+                    do (incf form-count))
+               (end-of-file (c)
+                 (error "~:(~a~) while reading ~a after ~:r form:~%~s"
+                        c (enough-namestring filename)
+                        form-count last-form))))
+         (retry-file ()
+           :report (lambda (s)
+                     (format s "Retry compiling ~a in JSCL" (enough-namestring filename)))
+           (go top))))
+     (format t " Done.")))
 
 (defun dump-global-environment (stream)
   (flet ((late-compile (form)
            (let ((*standard-output* stream))
              (write-string (compile-toplevel form)))))
-    ;; We assume that environments have a friendly list representation
+    ;; We assume  that environments have a  friendly list representation
     ;; for the compiler and it can be dumped.
     (dolist (b (lexenv-function *environment*))
       (when (eq (binding-type b) 'macro)
         (setf (binding-value b) `(,*magic-unquote-marker* ,(binding-value b)))))
     (late-compile `(setq *environment* ',*environment*))
-    ;; Set some counter variable properly, so user compiled code will
+    ;; Set some  counter variable properly,  so user compiled  code will
     ;; not collide with the compiler itself.
     (late-compile
      `(progn
@@ -204,10 +239,18 @@
 })( typeof require !== 'undefined'? require('./jscl'): window.jscl )" ,out)
           (terpri ,out)))
 
+(defun write-javascript-for-files (files &optional (stream *standard-output*))
+  (let ((*environment* (make-lexenv)))
+    (with-compilation-environment
+ (with-scoping-function (out)
+        (dolist (input files)
+          (terpri out)
+          (!compile-file input out))))))
+
 (defun compile-application (files output &key shebang)
   (with-compilation-environment
-      (with-open-file (out output :direction :output :if-exists :supersede)
-        (when shebang
+    (with-open-file (out output :direction :output :if-exists :supersede)
+      (when shebang
         (write-string "#!/usr/bin/env node" out)
         (terpri out))
       (with-scoping-function (out)
