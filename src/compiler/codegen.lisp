@@ -406,11 +406,16 @@
 (defun js-expr (form &optional (precedence 1000) associativity operand-order)
   (let ((form (js-expand-expr form)))
     (cond
+      ((pathnamep form)
+       (js-primary-expr (concatenate 'string 
+                                     "file://"
+                                     (host-namestring form)
+                                     (namestring form))))
       ((or (symbolp form) (numberp form) (stringp form))
        (js-primary-expr form))
       ((vectorp form)
        (js-vector-initializer form))
-      (t
+      ((consp form)
        (js-operator-expression (car form) (cdr form) precedence associativity operand-order)))))
 
 
