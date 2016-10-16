@@ -25,7 +25,7 @@
 (defun find-package (package-designator)
   (if (packagep package-designator)
       package-designator
-      (oget *package-table* (string package-designator))))
+      (jscl/ffi:oget *package-table* (string package-designator))))
 
 (defun delete-package (package-designator)
   ;; TODO: Signal a correctlable error in case the package-designator does not name a package. TODO:
@@ -37,11 +37,11 @@
   (when (find-package name)
     (error "A package namded `~a' already exists." name))
   (let ((package (new)))
-    (setf (oget package "packageName") name)
-    (setf (oget package "symbols") (new))
-    (setf (oget package "exports") (new))
-    (setf (oget package "use") use)
-    (setf (oget *package-table* name) package)
+    (setf (jscl/ffi::oget package "packageName") name)
+    (setf (jscl/ffi::oget package "symbols") (new))
+    (setf (jscl/ffi::oget package "exports") (new))
+    (setf (jscl/ffi::oget package "use") use)
+    (setf (jscl/ffi::oget *package-table* name) package)
     package))
 
 (defun resolve-package-list (packages)
@@ -60,19 +60,19 @@
 
 (defun package-name (package-designator)
   (let ((package (find-package-or-fail package-designator)))
-    (oget package "packageName")))
+    (jscl/ffi:oget package "packageName")))
 
 (defun %package-symbols (package-designator)
   (let ((package (find-package-or-fail package-designator)))
-    (oget package "symbols")))
+    (jscl/ffi:oget package "symbols")))
 
 (defun package-use-list (package-designator)
   (let ((package (find-package-or-fail package-designator)))
-    (oget package "use")))
+    (jscl/ffi:oget package "use")))
 
 (defun %package-external-symbols (package-designator)
   (let ((package (find-package-or-fail package-designator)))
-    (oget package "exports")))
+    (jscl/ffi:oget package "exports")))
 
 (defvar *user-package*
   (make-package "CL-USER" :use (list (find-package "CL"))))

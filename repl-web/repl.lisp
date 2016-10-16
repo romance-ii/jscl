@@ -84,7 +84,7 @@
 
             (catch (err)
               (#j:console:log err)
-              (let ((message (or (oget err "message") err)))
+              (let ((message (or (jscl/ffi:oget err "message") err)))
                 (#j:jqconsole:Write (format nil "ERROR[!]: ~a~%" message) "jqconsole-error"))))
 
            (save-history)
