@@ -178,7 +178,7 @@
 (defun !compile-file/progress (in source)
   (format t (concat
              (make-string 4 :initial-element #\Backspace)
-             "~[   ~:;~:*~2d%~]… ")
+             "~[    ~:;~:* ~2d%~]… ")
           (round (* 100
                     (/ (stream-file-position in)
                        (length source))))))
