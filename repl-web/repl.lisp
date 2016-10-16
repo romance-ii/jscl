@@ -8,7 +8,7 @@
 ;;
 ;; You should have  received a copy of the GNU  General Public License along with JSCL.  If not, see
 ;; <http://www.gnu.org/licenses/>.
-(defpackage repl-web (:use :jscl :jscl/ffi))
+
 (in-package :repl-web)
 (read-#j)
 (/debug "loading repl-web/repl.lisp!")
