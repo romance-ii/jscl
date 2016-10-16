@@ -299,6 +299,15 @@
     (compile-web-repl)
     (compile-node-repl)))
 
+(defun bootstrap-core (&optional verbosep)
+  (let ((*features* (list* :jscl :jscl-xc *features*))
+        (*package* (find-package "JSCL"))
+        (*default-pathname-defaults* *base-directory*))
+    (setq *environment* (make-lexenv))
+    (compile-jscl.js verbosep)
+    (report-undefined-functions)
+    (compile-test-suite)))
+
 (defun run-tests-in-host ()
   "Run the tests in  the host Lisp implementation. It is  a quick way to
 improve the level of trust of the tests."
