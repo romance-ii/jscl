@@ -24,6 +24,10 @@
   (:use :cl :jscl)
   (:export #:oget #:oget* #:make-new #:new #:*root*))
 
+(defpackage repl-web (:use :jscl :jscl/ffi))
+
+(defpackage repl-node (:use :jscl :jscl/ffi))
+
 #+sbcl (require 'bordeaux-threads)
 (defpackage jscl/test
   (:use :cl #-jscl :bordeaux-threads)
