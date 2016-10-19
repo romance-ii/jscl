@@ -410,9 +410,9 @@
           (ll-keyword-arguments  ll)
           (ll-rest-argument      ll)))
 
-;;; Process BODY for declarations and/or docstrings. Return as
-;;; multiple values the BODY without docstrings or declarations, the
-;;; list of declaration forms and the docstring.
+;;; Process BODY for declarations  and/or docstrings. Return as multiple
+;;; values  the BODY  without docstrings  or declarations,  the list  of
+;;; declaration forms and the docstring.
 (defun parse-body (body &key declarations docstring)
   (let ((value-declarations)
         (value-docstring))
@@ -551,9 +551,9 @@
       ;; Uninterned symbol
       ((null package)
        `(new (call-internal |Symbol| ,(symbol-name symbol))))
-      ;; Special case for bootstrap. For now, we just load all the
-      ;; code with JSCL as the current package. We will compile the
-      ;; JSCL package as CL in the target.
+      ;; Special case for bootstrap. For now,  we just load all the code
+      ;; with  JSCL as  the current  package. We  will compile  the JSCL
+      ;; package as CL in the target.
       #-jscl
       ((eq package (find-package "JSCL"))
        `(call-internal |intern| ,(symbol-name symbol)))
@@ -711,7 +711,7 @@
     (dolist (def definitions)
       (destructuring-bind (name lambda-list &body body) def
         (let ((binding (make-binding :name name :type 'macro :value
-                                     (let ((g!form (gensym)))
+                                     (let ((g!form (gensym "FORM-")))
                                        `(lambda (,g!form)
                                           (destructuring-bind ,lambda-list ,g!form
                                             ,@body))))))
@@ -731,10 +731,11 @@
 
 ;;; Given a let-like description of bindings, return:
 ;;;
-;;; 1. A list of lexical
-;;; 2. A list of values to bind to the lexical variables
-;;; 3. A alist of (special-variable . lexical-variable) to bind.
+;;; 1. A list of lexical variable names
 ;;;
+;;; 2. A list of values to bind to the lexical variables
+;;;
+;;; 3. A alist of (special-variable . lexical-variable) to bind.
 (defun process-bindings (bindings)
   (let ((bindings (mapcar #'normalize-bindings bindings))
         (special-bindings nil))
@@ -742,7 +743,7 @@
      ;; Lexical Variables
      (mapcar (lambda (var)
                (if (special-variable-p var)
-                   (let ((lexvar (gensym)))
+                   (let ((lexvar (gensym "LEXICAL-VARIABLE-")))
                      (push (cons var lexvar) special-bindings)
                      lexvar)
                    var))
@@ -753,11 +754,10 @@
      special-bindings)))
 
 
-;;; Wrap CODE to restore the symbol values of the dynamic
-;;; bindings. BINDINGS is a list of pairs of the form
-;;; (SYMBOL . PLACE),  where PLACE is a Javascript variable
-;;; name to initialize the symbol value and where to stored
-;;; the old value.
+;;; Wrap  CODE to  restore the  symbol values  of the  dynamic bindings.
+;;; BINDINGS is  a list  of pairs  of the form  (SYMBOL .  PLACE), where
+;;; PLACE is a  Javascript variable name to initialize  the symbol value
+;;; and where to stored the old value.
 (defun let-bind-dynamic-vars (special-bindings body)
   (if (null special-bindings)
       (convert-block body t t)
@@ -780,7 +780,7 @@
              ,@compiled-values))))
 
 
-;;; Return the code to initialize BINDING, and push it extending the
+;;; Return the  code to  initialize BINDING, and  push it  extending the
 ;;; current lexical environment if the variable is not special.
 (defun let*-initialize-value (binding)
   (let ((var (first binding))
@@ -792,8 +792,8 @@
           (prog1 `(var (,v ,(convert value)))
             (push-to-lexenv b *environment* 'variable))))))
 
-;;; Wrap BODY to restore the symbol values of SYMBOLS after body. It
-;;; DOES NOT generate code to initialize the value of the symbols,
+;;; Wrap  BODY to  restore  the  symbol values  of  SYMBOLS after  body.
+;;; It DOES  NOT generate code to  initialize the value of  the symbols,
 ;;; unlike let-binding-wrapper.
 (defun let*-binding-wrapper (symbols body)
   (when (null symbols)
@@ -1000,11 +1000,11 @@
      (let ,(mapcar (lambda (arg) `(,arg (convert ,arg))) args)
        ,@body)))
 
-;;; VARIABLE-ARITY compiles variable arity operations. ARGS stands for
-;;; a variable which holds a list of forms. It will compile them and
-;;; store the result in some Javascript variables. BODY is evaluated
-;;; with ARGS bound to the list of these variables to generate the
-;;; code which performs the transformation on these variables.
+;;; VARIABLE-ARITY compiles  variable arity operations. ARGS  stands for
+;;; a variable  which holds a  list of forms.  It will compile  them and
+;;; store the  result in  some Javascript  variables. BODY  is evaluated
+;;; with ARGS bound to the list  of these variables to generate the code
+;;; which performs the transformation on these variables.
 (defun variable-arity-call (args function)
   (unless (consp args)
     (error "ARGS must be a non-empty list"))
@@ -1384,7 +1384,7 @@
   `(= ,(make-symbol var) (call-internal |lisp_to_js| ,(convert val))))
 
 (define-setf-expander %js-vref (var)
-  (let ((new-value (gensym)))
+  (let ((new-value (gensym "JS-VREF-NEW-VALUE-")))
     (unless (stringp var)
       (error "`~S' is not a string." var))
     (values nil
@@ -1520,22 +1520,23 @@
          (symbol-name (car function))))
 
 (defun compile-funcall (function args)
-  (let* ((arglist (cons (if *multiple-value-p* '|values| '(internal |pv|))
-                        (mapcar #'convert args))))
-    (cond
-      ((translate-function function)
-       (compile-funcall/translate-function function arglist))
-      ((and (symbolp function) (!macro-function function))
-       (error "Compiler error: Macro function was not expanded: ~s" function))
-      ((symbolp function)
-       (compile-funcall/function function arglist))
-      ((and (consp function) (eql (car function) 'lambda))
-       (compile-funcall/lambda function arglist))
-      ((and (consp function) (member (car function) '(jscl::oget jscl/ffi::oget)))
-       (compile-funcall/oget function args))
-      ((consp function)
-       (compile-funcall/error function))
-      (t (error "Bad function designator `~S'" function)))))
+  (restart-case
+      (let* ((arglist (cons (if *multiple-value-p* '|values| '(internal |pv|))
+                            (mapcar #'convert args))))
+        (cond
+          ((translate-function function)
+           (compile-funcall/translate-function function arglist))
+          ((and (symbolp function) (!macro-function function))
+           (error "Compiler error: Macro function was not expanded: ~s" function))
+          ((symbolp function)
+           (compile-funcall/function function arglist))
+          ((and (consp function) (eql (car function) 'lambda))
+           (compile-funcall/lambda function arglist))
+          ((and (consp function) (eql (car function) 'jscl/ffi:oget))
+           (compile-funcall/oget function args))
+          ((consp function)
+           (compile-funcall/error function))
+          (t (error "Bad function designator `~S'" function))))))
 
 (defun convert-block (sexps &optional return-last-p decls-allowed-p)
   (multiple-value-bind (sexps decls)
@@ -1633,7 +1634,8 @@
       ((and (consp sexp)
             (eq (car sexp) 'in-package)
             (= 2 (length sexp)))
-       (setf *package* (find-package (second sexp)))
+       (setf *package* (find-package-or-fail (second sexp)))
+       (format t "~&;;;; In package ~a…" (package-name *package*))
        nil)
       ;; Non-empty toplevel progn
       ((and (consp sexp)
@@ -1648,7 +1650,7 @@
       (t
        (when *compile-print-toplevels*
          (let ((form-string (prin1-to-string sexp)))
-           (format t "Compiling ~a...~%" (truncate-string form-string))))
+           (format t "~&;; Compiling ~a…" (truncate-string form-string))))
 
        (let ((code (convert sexp multiple-value-p)))
          (if return-p

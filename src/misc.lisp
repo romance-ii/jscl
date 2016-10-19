@@ -68,8 +68,8 @@
                      (and #j:process #j:process:version))))
 
 (defmacro time (form)
-  (let ((start (gensym))
-        (end (gensym)))
+  (let ((start (gensym "START-TIME-"))
+        (end (gensym "END-TIME-")))
     `(let ((,start (get-internal-real-time))
            (,end))
        (prog1 (progn ,form)

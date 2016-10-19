@@ -180,7 +180,7 @@
 ;;;; Destructuring
 
 (defmacro do-keywords (var value list &body body)
-  (let ((g!list (gensym)))
+  (let ((g!list (gensym "LIST-")))
     `(let ((,g!list ,list))
        (while ,g!list
          (let ((,var (car ,g!list))
@@ -263,7 +263,8 @@
                (compute-bindings (ll form)
                  (let ((reqvar-count (length (lambda-list-reqvars ll)))
                        (optvar-count (length (lambda-list-optvars ll)))
-                       (whole (or (lambda-list-wholevar ll) (gensym))))
+                       (whole (or (lambda-list-wholevar ll)
+                                  (gensym "LAMBDA-LIST-WHOLE-"))))
                    ;; Create a  binding for  the whole  expression FORM.
                    ;; It will match to LL,  so we validate the number of
                    ;; elements on the result of FORM.
@@ -296,7 +297,8 @@
                      ;; is any.
                      (let* ((chain (nth-chain whole (+ reqvar-count optvar-count) t))
                             (restvar (lambda-list-restvar ll))
-                            (pattern (or restvar (gensym)))
+                            (pattern (or restvar
+                                         (gensym "REST-PATERN-")))
                             (keywords (mapcar #'keyvar-keyword-name (lambda-list-keyvars ll)))
                             (rest
                              ;; Create  a binding  for the  rest of  the
@@ -308,7 +310,7 @@
                              ;; we expect.
                              (cond
                                (keywords (compute-pbindings pattern
-                                                            `(validate-keyvars ,chain ',keywords 
+                                                            `(validate-keyvars ,chain ',keywords
                                                                                ,(lambda-list-allow-other-keys ll))))
                                (restvar  (compute-pbindings pattern chain))
                                (t        (compute-pbindings pattern `(validate-max-args ,chain))))))
@@ -318,7 +320,7 @@
                            (let ((variable (keyvar-variable keyvar))
                                  (keyword (keyvar-keyword-name keyvar))
                                  (supplied (or (keyvar-supplied-p-parameter keyvar)
-                                               (gensym))))
+                                               (gensym "SUPPLIED-P-"))))
                              (when supplied
                                (compute-pbindings supplied `(keyword-supplied-p ,keyword ,rest)))
                              (compute-pbindings variable `(if ,supplied

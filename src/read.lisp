@@ -174,7 +174,7 @@
               (*make-fixup-function* (lambda ()
                                        (lambda (obj)
                                          (rplaca cell obj))))
-              (eof (gensym))
+              (eof (gensym "EOF-"))
               (next (ls-read stream nil eof t)))
          (rplaca cell next)
          (skip-whitespaces-and-comments stream)
@@ -269,7 +269,7 @@
                 (*make-fixup-function* (lambda ()
                                          (lambda (obj)
                                            (aset result ix obj))))
-                (eof (gensym))
+                (eof (gensym "EOF-"))
                 (value (ls-read stream nil eof t)))
            (push value elements))))
       (#\:

@@ -76,9 +76,9 @@
   (storage-vector-set array index value))
 
 (define-setf-expander aref (array index)
-  (let ((g!array (gensym))
-        (g!index (gensym))
-        (g!value (gensym)))
+  (let ((g!array (gensym "ARRAY-"))
+        (g!index (gensym "INDEX-"))
+        (g!value (gensym "VALUE-")))
     (values (list g!array g!index)
             (list array index)
             (list g!value)

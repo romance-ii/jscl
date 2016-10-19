@@ -14,7 +14,7 @@
 ;; <http://www.gnu.org/licenses/>.
 
 (defpackage :jscl
-  (:use :cl)
+  (:use :cl #+sbcl :sb-gray)
   (:export #:bootstrap #:run-tests-in-host
            #:write-javascript-for-files #:compile-application))
 
@@ -140,24 +140,57 @@
                    (char= #\newline ch)))
              string)))
 
+(defun !compile-file/form (form in out)
+  (let ((compilation (compile-toplevel form)))
+    (if (possibly-valid-js-p compilation)
+        (when (plusp (length compilation))
+          (write-string compilation out))
+        (error "Generated illegal characters (first is ~@c)~%Compiling form:~%~S~%from ~s~%Generated:~%~s"
+               (find-if (complement #'possibly-valid-js-p) compilation)
+               form in compilation))))
+
+(defmacro with-compile-file-bindings ((filename) &body body)
+  `(let* ((*compiling-file* t)
+          (*compile-print-toplevels* print)
+          (*package* *package*)
+          (source (read-whole-file ,filename))
+          (in (make-string-input-stream source))
+          (form-count 0)
+          last-form)
+     ,@body))
+
+(defun !compile-file/progress (in source)
+  (format t (concat
+             (make-string 4 :initial-element #\Backspace)
+             "~[   ~:;~:*~2d%~]… ")
+          (round (* 100
+                    (/ (stream-file-position in)
+                       (length source))))))
+
 (defun !compile-file (filename out &key print)
-  (let ((*compiling-file* t)
-        (*compile-print-toplevels* print)
-        (*package* *package*))
-    (let* ((source (read-whole-file filename))
-           (in (make-string-input-stream source)))
-      (format t "Compiling ~a...~%" (enough-namestring filename))
-      (loop
-         with eof-mark = (gensym)
-         for x = (read in nil eof-mark)
-         until (eq x eof-mark)
-         do (let ((compilation (compile-toplevel x)))
-              (if (possibly-valid-js-p compilation)
-                  (when (plusp (length compilation))
-                    (write-string compilation out))
-                  (error "Generated illegal characters (first is ~@c)~%Compiling form:~%~S~%from ~s~%Generated:~%~s"
-                         (find-if (complement #'possibly-valid-js-p) compilation)
-                         x in compilation)))))))
+  (tagbody top
+     (with-compile-file-bindings (filename)
+       (restart-case
+           (progn
+             (format t "Compiling ~a...~%    " (enough-namestring filename))
+             (handler-case
+                 (loop
+                    with eof = (gensym)
+                    for form = (read in nil eof)
+                    until (eq form eof)
+                    do (!compile-file/progress in source)
+                    do (!compile-file/form form in out)
+                    do (setf last-form form)
+                    do (incf form-count))
+               (end-of-file (c)
+                 (error "~:(~a~) while reading ~a after ~:r form:~%~s"
+                        c (enough-namestring filename)
+                        form-count last-form))))
+         (retry-file ()
+           :report (lambda (s)
+                     (format s "Retry compiling ~a in JSCL" (enough-namestring filename)))
+           (go top))))
+     (format t " Done.")))
 
 (defun dump-global-environment (stream)
   (flet ((late-compile (form)

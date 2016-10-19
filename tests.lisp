@@ -1,3 +1,7 @@
+(defpackage jscl/test
+  (:use :cl))
+(in-package :jscl/test)
+
 (defparameter *total-tests* 0)
 (defparameter *passed-tests* 0)
 (defparameter *failed-tests* 0)

@@ -20,8 +20,8 @@
   "Makes available to BODY a function named collect. The function accumulates
 values passed to it. The return value of with-collect is the list of values
 accumulated, in the order."
-  (let ((head (gensym))
-        (tail (gensym)))
+  (let ((head (gensym "HEAD-"))
+        (tail (gensym "TAIL-")))
     `(let* ((,head (cons 'sentinel nil))
             (,tail ,head))
        (flet ((collect (x)
@@ -36,8 +36,8 @@ accumulated, in the order."
  1) However the list where the values are being accumulated is available to the body by the name NAME.
  2) The name COLLECTOR function can be passed as a parameter
  3) The return value the last form of BODY"
-  (let ((head (gensym))
-        (tail (gensym)))
+  (let ((head (gensym "HEAD-"))
+        (tail (gensym "TAIL-")))
     `(let* ((,head (cons 'sentinel nil))
             (,tail ,head))
        (symbol-macrolet ((,name (cdr ,head)))

@@ -28,8 +28,8 @@
   (oset* new-value x "plist"))
 
 (define-setf-expander symbol-plist (x)
-  (let ((g!x (gensym))
-        (g!value (gensym)))
+  (let ((g!x (gensym "SYMBOL-"))
+        (g!value (gensym "VALUE-")))
     (values (list g!x)
             (list x)
             (list g!value)

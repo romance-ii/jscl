@@ -428,7 +428,7 @@
      (t (not-seq-error sequence2)))
    sequence1 sequence2 args))
 
-(defparameter *iterator-done* (gensym))
+(defparameter *iterator-done* (gensym "ITERATOR-DONE-"))
 
 (defun make-list-iterator (the-list)
   (let ((tail the-list))

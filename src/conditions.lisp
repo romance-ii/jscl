@@ -39,8 +39,8 @@
 
 ;; Implementation if :NO-ERROR case is missing.
 (defmacro %handler-case-1 (form &body cases)
-  (let ((datum (gensym))
-        (nlx (gensym))
+  (let ((datum (gensym "DATUM-"))
+        (nlx (gensym "NON-LOCAL-TRANSFER-POINT-"))
         (tagbody-content nil))
 
     (flet (
@@ -50,9 +50,9 @@
            ;; handlers will GO  to labels there in order  to perform non
            ;; local exit and handle the condition.
            (translate-case (case)
-             (destructuring-bind (type (&optional (var (gensym))) &body body)
+             (destructuring-bind (type (&optional (var (gensym "VAR-"))) &body body)
                  case
-               (let ((label (gensym)))
+               (let ((label (gensym "LABEL-")))
                  (push label tagbody-content)
                  (push `(return-from ,nlx
                           (let ((,var ,datum))
@@ -75,8 +75,8 @@
   (let ((last-case (car (last cases))))
     (if (and last-case (eq (car last-case) :no-error))
         (destructuring-bind (lambda-list &body body) (cdr last-case)
-          (let ((error-return (gensym))
-                (normal-return (gensym)))
+          (let ((error-return (gensym "ERROR-RETURN-"))
+                (normal-return (gensym "NORMAL-RETURN-")))
             `(block ,error-return
                (multiple-value-call (lambda ,lambda-list ,@body)
                  (block ,normal-return
