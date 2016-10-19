@@ -93,15 +93,15 @@
      (setq *package* (find-package-or-fail ',string-designator))))
 
 (eval-when (:compile-toplevel :execute)
-(defun defpackage/parse-options (options)
-  (let (use exports)
-    (dolist (option options)
-      (ecase (car option)
-        (:use
-         (setf use (append use (cdr option))))
-        (:export
-         (setf exports (append use (cdr option))))))
-    (list use exports))))
+  (defun defpackage/parse-options (options)
+    (let (use exports)
+      (dolist (option options)
+        (ecase (car option)
+          (:use
+           (setf use (append use (cdr option))))
+          (:export
+           (setf exports (append use (cdr option))))))
+      (list use exports))))
 
 (defmacro defpackage (package &rest options)
   (destructuring-bind (use exports)
@@ -114,7 +114,7 @@
                    exports))
        (eval-when (:compile-toplevel)
          (make-package ',(string package) :use ',use))
-         ,@(mapcar (lambda (symbol)
+       ,@(mapcar (lambda (symbol)
                    (export (intern (symbol-name symbol) package)))
                  exports))))
 

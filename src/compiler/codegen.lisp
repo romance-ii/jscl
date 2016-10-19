@@ -407,7 +407,7 @@
   (let ((form (js-expand-expr form)))
     (cond
       ((pathnamep form)
-       (js-primary-expr (concatenate 'string 
+       (js-primary-expr (concatenate 'string
                                      "file://"
                                      (host-namestring form)
                                      (namestring form))))

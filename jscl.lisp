@@ -2,10 +2,9 @@
 
 ;; Copyright (C) 2012, 2013 David Vazquez Copyright (C) 2012 Raimon Grau
 
-;; JSCL is free software: you can redistribute it and/or modify it under
-;; the terms of the GNU General  Public License as published by the Free
-;; Software Foundation,  either version  3 of the  License, or  (at your
-;; option) any later version.
+;; JSCL is  free software:  you can  redistribute it  and/or modify it  under the  terms of  the GNU
+;; General Public  License as published  by the  Free Software Foundation,  either version 3  of the
+;; License, or (at your option) any later version.
 ;;
 ;; JSCL is distributed  in the hope that it will  be useful, but WITHOUT
 ;; ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -45,9 +44,8 @@
       *default-pathname-defaults*))
 
 (defvar *version*
-  ;; Read the  version from  the package.json file.  We could  have used
-  ;; a json library to parse this, but that would introduce a dependency
-  ;; and we are not using ASDF yet.
+  ;; Read the version from  the package.json file. We could have used a  json library to parse this,
+  ;; but that would introduce a dependency and we are not using ASDF yet.
   (with-open-file (in (merge-pathnames "package.json" *base-directory*))
     (loop
        for line = (read-line in nil)
@@ -194,7 +192,7 @@
            (progn
              (format t "Compiling ~a...~%    " (enough-namestring filename))
              (handler-case
-      (loop
+                 (loop
                     with eof = (gensym)
                     for form = (read in nil eof)
                     until (eq form eof)
@@ -243,21 +241,21 @@
 (defun write-javascript-for-files (files &optional (stream *standard-output*))
   (let ((*environment* (make-lexenv)))
     (with-compilation-environment
- (with-scoping-function (out)
-        (dolist (input files)
-          (terpri out)
-          (!compile-file input out))))))
+        (with-scoping-function (out)
+          (dolist (input files)
+            (terpri out)
+            (!compile-file input out))))))
 
 (defun compile-application (files output &key shebang)
   (with-compilation-environment
-    (with-open-file (out output :direction :output :if-exists :supersede)
-      (when shebang
-        (write-string "#!/usr/bin/env node" out)
-        (terpri out))
-      (with-scoping-function (out)
-        (dolist (input files)
-          (terpri out)
-          (!compile-file input out))))))
+      (with-open-file (out output :direction :output :if-exists :supersede)
+        (when shebang
+          (write-string "#!/usr/bin/env node" out)
+          (terpri out))
+        (with-scoping-function (out)
+          (dolist (input files)
+            (terpri out)
+            (!compile-file input out))))))
 
 (defun compile-test-suite ()
   (compile-application
@@ -278,16 +276,16 @@
    :shebang t))
 
 (defun compile-jscl.js (verbosep)
-    (with-compilation-environment
-        (with-open-file (out (merge-pathnames "jscl.js" *base-directory*)
-                             :direction :output
-                             :if-exists :supersede)
-      (format out "(function(){~%'use strict';~%")
-          (write-string (read-whole-file (source-pathname "prelude.js")) out)
-          (do-source input :target
-        (!compile-file input out :print verbosep))
-          (dump-global-environment out)
-      (format out "})();~%"))))
+  (with-compilation-environment
+      (with-open-file (out (merge-pathnames "jscl.js" *base-directory*)
+                           :direction :output
+                           :if-exists :supersede)
+        (format out "(function(){~%'use strict';~%")
+        (write-string (read-whole-file (source-pathname "prelude.js")) out)
+        (do-source input :target
+                   (!compile-file input out :print verbosep))
+        (dump-global-environment out)
+        (format out "})();~%"))))
 
 (defun bootstrap (&optional verbosep)
   (let ((*features* (list* :jscl :jscl-xc *features*))
