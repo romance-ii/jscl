@@ -20,9 +20,18 @@
 
 (in-package :jscl)
 
-#+jscl (error "This should not be getting evaluated within JSCL.")
 #-jscl-xc (error "This should not be getting evaluated except during JSCL-XC.")
 (/debug "loading boot.lisp!")
+
+(defpackage :jscl
+  (:use :cl #+sbcl :sb-gray)
+  (:export #:bootstrap #:bootstrap-core
+           #:run-tests-in-host #:with-sharp-j #:read-#j
+           #:write-javascript-for-files #:compile-application))
+
+(defpackage :jscl/ffi
+  (:use :cl :jscl)
+  (:export #:oget #:oget* #:make-new #:new #:*root*))
 
 (eval-when (:compile-toplevel)
   (let ((defmacro-macroexpander

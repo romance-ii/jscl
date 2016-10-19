@@ -297,6 +297,13 @@ packages.JSCL = {
     use: nil
 };
 
+packages.JSCLFFI = {
+    packageName: 'JSCL/FFI',
+    symbols: {},
+    exports: {},
+    use: nil
+};
+
 packages.CL = {
     packageName: 'CL',
     symbols: {},
