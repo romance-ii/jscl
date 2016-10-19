@@ -2,36 +2,33 @@
 
 ;; Copyright (C) 2012, 2013 David Vazquez Copyright (C) 2012 Raimon Grau
 
-;; JSCL is free software: you can redistribute it and/or modify it under
-;; the terms of the GNU General  Public License as published by the Free
-;; Software Foundation,  either version  3 of the  License, or  (at your
-;; option) any later version.
+;; JSCL is  free software:  you can  redistribute it  and/or modify it  under the  terms of  the GNU
+;; General Public  License as published  by the  Free Software Foundation,  either version 3  of the
+;; License, or (at your option) any later version.
 ;;
-;; JSCL is distributed  in the hope that it will  be useful, but WITHOUT
-;; ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-;; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-;; for more details.
+;; JSCL is distributed  in the hope that it  will be useful, but WITHOUT ANY  WARRANTY; without even
+;; the implied warranty of MERCHANTABILITY or FITNESS  FOR A PARTICULAR PURPOSE. See the GNU General
+;; Public License for more details.
 ;;
-;; You should  have received a  copy of  the GNU General  Public License
-;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
+;; You should have  received a copy of the GNU  General Public License along with JSCL.  If not, see
+;; <http://www.gnu.org/licenses/>.
 
 (in-package :jscl)
 (/debug "loading read.lisp!")
 
 ;;;; Reader
 
-;;; If it  is not NIL, we  do not want  to read the expression  but just
-;;; ignore it. For example, it is used in conditional reads #+.
+;;; If it is not NIL,  we do not want to read the expression but just  ignore it. For example, it is
+;;; used in conditional reads #+.
 (defvar *read-skip-p* nil)
 
-;;; The Lisp  reader, parse  strings and return  Lisp objects.  The main
-;;; entry points are `ls-read' and `ls-read-from-string'.
+;;; The Lisp reader, parse strings and return Lisp  objects. The main entry points are `ls-read' and
+;;; `ls-read-from-string'.
 
 ;;; #= / ## implementation
 
-;; For now  associations label->object  are kept  in a  plist May  be it
-;; makes sense to use a vector  instead if speed is considered a problem
-;; with many labelled objects
+;; For now  associations label->object are kept  in a plist  May be it  makes sense to use  a vector
+;; instead if speed is considered a problem with many labelled objects
 (defvar *labelled-objects* nil)
 
 (defun new-labelled-objects-table ()
@@ -43,9 +40,8 @@
 (defun add-labelled-object (id value)
   (push (cons id value) *labelled-objects*))
 
-;; A unique value  used to mark in the labelled  objects table an object
-;; that  is  being  constructed  (e.g. #1#  while  reading  elements  of
-;; "#1=(#1# #1# #1#)")
+;; A unique  value used to mark  in the labelled objects  table an object that  is being constructed
+;; (e.g. #1# while reading elements of "#1=(#1# #1# #1#)")
 (defvar *future-value* (make-symbol "future"))
 
 ;; A unique  value used to mark  temporary values that will  be replaced
@@ -393,7 +389,7 @@
         (last-escape nil))
     (dotimes (i (length s))
       (let ((ch (char s i)))
-        (cond 
+        (cond
           (last-escape
            (setf last-escape nil)
            (setf result (concatenate 'string result (string ch))))
@@ -401,7 +397,7 @@
            (setf last-escape t))
           ((char= ch #\:)
            (error "Too many colons in symbol-name `~a'" s))
-          (t (setf result (concatenate 'string result 
+          (t (setf result (concatenate 'string result
                                        (string-upcase (string ch))))))))
     result))
 
@@ -426,19 +422,19 @@
        (setq internalp t))
       ;; Package prefix
       (t
-       (if (zerop index) 
+       (if (zerop index)
            (setq package "KEYWORD")
            (setq package (string-upcase-noescaped (subseq string 0 index))))
        (incf index)
-       (when (char= (char string index) #\:) 
+       (when (char= (char string index) #\:)
          (setq internalp t)
          (incf index))
        (setq name (subseq string index))))
     ;; Canonalize symbol name and package
     (setq name (if (string= package "JS")
                    (setq name (unescape-token name))
-                   (setq name (string-upcase-noescaped name)))) 
-    (setq package (find-package-or-fail package)) 
+                   (setq name (string-upcase-noescaped name))))
+    (setq package (find-package-or-fail package))
     (if (or internalp
             (eq package (find-package "KEYWORD"))
             (eq package (find-package "JS")))
@@ -447,7 +443,7 @@
             (find-symbol name package)
           (if (eq external :external)
               symbol
-              (error "The symbol `~S' is not external in the package ~S." 
+              (error "The symbol `~S' is not external in the package ~S."
                      name package))))))
 
 (defun read-integer (string)
@@ -613,7 +609,7 @@
                (if (char= (peek-char nil stream nil nil) #\#)
                    (warn "`# might be `#(vec) form, not yet supported;
 rewrite `#(v1 v2…) as (apply #'vector `(v1 v2…))"))
-               
+
                (list 'backquote (ls-read stream eof-error-p eof-value t)))
               ((char= ch #\")
                (read-char stream nil nil)
@@ -624,7 +620,7 @@ rewrite `#(v1 v2…) as (apply #'vector `(v1 v2…))"))
                        (char= (peek-char nil stream nil nil) #\.))
                    (progn (read-char stream nil nil)
                           (list 'unquote-splicing
-                                                           (ls-read stream eof-error-p eof-value t)))
+                                (ls-read stream eof-error-p eof-value t)))
                    (list 'unquote (ls-read stream eof-error-p eof-value t))))
               ((char= ch #\#)
                (read-sharp stream eof-error-p eof-value))

@@ -170,7 +170,7 @@
               (cond ,@(rest clausules))))))))
 
 (defun ensure-list (list-or-atom)
-  (if (listp list-or-atom) 
+  (if (listp list-or-atom)
       list-or-atom
       (list list-or-atom)))
 
@@ -185,7 +185,7 @@
                              ((listp keys)
                               `((or ,@(mapcar (lambda (key)
                                                 `(eql ,!form ',key))
-                                              keys)) 
+                                              keys))
                                 nil ,@body))
                              (t `(,keys nil ,@body)))))
                    clausules)))))
@@ -219,7 +219,7 @@
     (t
      (let ((g (gensym)))
        `(let ((,g ,(car forms)))
-          (if ,g 
+          (if ,g
               ,g
               (or ,@(cdr forms))))))))
 
@@ -240,8 +240,8 @@
          (tagbody ,@forms)))))
 
 (defmacro psetq (&rest pairs)
-  (let (;;  For each pair,  we store here a  list of the  form (VARIABLE
-        ;; GENSYM VALUE).
+  (let (;;  For  each pair, we store  here a list of  the form (VARIABLE
+        ;;  GENSYM VALUE).
         (assignments '()))
     (while t
       (cond
@@ -251,7 +251,7 @@
         (t
          (let ((variable (car pairs))
                (value (cadr pairs)))
-           (push (list variable (gensym (string variable)) value) 
+           (push (list variable (gensym (string variable)) value)
                  assignments)
            (setq pairs (cddr pairs))))))
     (setq assignments (reverse assignments))
@@ -265,7 +265,7 @@
        ,(mapcar (lambda (x)
                   (if (symbolp x)
                       (list x nil)
-                      (list (first x) (second x)))) 
+                      (list (first x) (second x))))
                 varlist)
        (while t
          (when ,(car endlist)
@@ -286,10 +286,10 @@
 
 (defmacro declare (&rest declarations)
   "Early DECLARE ignores everything. This only exists so that during the
-  bootstrapping process,  we can have  declarations that SBCL  will read
-  and  they won't  make JSCL  choke. Once  the various  places in  which
-  DECLARE forms  are valid have  appropriate support to at  least ignore
-  them, this can be removed."
+ bootstrapping process,  we can have  declarations that SBCL  will read
+ and  they won't  make JSCL  choke. Once  the various  places in  which
+ DECLARE forms  are valid have  appropriate support to at  least ignore
+ them, this can be removed."
   nil)
 
 (defmacro assert (test &rest _)

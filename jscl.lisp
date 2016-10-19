@@ -181,20 +181,20 @@
 
 (defun write-javascript-for-files (files &optional (stream *standard-output*))
   (let ((*environment* (make-lexenv)))
-  (with-compilation-environment
+    (with-compilation-environment
         (format stream "(function(jscl){~%")
       (format stream "'use strict';~%")
       (format stream "(function(values, internals){~%")
-    (dolist (input files)
+      (dolist (input files)
         (!compile-file input stream))
       (format stream "})(jscl.internals.pv, jscl.internals);~%")
       (format stream "})( typeof require !== 'undefined'? require('./jscl'): window.jscl )~%"))))
 
 (defun compile-application (files output &key shebang)
   (with-compilation-environment
-  (with-open-file (out output :direction :output :if-exists :supersede)
-    (when shebang
-      (format out "#!/usr/bin/env node~%"))
+      (with-open-file (out output :direction :output :if-exists :supersede)
+        (when shebang
+          (format out "#!/usr/bin/env node~%"))
         (write-javascript-for-files files out))))
 
 (defun bootstrap (&optional verbose)

@@ -319,22 +319,22 @@
     (when optional-arguments
       `(progn
          ,(when svars
-                `(var ,@(mapcar (lambda (svar)
-                                  (list (translate-variable svar)
-                                        (convert t)))
-                                svars)))
+            `(var ,@(mapcar (lambda (svar)
+                              (list (translate-variable svar)
+                                    (convert t)))
+                            svars)))
          (switch (nargs)
            ,@(with-collect
-              (dotimes (idx n-optional-arguments)
-                (let ((arg (nth idx optional-arguments)))
-                  (collect `(case ,(+ idx n-required-arguments)))
-                  (collect `(= ,(translate-variable (car arg))
-                               ,(convert (cadr arg))))
-                  (collect (when (third arg)
-                             `(= ,(translate-variable (third arg))
-                                 ,(convert nil))))))
-              (collect 'default)
-              (collect '(break))))))))
+                 (dotimes (idx n-optional-arguments)
+                   (let ((arg (nth idx optional-arguments)))
+                     (collect `(case ,(+ idx n-required-arguments)))
+                     (collect `(= ,(translate-variable (car arg))
+                                  ,(convert (cadr arg))))
+                     (collect (when (third arg)
+                                `(= ,(translate-variable (third arg))
+                                    ,(convert nil))))))
+               (collect 'default)
+               (collect '(break))))))))
 
 (defun compile-lambda-rest (ll)
   (let ((n-required-arguments (length (ll-required-arguments ll)))
@@ -348,7 +348,7 @@
            (for ((= i (- (nargs) 1))
                  (>= i ,(+ n-required-arguments n-optional-arguments))
                  (post-- i))
-             (= ,js!rest (new (call-internal |Cons| (arg i) ,js!rest)))))))))
+                (= ,js!rest (new (call-internal |Cons| (arg i) ,js!rest)))))))))
 
 (defun compile-lambda-parse-keywords (ll)
   (let ((n-required-arguments
@@ -360,52 +360,52 @@
     `(progn
        ;; Declare variables
        ,@(with-collect
-          (dolist (keyword-argument keyword-arguments)
-            (destructuring-bind ((keyword-name var) &optional initform svar)
-                keyword-argument
-              (declare (ignore keyword-name initform))
-              (collect `(var ,(translate-variable var)))
-              (when svar
-                (collect
-                    `(var (,(translate-variable svar)
-                            ,(convert nil))))))))
+             (dolist (keyword-argument keyword-arguments)
+               (destructuring-bind ((keyword-name var) &optional initform svar)
+                   keyword-argument
+                 (declare (ignore keyword-name initform))
+                 (collect `(var ,(translate-variable var)))
+                 (when svar
+                   (collect
+                       `(var (,(translate-variable svar)
+                               ,(convert nil))))))))
 
        ;; Parse keywords
        ,(flet ((parse-keyword (keyarg)
-                              (destructuring-bind ((keyword-name var) &optional initform svar) keyarg
-                                ;; ((keyword-name var) init-form svar)
-                                `(progn
-                                   (for ((= i ,(+ n-required-arguments n-optional-arguments))
-                                         (< i (nargs))
-                                         (+= i 2))
-                                     ;; ....
-                                     (if (=== (arg i) ,(convert keyword-name))
-                                         (progn
-                                           (= ,(translate-variable var) (arg (+ i 1)))
-                                           ,(when svar `(= ,(translate-variable svar)
-                                                           ,(convert t)))
-                                           (break))))
-                                   (if (== i (nargs))
-                                       (= ,(translate-variable var) ,(convert initform)))))))
-              (when keyword-arguments
-                `(progn
-                   (var i)
-                   ,@(mapcar #'parse-keyword keyword-arguments))))
+                 (destructuring-bind ((keyword-name var) &optional initform svar) keyarg
+                   ;; ((keyword-name var) init-form svar)
+                   `(progn
+                      (for ((= i ,(+ n-required-arguments n-optional-arguments))
+                            (< i (nargs))
+                            (+= i 2))
+                           ;; ....
+                           (if (=== (arg i) ,(convert keyword-name))
+                               (progn
+                                 (= ,(translate-variable var) (arg (+ i 1)))
+                                 ,(when svar `(= ,(translate-variable svar)
+                                                 ,(convert t)))
+                                 (break))))
+                      (if (== i (nargs))
+                          (= ,(translate-variable var) ,(convert initform)))))))
+          (when keyword-arguments
+            `(progn
+               (var i)
+               ,@(mapcar #'parse-keyword keyword-arguments))))
 
        ;; Check for unknown keywords
        ,(when keyword-arguments
-              `(progn
-                 (var (start ,(+ n-required-arguments n-optional-arguments)))
-                 (if (== (% (- (nargs) start) 2) 1)
-                     (throw "Odd number of keyword arguments."))
-                 (for ((= i start) (< i (nargs)) (+= i 2))
-                   (if (and ,@(mapcar (lambda (keyword-argument)
-                                        (destructuring-bind ((keyword-name var) &optional initform svar)
-                                            keyword-argument
-                                          (declare (ignore var initform svar))
-                                          `(!== (arg i) ,(convert keyword-name))))
-                                      keyword-arguments))
-                       (throw (+ "Unknown keyword argument " (property (arg i) "name"))))))))))
+          `(progn
+             (var (start ,(+ n-required-arguments n-optional-arguments)))
+             (if (== (% (- (nargs) start) 2) 1)
+                 (throw "Odd number of keyword arguments."))
+             (for ((= i start) (< i (nargs)) (+= i 2))
+                  (if (and ,@(mapcar (lambda (keyword-argument)
+                                       (destructuring-bind ((keyword-name var) &optional initform svar)
+                                           keyword-argument
+                                         (declare (ignore var initform svar))
+                                         `(!== (arg i) ,(convert keyword-name))))
+                                     keyword-arguments))
+                      (throw (+ "Unknown keyword argument " (property (arg i) "name"))))))))))
 
 (defun parse-lambda-list (ll)
   (values (ll-required-arguments ll)
@@ -476,9 +476,9 @@
                     ,(compile-lambda-parse-keywords ll)
                     ,(bind-this)
                     ,(let ((*multiple-value-p* t))
-                          (if block
-                              (convert-block `((block ,block ,@body)) t)
-                              (convert-block body t)))))))))
+                       (if block
+                           (convert-block `((block ,block ,@body)) t)
+                           (convert-block body t)))))))))
 
 
 (defun setq-pair (var val)
@@ -827,11 +827,11 @@
 
 
 (define-compilation block (name &rest body)
-  ;; We use Javascript exceptions to implement non local control
-  ;; transfer. Exceptions has dynamic scoping, so we use a uniquely
-  ;; generated object to identify the block. The instance of a empty
-  ;; array is used to distinguish between nested dynamic Javascript
-  ;; exceptions. See https://github.com/jscl-project/jscl/issues/64 for
+  ;; We  use  Javascript  exceptions  to  implement  non  local  control
+  ;; transfer.  Exceptions has  dynamic scoping,  so we  use a  uniquely
+  ;; generated object  to identify  the block. The  instance of  a empty
+  ;; array  is used  to  distinguish between  nested dynamic  Javascript
+  ;; exceptions. See  https://github.com/jscl-project/jscl/issues/64 for
   ;; futher details.
   (let* ((idvar (gvarname name))
          (b (make-binding :name name :type 'block :value idvar)))
@@ -859,9 +859,9 @@
     (when (null b)
       (error "Return from unknown block `~S'." (symbol-name name)))
     (push 'used (binding-declarations b))
-    ;; The binding value is the name of a variable, whose value is the
-    ;; unique identifier of the block as exception. We can't use the
-    ;; variable name itself, because it could not to be unique, so we
+    ;; The binding value  is the name of a variable,  whose value is the
+    ;; unique identifier  of the  block as exception.  We can't  use the
+    ;; variable name  itself, because it could  not to be unique,  so we
     ;; capture it in a closure.
     `(selfcall
       ,(when multiple-value-p `(var (|values| (internal |mv|))))
@@ -901,9 +901,9 @@
     (extend-lexenv bindings *environment* 'gotag)))
 
 (define-compilation tagbody (&rest body)
-  ;; Ignore the tagbody if it does not contain any go-tag. We do this
-  ;; because 1) it is easy and 2) many built-in forms expand to a
-  ;; implicit tagbody, so we save some space.
+  ;; Ignore the  tagbody if it does  not contain any go-tag.  We do this
+  ;; because  1)  it is  easy  and  2)  many  built-in forms  expand  to
+  ;; a implicit tagbody, so we save some space.
   (unless (some #'go-tag-p body)
     (return-from tagbody (convert `(progn ,@body nil))))
   ;; The translation assumes the first form in BODY is a label
@@ -925,12 +925,12 @@
                  (try
                   (switch ,branch
                     ,@(with-collect
-                       (collect `(case ,initag))
-                       (dolist (form (cdr body))
-                         (if (go-tag-p form)
-                             (let ((b (lookup-in-lexenv form *environment* 'gotag)))
-                               (collect `(case ,(second (binding-value b)))))
-                             (collect (convert form)))))
+                          (collect `(case ,initag))
+                        (dolist (form (cdr body))
+                          (if (go-tag-p form)
+                              (let ((b (lookup-in-lexenv form *environment* 'gotag)))
+                                (collect `(case ,(second (binding-value b)))))
+                              (collect (convert form)))))
                     default
                     (break tbloop)))
                  (catch (jump)
@@ -967,12 +967,12 @@
        (var vs)
        (progn
          ,@(with-collect
-            (dolist (form forms)
-              (collect `(= vs ,(convert form t)))
-              (collect `(if (and (=== (typeof vs) "object")
-                                 (in "multiple-value" vs))
-                            (= args (method-call args "concat" vs))
-                            (method-call args "push" vs))))))
+               (dolist (form forms)
+                 (collect `(= vs ,(convert form t)))
+                 (collect `(if (and (=== (typeof vs) "object")
+                                    (in "multiple-value" vs))
+                               (= args (method-call args "concat" vs))
+                               (method-call args "push" vs))))))
        (return (method-call func "apply" null args))))))
 
 (define-compilation multiple-value-prog1 (first-form &rest forms)
@@ -991,8 +991,8 @@
   (make-hash-table))
 
 (defmacro define-raw-builtin (name args &body body)
-  ;; Creates a new primitive function `name' with parameters args and
-  ;; @body. The body can access to the local environment through the
+  ;; Creates a  new primitive function  `name' with parameters  args and
+  ;; @body. The  body can  access to the  local environment  through the
   ;; variable *ENVIRONMENT*.
   `(setf (gethash ',name *builtins*)
          (lambda ,args
@@ -1043,7 +1043,7 @@
   (if (null numbers)
       0
       (variable-arity numbers
-        `(+ ,@numbers))))
+                      `(+ ,@numbers))))
 
 (define-raw-builtin - (x &rest others)
   (let ((args (cons x others)))
@@ -1061,10 +1061,10 @@
 (define-raw-builtin / (x &rest others)
   (let ((args (cons x others)))
     (variable-arity args
-      (if (null others)
-          `(call-internal |handled_division| 1 ,(car args))
-          (reduce (lambda (x y) `(call-internal |handled_division| ,x ,y))
-                  args)))))
+                    (if (null others)
+                        `(call-internal |handled_division| 1 ,(car args))
+                        (reduce (lambda (x y) `(call-internal |handled_division| ,x ,y))
+                                args)))))
 
 (define-builtin mod (x y)
   `(selfcall
@@ -1087,7 +1087,7 @@
   `(define-raw-builtin ,op (x &rest args)
      (let ((args (cons x args)))
        (variable-arity args
-         (convert-to-bool (comparison-conjuntion args ',sym))))))
+                       (convert-to-bool (comparison-conjuntion args ',sym))))))
 
 (define-builtin-comparison > >)
 (define-builtin-comparison < <)
@@ -1404,9 +1404,9 @@
   `(internal ,name))
 
 
-;; Catch any Javascript exception. Note that because all non-local
-;; exit are based on try-catch-finally, it will also catch them. We
-;; could provide a JS function to detect it, so the user could rethrow
+;; Catch any Javascript exception. Note  that because all non-local exit
+;; are based  on try-catch-finally,  it will also  catch them.  We could
+;; provide  a JS  function  to  detect it,  so  the  user could  rethrow
 ;; the error.
 ;;
 ;; (%js-try (progn ) (catch (err) ) (finally ))
@@ -1455,7 +1455,7 @@
     (error "`~S' is not a symbol." symbol))
   #+sbcl
   (when (eql symbol 'sb-int:quasiquote)
-    (return-from !macro-function 
+    (return-from !macro-function
       (lambda (form)
         (sb-impl::expand-quasiquote form nil))))
   (let ((b (lookup-in-lexenv symbol *environment* 'function)))
@@ -1495,37 +1495,36 @@
      (values form nil))))
 
 (defun compile-funcall/function (function arglist)
-       (fn-info function :called t)
-       ;; This code will work even if the symbol-function is unbound, as
-       ;; it   is   represented   by   a  function   that   throws   the
-       ;; expected error.
-       `(method-call ,(convert `',function) "fvalue" ,@arglist))
+  (fn-info function :called t)
+  ;; This code will  work even if the symbol-function is  unbound, as it
+  ;; is represented by a function that throws the expected error.
+  `(method-call ,(convert `',function) "fvalue" ,@arglist))
 
 (defun compile-funcall/translate-function (function arglist)
   `(call ,(translate-function function) ,@arglist))
 
 (defun compile-funcall/lambda (function arglist)
-       `(call ,(convert `(function ,function)) ,@arglist))
+  `(call ,(convert `(function ,function)) ,@arglist))
 
 (defun compile-funcall/oget (function args)
   `(call-internal
     |js_to_lisp|
-                       (call ,(reduce (lambda (obj p)
-                                        `(property ,obj (call-internal |xstring| ,p)))
-                                      (mapcar #'convert (cdr function)))
-                             ,@(mapcar (lambda (s)
-                                         `(call-internal |lisp_to_js| ,(convert s)))
-                                       args))))
+    (call ,(reduce (lambda (obj p)
+                     `(property ,obj (call-internal |xstring| ,p)))
+                   (mapcar #'convert (cdr function)))
+          ,@(mapcar (lambda (s)
+                      `(call-internal |lisp_to_js| ,(convert s)))
+                    args))))
 
 (defun compile-funcall/error (function)
   (error "Function designator ~s is not a lambda form nor an oget; car is ~a::~a"
-              function
+         function
          (package-name (symbol-package (car function)))
          (symbol-name (car function))))
 
 (defun compile-funcall (function args)
   (let* ((arglist (cons (if *multiple-value-p* '|values| '(internal |pv|))
-                        (mapcar #'convert args)))) 
+                        (mapcar #'convert args))))
     (cond
       ((translate-function function)
        (compile-funcall/translate-function function arglist))
@@ -1577,7 +1576,7 @@
        (compile-builtin-function name args))
       (t (compile-funcall name args)))))
 
-(defun convert-1 (sexp &optional multiple-value-p) 
+(defun convert-1 (sexp &optional multiple-value-p)
   (multiple-value-bind (sexp expandedp) (!macroexpand-1 sexp)
     (when expandedp
       (return-from convert-1 (convert sexp multiple-value-p)))
