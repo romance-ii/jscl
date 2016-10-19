@@ -1513,8 +1513,7 @@
 
 (defun compile-funcall (function args)
   (restart-case
-      (let* ((arglist (cons (if *multiple-value-p* '|values| '(internal |pv|))
-                            (mapcar #'convert args))))
+      (let* ((arglist (compile-funcall/args-list args)))
         (cond
           ((translate-function function)
            (compile-funcall/translate-function function arglist))
@@ -1522,13 +1521,13 @@
            (error "Compiler error: Macro function was not expanded: ~s" function))
           ((symbolp function)
            (compile-funcall/function function arglist))
-          ((and (consp function) (eql (car function) 'lambda))
+          ((not (consp function))
+           (error "Bad function designator `~s'" function))
+          ((eql (car function) 'lambda)
            (compile-funcall/lambda function arglist))
-          ((and (consp function) (eql (car function) 'jscl/ffi:oget))
+          ((eql (car function) 'jscl/ffi:oget)
            (compile-funcall/oget function args))
-          ((consp function)
-           (compile-funcall/error function))
-          (t (error "Bad function designator `~S'" function))))))
+          (t (compile-funcall/error function))))))
 
 (defun convert-block (sexps &optional return-last-p decls-allowed-p)
   (multiple-value-bind (sexps decls)
