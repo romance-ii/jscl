@@ -2,8 +2,7 @@
 #-jscl (error "Don't load this file on the host compiler")
 (/debug "loading char.lisp!")
 
-;; These comparison  functions heavily borrowed from  SBCL/CMUCL (public
-;; domain).
+;; These comparison functions heavily borrowed from SBCL/CMUCL (public domain).
 
 (defun char= (character &rest more-characters)
   (dolist (c more-characters t)

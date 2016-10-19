@@ -8,7 +8,7 @@
 
                                         ; COND
 (test (eql nil (cond)))
-(test (=   1   (cond (1)))) 
+(test (=   1   (cond (1))))
 (test (= 1
          (let ((x 0))
            (cond ((incf x))))))

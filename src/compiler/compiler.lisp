@@ -1,17 +1,15 @@
 ;; compiler.lisp ---
 
-;; JSCL is free software: you can redistribute it and/or modify it under
-;; the terms of the GNU General  Public License as published by the Free
-;; Software Foundation,  either version  3 of the  License, or  (at your
-;; option) any later version.
+;; JSCL is  free software:  you can  redistribute it  and/or modify it  under the  terms of  the GNU
+;; General Public  License as published  by the  Free Software Foundation,  either version 3  of the
+;; License, or (at your option) any later version.
 ;;
-;; JSCL is distributed  in the hope that it will  be useful, but WITHOUT
-;; ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-;; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-;; for more details.
+;; JSCL is distributed  in the hope that it  will be useful, but WITHOUT ANY  WARRANTY; without even
+;; the implied warranty of MERCHANTABILITY or FITNESS  FOR A PARTICULAR PURPOSE. See the GNU General
+;; Public License for more details.
 ;;
-;; You should  have received a  copy of  the GNU General  Public License
-;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
+;; You should have  received a copy of the GNU  General Public License along with JSCL.  If not, see
+;; <http://www.gnu.org/licenses/>.
 
 ;;;; Compiler
 
@@ -19,10 +17,9 @@
 
 (/debug "loading compiler.lisp!")*
 
-;;; Translate the Lisp  code to Javascript. It will  compile the special
-;;; forms. Some primitive  functions are compiled as  special forms too.
-;;; The respective  real functions  are defined in  the target  (see the
-;;; beginning of this file) as well as some primitive functions.
+;;; Translate  the Lisp  code to  Javascript.  It will  compile  the special  forms. Some  primitive
+;;; functions are compiled  as special forms too.  The respective real functions are  defined in the
+;;; target (see the beginning of this file) as well as some primitive functions.
 
 (define-js-macro selfcall (&body body)
   `(call (function () ,@body)))
@@ -1496,8 +1493,8 @@
 
 (defun compile-funcall/function (function arglist)
   (fn-info function :called t)
-  ;; This code will  work even if the symbol-function is  unbound, as it
-  ;; is represented by a function that throws the expected error.
+  ;; This code will work even if the symbol-function  is unbound, as it is represented by a function
+  ;; that throws the expected error.
   `(method-call ,(convert `',function) "fvalue" ,@arglist))
 
 (defun compile-funcall/translate-function (function arglist)
@@ -1671,4 +1668,4 @@
          (*gensym-counter* 0)
          (*literal-counter* 0))
      (with-sharp-j
-       ,@body)))
+         ,@body)))
