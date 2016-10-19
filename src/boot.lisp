@@ -2,24 +2,21 @@
 
 ;; Copyright (C) 2012, 2013 David Vazquez Copyright (C) 2012 Raimon Grau
 
-;; JSCL is free software: you can redistribute it and/or modify it under
-;; the terms of the GNU General  Public License as published by the Free
-;; Software Foundation,  either version  3 of the  License, or  (at your
-;; option) any later version.
+;; JSCL is  free software:  you can  redistribute it  and/or modify it  under the  terms of  the GNU
+;; General Public  License as published  by the  Free Software Foundation,  either version 3  of the
+;; License, or (at your option) any later version.
 ;;
-;; JSCL is distributed  in the hope that it will  be useful, but WITHOUT
-;; ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-;; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-;; for more details.
+;; JSCL is distributed  in the hope that it  will be useful, but WITHOUT ANY  WARRANTY; without even
+;; the implied warranty of MERCHANTABILITY or FITNESS  FOR A PARTICULAR PURPOSE. See the GNU General
+;; Public License for more details.
 ;;
-;; You should  have received a  copy of  the GNU General  Public License
-;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
+;; You should have  received a copy of the GNU  General Public License along with JSCL.  If not, see
+;; <http://www.gnu.org/licenses/>.
 
-;;; This  code  is  executed  when   JSCL  compiles  this  file  itself.
-;;; The compiler provides compilation of  some special forms, as well as
-;;; funcalls and  macroexpansion, but  no functions.  So, we  define the
-;;; Lisp world from scratch. This code  has to define enough language to
-;;; the compiler to be able to run.
+;;; This code is executed when JSCL compiles  this file itself. The compiler provides compilation of
+;;; some special forms, as well as funcalls and  macroexpansion, but no functions. So, we define the
+;;; Lisp world  from scratch. This  code has to  define enough language to  the compiler to  be able
+;;; to run.
 
 (/debug "loading boot.lisp!")
 
@@ -388,22 +385,22 @@ macro cache is so aggressive that it cannot be redefined."
                      (if (find (car c) '(t otherwise))
                          `(t ,@(rest c))
                          `((,(ecase (car c)
-                                    (number 'numberp)
-                                    (integer 'integerp)
-                                    (cons 'consp)
-                                    (list 'listp)
-                                    (vector 'vectorp)
-                                    (character 'characterp)
-                                    (sequence 'sequencep)
-                                    (symbol 'symbolp)
-                                    (keyword 'keywordp)
-                                    (function 'functionp)
-                                    (float 'floatp)
-                                    (array 'arrayp)
-                                    (string 'stringp)
-                                    (atom 'atom)
-                                    (null 'null)
-                                    (package 'packagep))
+                               (number 'numberp)
+                               (integer 'integerp)
+                               (cons 'consp)
+                               (list 'listp)
+                               (vector 'vectorp)
+                               (character 'characterp)
+                               (sequence 'sequencep)
+                               (symbol 'symbolp)
+                               (keyword 'keywordp)
+                               (function 'functionp)
+                               (float 'floatp)
+                               (array 'arrayp)
+                               (string 'stringp)
+                               (atom 'atom)
+                               (null 'null)
+                               (package 'packagep))
                              ,value)
                            ,@(or (rest c)
                                  (list nil)))))

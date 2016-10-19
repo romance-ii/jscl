@@ -1,17 +1,15 @@
 ;;; misc.lisp --
 
-;; JSCL is free software: you can redistribute it and/or modify it under
-;; the terms of the GNU General  Public License as published by the Free
-;; Software Foundation,  either version  3 of the  License, or  (at your
-;; option) any later version.
+;; JSCL is  free software:  you can  redistribute it  and/or modify it  under the  terms of  the GNU
+;; General Public  License as published  by the  Free Software Foundation,  either version 3  of the
+;; License, or (at your option) any later version.
 ;;
-;; JSCL is distributed  in the hope that it will  be useful, but WITHOUT
-;; ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-;; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-;; for more details.
+;; JSCL is distributed  in the hope that it  will be useful, but WITHOUT ANY  WARRANTY; without even
+;; the implied warranty of MERCHANTABILITY or FITNESS  FOR A PARTICULAR PURPOSE. See the GNU General
+;; Public License for more details.
 ;;
-;; You should  have received a  copy of  the GNU General  Public License
-;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
+;; You should have  received a copy of the GNU  General Public License along with JSCL.  If not, see
+;; <http://www.gnu.org/licenses/>.
 
 (/debug "loading misc.lisp!")
 #-jscl (error "Don't build this file on the host")
@@ -24,10 +22,9 @@
 (defun lisp-implementation-version ()
   #.*version*)
 
-;; Following  the  “most  useful”  (in one  opinion)  form,  these  wrap
-;; Navigator  (browser) methods.  NB someone  familiar with  Node.JS may
-;; want to  provide alternative  implementations that  are more  in line
-;; with what a “normal” compiler would provide.
+;; Following  the “most  useful” (in  one  opinion) form,  these wrap  Navigator (browser)  methods.
+;; NB someone familiar with Node.JS may want to provide alternative implementations that are more in
+;; line with what a “normal” compiler would provide.
 
 (defun null-if-empty (x)
   (if (and x (emptyp x)) nil x))

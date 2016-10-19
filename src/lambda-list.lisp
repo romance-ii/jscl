@@ -2,18 +2,16 @@
 
 ;;; Copyright (C) 2013 David Vazquez
 
-;; JSCL is free software: you can redistribute it and/or modify it under
-;; the terms of the GNU General  Public License as published by the Free
-;; Software Foundation,  either version  3 of the  License, or  (at your
-;; option) any later version.
+;; JSCL is  free software:  you can  redistribute it  and/or modify it  under the  terms of  the GNU
+;; General Public  License as published  by the  Free Software Foundation,  either version 3  of the
+;; License, or (at your option) any later version.
 ;;
-;; JSCL is distributed  in the hope that it will  be useful, but WITHOUT
-;; ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-;; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-;; for more details.
+;; JSCL is distributed  in the hope that it  will be useful, but WITHOUT ANY  WARRANTY; without even
+;; the implied warranty of MERCHANTABILITY or FITNESS  FOR A PARTICULAR PURPOSE. See the GNU General
+;; Public License for more details.
 ;;
-;; You should  have received a  copy of  the GNU General  Public License
-;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
+;; You should have  received a copy of the GNU  General Public License along with JSCL.  If not, see
+;; <http://www.gnu.org/licenses/>.
 
 (/debug "loading lambda-list.lisp!")
 
@@ -192,16 +190,16 @@
 ;;; Return T if KEYWORD is supplied in the list of arguments LIST.
 (defun keyword-supplied-p (keyword list)
   (do-keywords key value list
-    (declare (ignore value))
-    (when (eq key keyword) (return t))
-    (setq list (cddr list))))
+               (declare (ignore value))
+               (when (eq key keyword) (return t))
+               (setq list (cddr list))))
 
 ;;; Return the value of KEYWORD in the list of arguments LIST or NIL
 ;;; if it is not supplied.
 (defun keyword-lookup (keyword list)
   (do-keywords key value list
-    (when (eq key keyword) (return value))
-    (setq list (cddr list))))
+               (when (eq key keyword) (return value))
+               (setq list (cddr list))))
 
 (defun validate-reqvars (list n)
   (unless (listp list)
@@ -223,9 +221,9 @@
          (or allow-other-keys (keyword-lookup :allow-other-keys list))))
     (unless allow-other-keys
       (do-keywords key value list
-        (declare (ignore value))
-        (unless (find key keyword-list)
-          (error "Unknown keyword argument `~S'." key))))
+                   (declare (ignore value))
+                   (unless (find key keyword-list)
+                     (error "Unknown keyword argument `~S'." key))))
     (do* ((tail list (cddr tail))
           (key (car tail) (car tail)))
          ((null tail) list)
