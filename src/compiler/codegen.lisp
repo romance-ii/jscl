@@ -59,11 +59,7 @@
 ;;; either depending on the  context, e.g: foo's => "foo's" "foo" => '"foo"'  which avoids having to
 ;;; escape quotes where possible
 (defun js-escape-string (string)
-  (let ((index 0)
-        (size (length string))
-        (seen-single-quote nil)
-        (seen-double-quote nil)
-        (skipper (gensym "SKIPPER-")))
+  (let ((size (length string)))
     (flet ((%js-escape-string (string escape-single-quote-p)
              (let ((output "")
                    (index 0))

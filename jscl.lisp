@@ -33,9 +33,6 @@
   (:use :cl #-jscl :bordeaux-threads)
   (:export #:RUN))
 
-(defpackage :jscl/ffi
-  (:use :jscl))
-
 (in-package :jscl)
 
 (defvar *base-directory*
@@ -186,7 +183,8 @@
                        (length source))))))
 
 (defun !compile-file (filename out &key print)
-  (tagbody top
+  (tagbody 
+   top
      (with-compile-file-bindings (filename)
        (restart-case
            (progn
@@ -207,8 +205,13 @@
          (retry-file ()
            :report (lambda (s)
                      (format s "Retry compiling ~a in JSCL" (enough-namestring filename)))
-           (go top))))
-     (format t " Done.")))
+           (go top))
+         (continue ()
+           :report (lambda (s)
+                     (format s "Continue without compiling ~a in JSCL" (enough-namestring filename)))
+           (go end))))
+     (format t " Done.")
+   end))
 
 (defun dump-global-environment (stream)
   (flet ((late-compile (form)
@@ -241,10 +244,10 @@
 (defun write-javascript-for-files (files &optional (stream *standard-output*))
   (let ((*environment* (make-lexenv)))
     (with-compilation-environment
-        (with-scoping-function (out)
-          (dolist (input files)
-            (terpri out)
-            (!compile-file input out))))))
+      (with-scoping-function (stream)
+        (dolist (input files)
+          (terpri stream)
+          (!compile-file input stream))))))
 
 (defun compile-application (files output &key shebang)
   (with-compilation-environment

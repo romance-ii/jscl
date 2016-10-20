@@ -119,10 +119,12 @@
   (reverse *toplevel-compilations*))
 
 (defun %compile-defmacro (name lambda)
+  (warn "DEFMACRO ~a ~%   ~s" name lambda)
   (let ((binding (make-binding :name name :type 'macro :value lambda)))
     (push-to-lexenv binding  *environment* 'function))
   #+sbcl (unless (sb-ext:package-locked-p (symbol-package name))
-           (setf (macro-function name) (eval lambda)))
+           (setf (macro-function name) 
+                 (eval lambda)))
   name)
 
 (defun global-binding (name type namespace)

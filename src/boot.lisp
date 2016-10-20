@@ -34,11 +34,26 @@
   (:export #:oget #:oget* #:make-new #:new #:*root*))
 
 (eval-when (:compile-toplevel)
+  (defun without-docstring-or-declare (form)
+    (cond 
+      ((null form) nil)
+      ((not (consp form)) form) 
+      ((stringp (first form))
+       (if (and (second form)
+                (consp (second form))
+                (eql 'declare (first (second form))))
+           (cddr form)
+           (cdr form)))
+      ((and (consp (first form))
+            (eql 'declare (first (first form))))
+       (cdr form))
+      (t form)))
   (let ((defmacro-macroexpander
          '#'(lambda (form)
               (destructuring-bind (name args &body body)
                   form
-                (let* ((whole (gensym "WHOLE-"))
+                (let* ((body (without-docstring-or-declare body))
+                       (whole (gensym "WHOLE-"))
                        (expander `(function
                                    (lambda (,whole)
                                     (block ,name
@@ -250,9 +265,8 @@
          (tagbody ,@forms)))))
 
 (defmacro psetq (&rest pairs)
-  (let (;;  For  each pair, we store  here a list of  the form (VARIABLE
-        ;;  GENSYM VALUE).
-        (assignments '()))
+  ;;  For each pair, we store here a list of the form (VARIABLE GENSYM VALUE).
+  (let ((assignments '()))
     (while t
       (cond
         ((null pairs) (return))
@@ -267,7 +281,7 @@
     (setq assignments (reverse assignments))
     ;;
     `(let ,(mapcar #'cdr assignments)
-       (setq ,@(mapcan #'butlast assignments)))))
+       (setq ,@ (!reduce #'append (mapcar #'butlast assignments)) nil))))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun do/do* (do/do* varlist endlist body)
@@ -283,13 +297,14 @@
              (return (progn ,@(cdr endlist))))
            (tagbody ,@body)
            (,(ecase do/do* (do 'psetq) (do* 'setq))
-             ,@(mapcan (lambda (v)
-                         (and (listp v) (consp (cddr v))
-                              (list (first v) (third v))))
-                       varlist)))))))
+             ,@(apply #'append 
+                      (mapcar (lambda (v)
+                                (and (listp v) (consp (cddr v))
+                                     (list (first v) (third v))))
+                              varlist))))))))
 
 (defmacro do (varlist endlist &body body)
-  (do/do* 'do varlist endlist body)  )
+  (do/do* 'do varlist endlist body))
 
 (defmacro do* (varlist endlist &body body)
   (do/do* 'do* varlist endlist body))
@@ -311,8 +326,9 @@ macro cache is so aggressive that it cannot be redefined."
   `(unless ,test
      (error "Assertion failed: NOT ~s" ',test)))
 
-(defmacro check-type (place type &optional type-name)
+(defmacro check-type (place type &optional type-name) 
   "Early/minimalist CHECK-TYPE using ETYPECASE"
+  (declare (ignore type-name))
   `(etypecase ,place (,type nil)))
 
 (defmacro loop (&body body)
