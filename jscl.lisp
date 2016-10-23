@@ -23,7 +23,8 @@
 
 (defpackage :jscl/ffi
   (:use :cl :jscl)
-  (:export #:oget #:oget* #:make-new #:new #:*root*))
+  (:export #:oget #:oget* #:make-new #:new #:*root*
+           #:oset #:oset*))
 
 (defpackage repl-web (:use :jscl :jscl/ffi))
 
