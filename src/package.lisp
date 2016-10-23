@@ -1,15 +1,17 @@
 ;;; package.lisp ---
 
-;; JSCL is  free software:  you can  redistribute it  and/or modify it  under the  terms of  the GNU
-;; General Public  License as published  by the  Free Software Foundation,  either version 3  of the
-;; License, or (at your option) any later version.
+;; JSCL is free software: you can redistribute it and/or modify it under
+;; the terms of the GNU General  Public License as published by the Free
+;; Software Foundation,  either version  3 of the  License, or  (at your
+;; option) any later version.
 ;;
-;; JSCL is distributed  in the hope that it  will be useful, but WITHOUT ANY  WARRANTY; without even
-;; the implied warranty of MERCHANTABILITY or FITNESS  FOR A PARTICULAR PURPOSE. See the GNU General
-;; Public License for more details.
+;; JSCL is distributed  in the hope that it will  be useful, but WITHOUT
+;; ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+;; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+;; for more details.
 ;;
-;; You should have  received a copy of the GNU  General Public License along with JSCL.  If not, see
-;; <http://www.gnu.org/licenses/>.
+;; You should  have received a  copy of  the GNU General  Public License
+;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
 
 (/debug "loading package.lisp!")
 
@@ -28,12 +30,13 @@
       (jscl/ffi:oget *package-table* (string package-designator))))
 
 (defun delete-package (package-designator)
-  ;; TODO: Signal a correctlable error in case the package-designator does not name a package. TODO:
-  ;; Implement unuse-package and remove the deleted package from packages that use it.
+  ;; TODO: Signal  a correctlable  error in case  the package-designator
+  ;; does not name  a package. TODO: Implement  unuse-package and remove
+  ;; the deleted package from packages that use it.
   (delete-property (package-name (find-package-or-fail package-designator))
                    *package-table*))
 
-(defun %make-package (name use)
+(defun %make-package (name use &optional nicknames)
   (when (find-package name)
     (error "A package namded `~a' already exists." name))
   (let ((package (new)))
@@ -41,7 +44,10 @@
     (setf (jscl/ffi::oget package "symbols") (new))
     (setf (jscl/ffi::oget package "exports") (new))
     (setf (jscl/ffi::oget package "use") use)
+    (setf (jscl/ffi::oget package "nicknames") nicknames)
     (setf (jscl/ffi::oget *package-table* name) package)
+    (dolist (nickname (nicknames))
+      (setf (jscl/ffi:oget *package-table* nickname) package))
     package))
 
 (defun resolve-package-list (packages)
@@ -90,22 +96,24 @@
      (setq *package* (find-package-or-fail ',string-designator))))
 
 (eval-when (:compile-toplevel :execute)
-(defun defpackage/parse-options (options)
-  (let (use exports)
-    (dolist (option options)
-      (ecase (car option)
-        (:use
-         (setf use (append use (cdr option))))
-        (:export
-         (setf exports (append use (cdr option))))))
-    (list use exports))))
+  (defun defpackage/parse-options (options)
+    (let (use exports nicknames)
+      (dolist (option options)
+        (ecase (car option)
+          (:use
+           (appendf use (cdr option)))
+          (:export
+           (appendf exports (cdr option)))
+          (:nicknames
+           (appendf nicknames (cdr option )))))
+      (list use exports nicknames))))
 
 (defmacro defpackage (package &rest options)
-  (destructuring-bind (use exports)
+  (destructuring-bind (use exports nicknames)
       (defpackage/parse-options options)
     `(progn
        (eval-when (:load-toplevel :execute)
-         (%defpackage ',(string package) ',use)
+         (%defpackage ',(string package) ',use ',nicknames)
          ,@(mapcar (lambda (symbol)
                      `(export (intern ,(string symbol) (find-package ,(string package)))))
                    exports))
@@ -113,16 +121,23 @@
          (make-package ',(string package) :use ',use)))))
 
 
-(defun redefine-package (package use)
-  (setf (jscl/ffi:oget package "use") use)
+(defun redefine-package (package use &optional nicknames)
+  (setf (jscl/ffi:oget package "use")
+        (remove-duplicates (append (jscl/ffi:oget package "use") use)
+                           :test #'equal))
+  (setf (jscl/ffi:oget package "nicknames")
+        (remove-duplicates (append (jscl/ffi:oget package "nicknames") nicknames)
+                           :test #'equal))
+  (dolist (nickname (nicknames))
+    (setf (jscl/ffi:oget *package-table* nickname) package))
   package)
 
-(defun %defpackage (name use)
+(defun %defpackage (name use nicknames)
   (let ((package (find-package name))
         (use (resolve-package-list use)))
     (if package
-        (redefine-package package use)
-        (make-package name :use use))))
+        (redefine-package package use )
+        (make-package name :use use :nicknames nicknames))))
 
 
 (defun find-symbol (name &optional (package *package*))
@@ -141,8 +156,8 @@
              (return (values (jscl/ffi:oget exports name) :inherited)))))))))
 
 
-;;; It is a function to call when a symbol is interned. The function
-;;; is invoked with the already interned symbol as argument.
+;;; It is a function to call when  a symbol is interned. The function is
+;;; invoked with the already interned symbol as argument.
 (defvar *intern-hook* nil)
 
 (defun intern (name &optional (package *package*))
