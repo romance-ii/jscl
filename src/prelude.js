@@ -40,7 +40,7 @@ else
 var internals = jscl.internals = {};
 
 internals.globalEval = function(code){
-    var geval = eval;             // Just an indirect eval
+    var geval = eval;       // Just an indirect eval
     var fn = geval('(function(values, internals){ "use strict"; ' + code + '; })');
     return fn(internals.mv, internals);
 };
@@ -65,7 +65,7 @@ internals.forcemv = function(x) {
 // arguments. Some primitive constructors (like Date) differ if they
 // are called as a function or as a constructor.
 //
-//    https://github.com/jscl-project/jscl/pull/242#issuecomment-238923579
+//  https://github.com/jscl-project/jscl/pull/242#issuecomment-238923579
 //
 // Note that primitive constructors, if accessed with oget (e.g:
 // #j:Date) will be converted into a Lisp function. We track the
@@ -247,7 +247,7 @@ internals.js_to_lisp = function (x) {
         return nil;
     else if (typeof x == 'function'){
         // Trampoline calling the JS function
-    var trampoline = function(values){
+        var trampoline = function(values){
             var args = Array.prototype.slice.call(arguments, 1);
             for (var i in args)
                 args[i] = internals.lisp_to_js(args[i]);
@@ -281,8 +281,8 @@ internals.TagNLX = function (id, label){
 internals.isNLX = function(x){
     var i = internals;
     return x instanceof i.BlockNLX
-        ||   x instanceof i.CatchNLX
-        ||   x instanceof i.TagNLX;
+        ||  x instanceof i.CatchNLX
+        ||  x instanceof i.TagNLX;
 };
 
 
@@ -297,7 +297,7 @@ packages.JSCL = {
     use: nil
 };
 
-packages.JSCLFFI = {
+packages["JSCL/FFI"] = {
     packageName: 'JSCL/FFI',
     symbols: {},
     exports: {},
@@ -386,7 +386,7 @@ internals.intern = function (name, package_name){
 };
 
 /* execute all script tags with type of x-common-lisp */
-var eval_in_lisp;               // set in FFI.lisp
+var eval_in_lisp;        // set in FFI.lisp
 if (typeof window !== "undefined"){
     window.onload = (function () {
         var scripts = document.scripts;
@@ -405,3 +405,6 @@ if (typeof module !== 'undefined' &&
     typeof global !== 'undefined' &&
     typeof phantom === 'undefined')
     global.readline = require('readline');
+
+/* -- End of prelude -- */
+
