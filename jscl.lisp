@@ -177,22 +177,35 @@
           last-form)
      ,@body))
 
-(defun !compile-file/progress (in source)
-  (when (zerop (nth-value 1 (round (get-universal-time) 5)))
-    (format t " ~2d%… "
-            (round (* 100
-                      (/ (stream-file-position in)
-                         (length source)))))))
+(let ((compiled-form-timer 0)
+      (last-reported-% -1)
+      (compiling-source nil))
+  (defun !compile-file/progress (in source)
+    (unless (eql source compiling-source)
+      (setf compiled-form-timer 0
+            compiling-source source
+            last-reported-% -1))
+    (when (and (plusp (length source))
+               (> (get-universal-time)
+                  (+ 5 compiled-form-timer)))
+      (let ((compilation-% (round (* 100
+                                     (/ (stream-file-position in)
+                                        (length source))))))
+        (if (> compilation-% last-reported-%)
+            (format t " ~2d%…" compilation-%)
+            (princ "…")))
+      (setf compiled-form-timer (get-universal-time)
+            last-reported-% compilation-%))))
 
 (defun !compile-file (filename out &key print)
-  (tagbody 
+  (tagbody
    top
      (with-compile-file-bindings (filename)
        (restart-case
            (progn
-             (format t "Compiling ~a...~%    " (enough-namestring filename))
+             (format t "~&Compiling ~a... " (enough-namestring filename))
              (handler-case
-      (loop
+                 (loop
                     with eof = (gensym)
                     for form = (read in nil eof)
                     until (eq form eof)
