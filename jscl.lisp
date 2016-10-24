@@ -190,9 +190,9 @@
      (with-compile-file-bindings (filename)
        (restart-case
            (progn
-             (format t "Compiling ~a...~%    " (enough-namestring filename))
+             (format t "~&Compiling ~a... " (enough-namestring filename))
              (handler-case
-      (loop
+                 (loop
                     with eof = (gensym)
                     for form = (read in nil eof)
                     until (eq form eof)
