@@ -33,7 +33,7 @@
       (jscl/ffi:oget *package-table* (string package-designator))))
 
 (defun delete-package (package-designator)
-  ;; TODO: Signal  a correctable  error in case  the package-designator
+  ;; TODO:  Signal a  correctable error  in case  the package-designator
   ;; does not name  a package. TODO: Implement  unuse-package and remove
   ;; the deleted package from packages that use it.
   (delete-property (package-name (find-package-or-fail package-designator))
@@ -101,9 +101,9 @@
 (eval-when (:compile-toplevel :execute)
   (defun defpackage/parse-options (options)
     (let (use exports nicknames)
-    (dolist (option options)
-      (ecase (car option)
-        (:use
+      (dolist (option options)
+        (ecase (car option)
+          (:use
            (appendf use (cdr option)))
           (:export
            (appendf exports (cdr option)))
