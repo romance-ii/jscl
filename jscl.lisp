@@ -178,12 +178,11 @@
      ,@body))
 
 (defun !compile-file/progress (in source)
-  (format t (concat
-             (make-string 4 :initial-element #\Backspace)
-             "~[    ~:;~:* ~2d%~]… ")
-          (round (* 100
-                    (/ (stream-file-position in)
-                       (length source))))))
+  (when (zerop (nth-value 1 (round (get-universal-time) 5)))
+    (format t " ~2d%… "
+            (round (* 100
+                      (/ (stream-file-position in)
+                         (length source)))))))
 
 (defun !compile-file (filename out &key print)
   (tagbody 
