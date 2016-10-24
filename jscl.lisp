@@ -185,17 +185,17 @@
       (setf compiled-form-timer 0
             compiling-source source
             last-reported-% -1))
-    (when (and (plusp (length source))
-               (> (get-universal-time)
-                  (+ 5 compiled-form-timer)))
+    (when (and (plusp (length source)))
       (let ((compilation-% (round (* 100
                                      (/ (stream-file-position in)
                                         (length source))))))
-        (if (> compilation-% last-reported-%)
-            (format t " ~2d%…" compilation-%)
-            (princ "…")))
-      (setf compiled-form-timer (get-universal-time)
-            last-reported-% compilation-%))))
+        (when (> (get-universal-time)
+                 (+ 5 compiled-form-timer))
+          (if (> compilation-% last-reported-%)
+              (format t " ~2d%…" compilation-%)
+              (princ "…")))
+        (setf compiled-form-timer (get-universal-time)
+              last-reported-% compilation-%)))))
 
 (defun !compile-file (filename out &key print)
   (tagbody
@@ -259,21 +259,21 @@
 (defun write-javascript-for-files (files &optional (stream *standard-output*))
   (let ((*environment* (make-lexenv)))
     (with-compilation-environment
-      (with-scoping-function (stream)
-        (dolist (input files)
-          (terpri stream)
-          (!compile-file input stream))))))
+        (with-scoping-function (stream)
+          (dolist (input files)
+            (terpri stream)
+            (!compile-file input stream))))))
 
 (defun compile-application (files output &key shebang)
   (with-compilation-environment
-    (with-open-file (out output :direction :output :if-exists :supersede)
-      (when shebang
-        (write-string "#!/usr/bin/env node" out)
-        (terpri out))
-      (with-scoping-function (out)
-        (dolist (input files)
-          (terpri out)
-          (!compile-file input out))))))
+      (with-open-file (out output :direction :output :if-exists :supersede)
+        (when shebang
+          (write-string "#!/usr/bin/env node" out)
+          (terpri out))
+        (with-scoping-function (out)
+          (dolist (input files)
+            (terpri out)
+            (!compile-file input out))))))
 
 (defun compile-test-suite ()
   (compile-application
@@ -294,16 +294,16 @@
    :shebang t))
 
 (defun compile-jscl.js (verbosep)
-    (with-compilation-environment
-        (with-open-file (out (merge-pathnames "jscl.js" *base-directory*)
-                             :direction :output
-                             :if-exists :supersede)
-      (format out "(function(){~%'use strict';~%")
-          (write-string (read-whole-file (source-pathname "prelude.js")) out)
-          (do-source input :target
-        (!compile-file input out :print verbosep))
-          (dump-global-environment out)
-      (format out "})();~%"))))
+  (with-compilation-environment
+      (with-open-file (out (merge-pathnames "jscl.js" *base-directory*)
+                           :direction :output
+                           :if-exists :supersede)
+        (format out "(function(){~%'use strict';~%")
+        (write-string (read-whole-file (source-pathname "prelude.js")) out)
+        (do-source input :target
+                   (!compile-file input out :print verbosep))
+        (dump-global-environment out)
+        (format out "})();~%"))))
 
 (defun bootstrap (&optional verbosep)
   (let ((*features* (cons :jscl-xc *features*))
