@@ -21,7 +21,7 @@
     ((not (symbolp x))
      (error "`~a' is not a symbol." x))
     ((in "plist" x)
-     (jscl/ffi:oget* x "plist"))))
+     (jscl/ffi:oget x "plist"))))
 
 (defun set-symbol-plist (new-value x)
   (unless (symbolp x )

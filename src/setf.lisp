@@ -15,6 +15,8 @@
 
 (in-package :jscl)
 
+#-jscl (error "Don't evaluate in host Lisp")
+
 (/debug "loading setf!")
 
 ;;; Generalized references (SETF)
@@ -69,6 +71,7 @@
   ;;
   ;;     http://www.lispworks.com/documentation/HyperSpec/Body/03_dg.htm
   ;;
+  (declare (ignore access-fn lambda-list store-variables body))
   (error "The long form of defsetf is not implemented"))
 
 (defmacro defsetf (&whole args first second &rest others)

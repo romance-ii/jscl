@@ -37,11 +37,26 @@
   (:export #:oget #:oget* #:make-new #:new #:*root*))
 
 (eval-when (:compile-toplevel)
+  (defun without-docstring-or-declare (form)
+    (cond 
+      ((null form) nil)
+      ((not (consp form)) form) 
+      ((stringp (first form))
+       (if (and (second form)
+                (consp (second form))
+                (eql 'declare (first (second form))))
+           (cddr form)
+           (cdr form)))
+      ((and (consp (first form))
+            (eql 'declare (first (first form))))
+       (cdr form))
+      (t form)))
   (let ((defmacro-macroexpander
          '#'(lambda (form)
               (destructuring-bind (name args &body body)
                   form
-                (let* ((whole (gensym "WHOLE-"))
+                (let* ((body (without-docstring-or-declare body))
+                       (whole (gensym "WHOLE-"))
                        (expander `(function
                                    (lambda (,whole)
                                     (block ,name
@@ -167,20 +182,20 @@
       (when (atom clause)
         (error "COND clause ~s is not a list" clause))
       (destructuring-bind (condition &body body) clause
-        (cond 
-          ((eq condition t)
+      (cond
+        ((eq condition t)
            (when more
              (warn "Unreachable: ~s" more))
-           `(progn ,@body))
+         `(progn ,@body))
           ((endp body)
            (let ((test-symbol (gensym "COND-TEST-")))
-             `(let ((,test-symbol ,condition))
-                (if ,test-symbol
-                    ,test-symbol
+           `(let ((,test-symbol ,condition))
+              (if ,test-symbol
+                  ,test-symbol
                     ,(when more `(cond ,@more))))))
-          (t
-           `(if ,condition
-                (progn ,@body)
+        (t
+         `(if ,condition
+              (progn ,@body)
                 ,(when more `(cond ,@more)))))))))
 
 (defun ensure-list (list-or-atom)
@@ -254,9 +269,8 @@
          (tagbody ,@forms)))))
 
 (defmacro psetq (&rest pairs)
-  (let (;;  For  each pair, we store  here a list of  the form (VARIABLE
-        ;;  GENSYM VALUE).
-        (assignments '()))
+  ;;  For each pair, we store here a list of the form (VARIABLE GENSYM VALUE).
+  (let ((assignments '()))
     (while t
       (cond
         ((null pairs) (return))
@@ -275,25 +289,25 @@
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun do/do* (do/do* varlist endlist body) 
-    `(block nil
+  `(block nil
        (,(ecase do/do* (do 'let) (do* 'let*))
          ,(mapcar (lambda (x)
                     (if (symbolp x)
-                        (list x nil)
+                                   (list x nil)
                         (list (first x) (second x))))
                   varlist)
-         (while t
-           (when ,(car endlist)
-             (return (progn ,@(cdr endlist))))
-           (tagbody ,@body)
+       (while t
+         (when ,(car endlist)
+           (return (progn ,@(cdr endlist))))
+         (tagbody ,@body)
            (,(ecase do/do* (do 'psetq) (do* 'setq))
              ,@(mapcan (lambda (v) 
                          (and (listp v) (consp (cddr v))
-                              (list (first v) (third v))))
-                       varlist)))))))
+                                  (list (first v) (third v))))
+                           varlist)))))))
 
 (defmacro do (varlist endlist &body body)
-  (do/do* 'do varlist endlist body)  )
+  (do/do* 'do varlist endlist body))
 
 (defmacro do* (varlist endlist &body body)
   (do/do* 'do* varlist endlist body))
@@ -317,7 +331,8 @@ macro cache is so aggressive that it cannot be redefined."
 
 (defmacro check-type (place type &optional type-name)
   "Early/minimalist CHECK-TYPE using ETYPECASE"
-  `(etypecase ,place (,type nil)))
+  #-jscl (declare (ignore _))
+  `(etypecase ,var (,type nil)))
 
 (defmacro loop (&body body)
   `(while t ,@body))
@@ -408,22 +423,22 @@ macro cache is so aggressive that it cannot be redefined."
                      (if (find (car c) '(t otherwise))
                          `(t ,@(rest c))
                          `((,(ecase (car c)
-                               (number 'numberp)
-                               (integer 'integerp)
-                               (cons 'consp)
-                               (list 'listp)
-                               (vector 'vectorp)
-                               (character 'characterp)
-                               (sequence 'sequencep)
-                               (symbol 'symbolp)
-                               (keyword 'keywordp)
-                               (function 'functionp)
-                               (float 'floatp)
-                               (array 'arrayp)
-                               (string 'stringp)
-                               (atom 'atom)
-                               (null 'null)
-                               (package 'packagep))
+                                    (number 'numberp)
+                                    (integer 'integerp)
+                                    (cons 'consp)
+                                    (list 'listp)
+                                    (vector 'vectorp)
+                                    (character 'characterp)
+                                    (sequence 'sequencep)
+                                    (symbol 'symbolp)
+                                    (keyword 'keywordp)
+                                    (function 'functionp)
+                                    (float 'floatp)
+                                    (array 'arrayp)
+                                    (string 'stringp)
+                                    (atom 'atom)
+                                    (null 'null)
+                                    (package 'packagep))
                              ,value)
                            ,@(or (rest c)
                                  (list nil)))))

@@ -18,6 +18,10 @@
 
 #-jscl (error "Don't compile this file in the host compiler.")
 
+(in-package :jscl/ffi)
+
+#-jscl (error "Don't compile this file in the host compiler.")
+
 (/debug "loading ffi.lisp!")
 
 (defvar *root*)

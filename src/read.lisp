@@ -120,12 +120,12 @@
 (defun read-until (stream func)
   (let ((string (make-array 80 :element-type 'character
                             :adjustable t :fill-pointer 0))
-        (ch (peek-char nil stream))) 
+        (ch (peek-char nil stream nil nil)))
     (while (and ch (not (funcall func ch)))
       #-jscl (vector-push-extend ch string 80)
-      #+jscl (setq string (concat string (string ch)))
-      (read-char stream)
-      (setq ch (peek-char nil stream)))
+      #+jscl (setq string (concatenate 'string string (string ch)))
+      (read-char stream nil nil)
+      (setq ch (peek-char nil stream nil nil)))
     string))
 
 (defun read-escaped-until (stream func)

@@ -13,6 +13,9 @@
 ;; You should  have received a  copy of  the GNU General  Public License
 ;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
 
+(in-package :jscl)
+
+#-jscl (error "Don't compile this file on the host")
 (/debug "loading package.lisp!")
 
 (defvar *package-table*
@@ -30,7 +33,7 @@
       (jscl/ffi:oget *package-table* (string package-designator))))
 
 (defun delete-package (package-designator)
-  ;; TODO: Signal  a correctlable  error in case  the package-designator
+  ;; TODO: Signal  a correctable  error in case  the package-designator
   ;; does not name  a package. TODO: Implement  unuse-package and remove
   ;; the deleted package from packages that use it.
   (delete-property (package-name (find-package-or-fail package-designator))
@@ -40,12 +43,12 @@
   (when (find-package name)
     (error "A package namded `~a' already exists." name))
   (let ((package (new)))
-    (setf (jscl/ffi::oget package "packageName") name)
-    (setf (jscl/ffi::oget package "symbols") (new))
-    (setf (jscl/ffi::oget package "exports") (new))
-    (setf (jscl/ffi::oget package "use") use)
-    (setf (jscl/ffi::oget package "nicknames") nicknames)
-    (setf (jscl/ffi::oget *package-table* name) package)
+    (setf (jscl/ffi:oget package "packageName") name)
+    (setf (jscl/ffi:oget package "symbols") (new))
+    (setf (jscl/ffi:oget package "exports") (new))
+    (setf (jscl/ffi:oget package "use") use)
+    (setf (jscl/ffi:oget package "nicknames") nicknames)
+    (setf (jscl/ffi:oget *package-table* name) package)
     (dolist (nickname (nicknames))
       (setf (jscl/ffi:oget *package-table* nickname) package))
     package))
@@ -89,7 +92,7 @@
 (defun keywordp (x)
   (and (symbolp x) (eq (symbol-package x) *keyword-package*)))
 
-(defvar *package* (find-package "CL"))
+(defvar *package* (find-package "CL-USER"))
 
 (defmacro in-package (string-designator)
   `(eval-when (:compile-toplevel :load-toplevel :execute)
@@ -98,9 +101,9 @@
 (eval-when (:compile-toplevel :execute)
   (defun defpackage/parse-options (options)
     (let (use exports nicknames)
-      (dolist (option options)
-        (ecase (car option)
-          (:use
+    (dolist (option options)
+      (ecase (car option)
+        (:use
            (appendf use (cdr option)))
           (:export
            (appendf exports (cdr option)))
@@ -136,7 +139,7 @@
   (let ((package (find-package name))
         (use (resolve-package-list use)))
     (if package
-        (redefine-package package use )
+        (redefine-package package use nicknames)
         (make-package name :use use :nicknames nicknames))))
 
 

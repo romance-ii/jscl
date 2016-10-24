@@ -2,31 +2,27 @@
 
 ;; Copyright (C) 2013, 2014 David Vazquez
 
-;; JSCL is free software: you can redistribute it and/or modify it under
-;; the terms of the GNU General  Public License as published by the Free
-;; Software Foundation,  either version  3 of the  License, or  (at your
-;; option) any later version.
+;; JSCL is  free software:  you can  redistribute it  and/or modify it  under the  terms of  the GNU
+;; General Public  License as published  by the  Free Software Foundation,  either version 3  of the
+;; License, or (at your option) any later version.
 ;;
-;; JSCL is distributed  in the hope that it will  be useful, but WITHOUT
-;; ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-;; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-;; for more details.
+;; JSCL is distributed  in the hope that it  will be useful, but WITHOUT ANY  WARRANTY; without even
+;; the implied warranty of MERCHANTABILITY or FITNESS  FOR A PARTICULAR PURPOSE. See the GNU General
+;; Public License for more details.
 ;;
-;; You should  have received a  copy of  the GNU General  Public License
-;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
+;; You should have  received a copy of the GNU  General Public License along with JSCL.  If not, see
+;; <http://www.gnu.org/licenses/>.
 
 
-;;; This code generator takes as  input a S-expression representation of
-;;; the Javascript  AST and generates Javascript  code without redundant
-;;; syntax constructions like extra parenthesis.
+;;; This code  generator takes  as input  a S-expression  representation of  the Javascript  AST and
+;;; generates Javascript code without redundant syntax constructions like extra parenthesis.
 ;;;
-;;; It is  intended to  be used  with the new  compiler. However,  it is
-;;; quite independent so it has been integrated early in JSCL.
+;;; It is intended to be used with the new compiler. However, it is quite independent so it has been
+;;; integrated early in JSCL.
 
 (in-package :jscl)
 
 (/debug "loading compiler/codegen.lisp!")
-
 
 (defvar *js-macros* nil)
 (defmacro define-js-macro (name lambda-list &body body)
@@ -63,11 +59,7 @@
 ;;; either depending on the  context, e.g: foo's => "foo's" "foo" => '"foo"'  which avoids having to
 ;;; escape quotes where possible
 (defun js-escape-string (string)
-  (let ((index 0)
-        (size (length string))
-        (seen-single-quote nil)
-        (seen-double-quote nil)
-        (skipper (gensym "SKIPPER-")))
+  (let ((size (length string)))
     (flet ((%js-escape-string (string escape-single-quote-p)
              (let ((output "")
                    (index 0))
@@ -79,8 +71,8 @@
                                              (vector stuff)))))
                     (backslash (char)
                       (add (vector #\\ char))))
-                 (while (< index size)
-                   (let ((ch (char string index)))
+               (while (< index size)
+                 (let ((ch (char string index)))
                      (case ch
                        (#\apostrophe
                         (if escape-single-quote-p
@@ -94,17 +86,17 @@
                        (#\backspace (backslash #\b))
                        (#\null (backslash #\0))
                        (otherwise
-                        (cond
+                   (cond
                           ((<= 1 (char-code ch) 26)
                            (add "\\c")
                            (add (code-char (+ (char-code #\A)
                                               -1
                                               (char-code ch)))))
-                          ((<= 27 (char-code ch) 31)
+                     ((<= 27 (char-code ch) 31)
                            (add "\\x")
                            (add (integer-to-string (char-code ch) 16)))
-                          ((<= 127 (char-code ch) 159)
-                           (let ((s (integer-to-string (char-code ch) 16)))
+                     ((<= 127 (char-code ch) 159)
+                      (let ((s (integer-to-string (char-code ch) 16)))
                              (add "\\u")
                              (add (make-string (- 4 (length s))
                                                :initial-element #\0))
@@ -112,7 +104,7 @@
                           (t (add ch))))))
                    (incf index)))
                output)))
-      ;; First, scan the string for single/double quotes 
+      ;; First, scan the string for single/double quotes
       (cond
         ((not (find #\apostrophe string))
          (concat #(#\apostrophe) 
@@ -128,8 +120,8 @@
                  #(#\apostrophe)))))))
 
 
-      (defun js-format (fmt &rest args)
-        (apply #'format *js-output* fmt args))
+(defun js-format (fmt &rest args)
+  (apply #'format *js-output* fmt args))
 
 ;;; Check if STRING-DESIGNATOR is  valid as a Javascript identifier. It returns  a couple of values.
 ;;; The identifier itself as a string and a boolean value with the result of this check.
