@@ -413,9 +413,24 @@ macro cache is so aggressive that it cannot be redefined."
 (defmacro multiple-value-list (value-from)
   `(multiple-value-call #'list ,value-from))
 
+(defun type-of (value)
+  (cond
+    ((integerp value) (list 'integer value value))
+    ((numberp value) 'double-float)
+    ((nullp value) 'null)
+    ((consp value) 'cons)
+    ((vectorp value) (list 'vector (length value)))
+    ((arrayp value) (append (list 'array t) (array-dimensions value)))
+    ((sequencep value) 'sequence)
+    ((keywordp value) 'keyword)
+    ((symbolp value) 'symbol)
+    ((functionp value) 'function)
+    ((packagep value) 'package)
+    ((hash-table-p value) 'hash-table)
+    (t t)))
 
-;; Incorrect typecase, but used in NCONC.
 (defmacro typecase (x &rest clausules)
+  "A fair approximation of TYPECASE for limited cases"
   (let ((value (gensym "TYPECASE-VALUE-")))
     `(let ((,value ,x))
        (cond
@@ -423,6 +438,7 @@ macro cache is so aggressive that it cannot be redefined."
                      (if (find (car c) '(t otherwise))
                          `(t ,@(rest c))
                          `((,(ecase (car c)
+                               (hash-table 'hash-table-p)
                                (number 'numberp)
                                (integer 'integerp)
                                (cons 'consp)
