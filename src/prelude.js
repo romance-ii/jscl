@@ -290,28 +290,29 @@ internals.isNLX = function(x){
 
 var packages = jscl.packages = {};
 
+packages['COMMON-LISP'] = {
+    packageName: 'COMMON-LISP',
+    symbols: {},
+    exports: {},
+    use: nil,
+    nicknames: 'CL'
+};
+
+packages.CL = packages['COMMON-LISP'];
+
 packages.JSCL = {
     packageName: 'JSCL',
     symbols: {},
     exports: {},
-    use: nil
+    use: [ packages['COMMON-LISP'] ]
 };
 
 packages["JSCL/FFI"] = {
     packageName: 'JSCL/FFI',
     symbols: {},
     exports: {},
-    use: nil
+    use: [ packages['COMMON-LISP'], packages['JSCL'] ]
 };
-
-packages.CL = {
-    packageName: 'CL',
-    symbols: {},
-    exports: {},
-    use: nil
-};
-
-packages['COMMON-LISP'] = packages.CL;
 
 packages.KEYWORD = {
     packageName: 'KEYWORD',
