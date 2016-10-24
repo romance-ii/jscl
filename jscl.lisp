@@ -294,7 +294,7 @@
       (format out "})();~%"))))
 
 (defun bootstrap (&optional verbosep)
-  (let ((*features* (list* :jscl :jscl-xc *features*))
+  (let ((*features* (cons :jscl-xc *features*))
         (*package* (find-package "JSCL"))
         (*default-pathname-defaults* *base-directory*))
     (setq *environment* (make-lexenv))
@@ -305,7 +305,7 @@
     (compile-node-repl)))
 
 (defun bootstrap-core (&optional verbosep)
-  (let ((*features* (list* :jscl :jscl-xc *features*))
+  (let ((*features* (cons :jscl-xc *features*))
         (*package* (find-package "JSCL"))
         (*default-pathname-defaults* *base-directory*))
     (setq *environment* (make-lexenv))
