@@ -54,6 +54,8 @@
         + -)
   (values-list /))
 
+(in-package :common-lisp)
+
 (export
  '(&allow-other-keys &aux &body &environment &key &optional &rest &whole
    * ** *** *break-on-signals* *compile-file-pathname*
@@ -252,6 +254,8 @@
    with-slots with-standard-io-syntax write write-byte write-char
    write-line write-sequence write-string write-to-string y-or-n-p
    yes-or-no-p zerop))
+
+(in-package :jscl)
 
 (setq *package* *user-package*)
 

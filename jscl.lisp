@@ -19,16 +19,17 @@
   (:use :cl #+sbcl :sb-gray)
   (:export #:bootstrap #:bootstrap-core
            #:run-tests-in-host #:with-sharp-j #:read-#j
-           #:write-javascript-for-files #:compile-application))
+           #:write-javascript-for-files #:compile-application
+           #:appendf))
 
 (defpackage :jscl/ffi
   (:use :cl :jscl)
   (:export #:oget #:oget* #:make-new #:new #:*root*
            #:oset #:oset*))
 
-(defpackage repl-web (:use :jscl :jscl/ffi))
+(defpackage repl-web (:use :cl :jscl :jscl/ffi))
 
-(defpackage repl-node (:use :jscl :jscl/ffi))
+(defpackage repl-node (:use :cl :jscl :jscl/ffi))
 
 #+sbcl (require 'bordeaux-threads)
 (defpackage jscl/test
