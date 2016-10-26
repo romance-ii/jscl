@@ -329,7 +329,7 @@ function unboundFunction () {
 
 internals.Symbol = function(name, package_name){
     this.name = name;
-    this.package = package_name;
+    this["package"] = package_name;
     this.value = undefined;
     this.fvalue = unboundFunction;
 };
