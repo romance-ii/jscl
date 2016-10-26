@@ -75,4 +75,6 @@
   (and (realp rational)
        (let ((f (coerce rational 'double-float)))
          (and (= f rational)
-              f))))
+              (list /
+                    (numerator rational)
+                    (denominator rational))))))
