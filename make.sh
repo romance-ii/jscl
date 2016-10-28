@@ -15,4 +15,4 @@ done
 shift `expr $OPTIND - 1`
 OPTIND=1
 
-sbcl --load "$BASE/jscl.lisp" --eval "(jscl:bootstrap $VERBOSE)" --eval '(quit)'
+sbcl --disable-debugger --load "$BASE/jscl.lisp" --eval "(jscl:bootstrap $VERBOSE)" --eval '(quit)'
