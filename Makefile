@@ -1,4 +1,4 @@
-all:	jscl.js test
+all:	jscl.js
 
 jscl.js:	$(shell find . -name \*.lisp)
 	./make.sh
