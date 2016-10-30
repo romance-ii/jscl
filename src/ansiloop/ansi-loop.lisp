@@ -896,173 +896,173 @@ a LET-like macro, and a SETQ-like macro, which perform LOOP-style destructuring.
 	  (t (throw 'estimate-code-size nil)))))
 
 
-;; ;;;; Loop Errors
+;;;; Loop Errors
 
 
-;; (defun loop-context ()
-;;   (do ((l *loop-source-context* (cdr l)) (new nil (cons (car l) new)))
-;;       ((eq l (cdr *loop-source-code*)) (nreverse new))))
+(defun loop-context ()
+  (do ((l *loop-source-context* (cdr l)) (new nil (cons (car l) new)))
+      ((eq l (cdr *loop-source-code*)) (nreverse new))))
 
 
-;; (defun loop-error (format-string &rest format-args)
-;;   #+(or Genera CLOE) (declare (dbg:error-reporter))
-;;   #+Genera (setq format-args (copy-list format-args))	;Don't ask.
-;;   (error "~?~%Current LOOP context:~{ ~S~}." format-string format-args (loop-context)))
+(defun loop-error (format-string &rest format-args)
+  #+(or Genera CLOE) (declare (dbg:error-reporter))
+  #+Genera (setq format-args (copy-list format-args))	;Don't ask.
+  (error "~?~%Current LOOP context:~{ ~S~}." format-string format-args (loop-context)))
 
 
-;; (defun loop-warn (format-string &rest format-args)
-;;   (warn "~?~%Current LOOP context:~{ ~S~}." format-string format-args (loop-context)))
+(defun loop-warn (format-string &rest format-args)
+  (warn "~?~%Current LOOP context:~{ ~S~}." format-string format-args (loop-context)))
 
 
-;; (defun loop-check-data-type (specified-type required-type
-;; 			     &optional (default-type required-type))
-;;   (if (null specified-type)
-;;       default-type
-;;       (multiple-value-bind (a b) (subtypep specified-type required-type)
-;; 	(cond ((not b)
-;; 	       (loop-warn "LOOP couldn't verify that ~S is a subtype of the required type ~S."
-;; 			  specified-type required-type))
-;; 	      ((not a)
-;; 	       (loop-error "Specified data type ~S is not a subtype of ~S."
-;; 			   specified-type required-type)))
-;; 	specified-type)))
-;; 
+(defun loop-check-data-type (specified-type required-type
+			     &optional (default-type required-type))
+  (if (null specified-type)
+      default-type
+      (multiple-value-bind (a b) (subtypep specified-type required-type)
+	(cond ((not b)
+	       (loop-warn "LOOP couldn't verify that ~S is a subtype of the required type ~S."
+			  specified-type required-type))
+	      ((not a)
+	       (loop-error "Specified data type ~S is not a subtype of ~S."
+			   specified-type required-type)))
+	specified-type)))
+
 
-;; ;;;INTERFACE: Traditional, ANSI, Lucid.
-;; (defmacro loop-finish () 
-;;   "Causes the iteration to terminate \"normally\", the same as implicit
-;; termination by an iteration driving clause, or by use of WHILE or
-;; UNTIL -- the epilogue code (if any) will be run, and any implicitly
-;; collected result will be returned as the value of the LOOP."
-;;   '(go end-loop))
-
-
-;; 
-
-;; (defun loop-translate (*loop-source-code* *loop-macro-environment* *loop-universe*)
-;;   (let ((*loop-original-source-code* *loop-source-code*)
-;; 	(*loop-source-context* nil)
-;; 	(*loop-iteration-variables* nil)
-;; 	(*loop-variables* nil)
-;; 	(*loop-nodeclare* nil)
-;; 	(*loop-named-variables* nil)
-;; 	(*loop-declarations* nil)
-;; 	(*loop-desetq-crocks* nil)
-;; 	(*loop-bind-stack* nil)
-;; 	(*loop-prologue* nil)
-;; 	(*loop-wrappers* nil)
-;; 	(*loop-before-loop* nil)
-;; 	(*loop-body* nil)
-;; 	(*loop-emitted-body* nil)
-;; 	(*loop-after-body* nil)
-;; 	(*loop-epilogue* nil)
-;; 	(*loop-after-epilogue* nil)
-;; 	(*loop-final-value-culprit* nil)
-;; 	(*loop-inside-conditional* nil)
-;; 	(*loop-when-it-variable* nil)
-;; 	(*loop-never-stepped-variable* nil)
-;; 	(*loop-names* nil)
-;; 	(*loop-collection-cruft* nil))
-;;     (loop-iteration-driver)
-;;     (loop-bind-block)
-;;     (let ((answer `(loop-body
-;; 		     ,(nreverse *loop-prologue*)
-;; 		     ,(nreverse *loop-before-loop*)
-;; 		     ,(nreverse *loop-body*)
-;; 		     ,(nreverse *loop-after-body*)
-;; 		     ,(nreconc *loop-epilogue* (nreverse *loop-after-epilogue*)))))
-;;       (do () (nil)
-;; 	(setq answer `(block ,(pop *loop-names*) ,answer))
-;; 	(unless *loop-names* (return nil)))
-;;       (dolist (entry *loop-bind-stack*)
-;; 	(let ((vars (first entry))
-;; 	      (dcls (second entry))
-;; 	      (crocks (third entry))
-;; 	      (wrappers (fourth entry)))
-;; 	  (dolist (w wrappers)
-;; 	    (setq answer (append w (list answer))))
-;; 	  (when (or vars dcls crocks)
-;; 	    (let ((forms (list answer)))
-;; 	      ;;(when crocks (push crocks forms))
-;; 	      (when dcls (push `(declare ,@dcls) forms))
-;; 	      (setq answer `(,(cond ((not vars) 'locally)
-;; 				    (*loop-destructuring-hooks* (first *loop-destructuring-hooks*))
-;; 				    (t 'let))
-;; 			     ,vars
-;; 			     ,@(if crocks
-;; 				   `((destructuring-bind ,@crocks
-;; 					 ,@forms))
-;; 				 forms)))))))
-;;       answer)))
+;;;INTERFACE: Traditional, ANSI, Lucid.
+(defmacro loop-finish () 
+  "Causes the iteration to terminate \"normally\", the same as implicit
+termination by an iteration driving clause, or by use of WHILE or
+UNTIL -- the epilogue code (if any) will be run, and any implicitly
+collected result will be returned as the value of the LOOP."
+  '(go end-loop))
 
 
-;; (defun loop-iteration-driver ()
-;;   (do () ((null *loop-source-code*))
-;;     (let ((keyword (car *loop-source-code*)) (tem nil))
-;;       (cond ((not (symbolp keyword))
-;; 	     (loop-error "~S found where LOOP keyword expected." keyword))
-;; 	    (t (setq *loop-source-context* *loop-source-code*)
-;; 	       (loop-pop-source)
-;; 	       (cond ((setq tem (loop-lookup-keyword keyword (loop-universe-keywords *loop-universe*)))
-;; 		      ;;It's a "miscellaneous" toplevel LOOP keyword (do, collect, named, etc.)
-;; 		      (apply (symbol-function (first tem)) (rest tem)))
-;; 		     ((setq tem (loop-lookup-keyword keyword (loop-universe-iteration-keywords *loop-universe*)))
-;; 		      (loop-hack-iteration tem))
-;; 		     ((loop-tmember keyword '(and else))
-;; 		      ;; Alternative is to ignore it, ie let it go around to the next keyword...
-;; 		      (loop-error "Secondary clause misplaced at top level in LOOP macro: ~S ~S ~S ..."
-;; 				  keyword (car *loop-source-code*) (cadr *loop-source-code*)))
-;; 		     (t (loop-error "~S is an unknown keyword in LOOP macro." keyword))))))))
-;; 
+
+
+(defun loop-translate (*loop-source-code* *loop-macro-environment* *loop-universe*)
+  (let ((*loop-original-source-code* *loop-source-code*)
+	(*loop-source-context* nil)
+	(*loop-iteration-variables* nil)
+	(*loop-variables* nil)
+	(*loop-nodeclare* nil)
+	(*loop-named-variables* nil)
+	(*loop-declarations* nil)
+	(*loop-desetq-crocks* nil)
+	(*loop-bind-stack* nil)
+	(*loop-prologue* nil)
+	(*loop-wrappers* nil)
+	(*loop-before-loop* nil)
+	(*loop-body* nil)
+	(*loop-emitted-body* nil)
+	(*loop-after-body* nil)
+	(*loop-epilogue* nil)
+	(*loop-after-epilogue* nil)
+	(*loop-final-value-culprit* nil)
+	(*loop-inside-conditional* nil)
+	(*loop-when-it-variable* nil)
+	(*loop-never-stepped-variable* nil)
+	(*loop-names* nil)
+	(*loop-collection-cruft* nil))
+    (loop-iteration-driver)
+    (loop-bind-block)
+    (let ((answer `(loop-body
+		     ,(nreverse *loop-prologue*)
+		     ,(nreverse *loop-before-loop*)
+		     ,(nreverse *loop-body*)
+		     ,(nreverse *loop-after-body*)
+		     ,(nreconc *loop-epilogue* (nreverse *loop-after-epilogue*)))))
+      (do () (nil)
+	(setq answer `(block ,(pop *loop-names*) ,answer))
+	(unless *loop-names* (return nil)))
+      (dolist (entry *loop-bind-stack*)
+	(let ((vars (first entry))
+	      (dcls (second entry))
+	      (crocks (third entry))
+	      (wrappers (fourth entry)))
+	  (dolist (w wrappers)
+	    (setq answer (append w (list answer))))
+	  (when (or vars dcls crocks)
+	    (let ((forms (list answer)))
+	      ;;(when crocks (push crocks forms))
+	      (when dcls (push `(declare ,@dcls) forms))
+	      (setq answer `(,(cond ((not vars) 'locally)
+				    (*loop-destructuring-hooks* (first *loop-destructuring-hooks*))
+				    (t 'let))
+			     ,vars
+			     ,@(if crocks
+				   `((destructuring-bind ,@crocks
+					 ,@forms))
+				 forms)))))))
+      answer)))
 
 
-;; (defun loop-pop-source ()
-;;   (if *loop-source-code*
-;;       (pop *loop-source-code*)
-;;       (loop-error "LOOP source code ran out when another token was expected.")))
+(defun loop-iteration-driver ()
+  (do () ((null *loop-source-code*))
+    (let ((keyword (car *loop-source-code*)) (tem nil))
+      (cond ((not (symbolp keyword))
+	     (loop-error "~S found where LOOP keyword expected." keyword))
+	    (t (setq *loop-source-context* *loop-source-code*)
+	       (loop-pop-source)
+	       (cond ((setq tem (loop-lookup-keyword keyword (loop-universe-keywords *loop-universe*)))
+		      ;;It's a "miscellaneous" toplevel LOOP keyword (do, collect, named, etc.)
+		      (apply (symbol-function (first tem)) (rest tem)))
+		     ((setq tem (loop-lookup-keyword keyword (loop-universe-iteration-keywords *loop-universe*)))
+		      (loop-hack-iteration tem))
+		     ((loop-tmember keyword '(and else))
+		      ;; Alternative is to ignore it, ie let it go around to the next keyword...
+		      (loop-error "Secondary clause misplaced at top level in LOOP macro: ~S ~S ~S ..."
+				  keyword (car *loop-source-code*) (cadr *loop-source-code*)))
+		     (t (loop-error "~S is an unknown keyword in LOOP macro." keyword))))))))
+
 
 
-;; (defun loop-get-progn ()
-;;   (do ((forms (list (loop-pop-source)) (cons (loop-pop-source) forms))
-;;        (nextform (car *loop-source-code*) (car *loop-source-code*)))
-;;       ((atom nextform)
-;;        (if (null (cdr forms)) (car forms) (cons 'progn (nreverse forms))))))
+(defun loop-pop-source ()
+  (if *loop-source-code*
+      (pop *loop-source-code*)
+      (loop-error "LOOP source code ran out when another token was expected.")))
 
 
-;; (defun loop-get-form ()
-;;   (if *loop-source-code*
-;;       (loop-pop-source)
-;;       (loop-error "LOOP code ran out where a form was expected.")))
+(defun loop-get-progn ()
+  (do ((forms (list (loop-pop-source)) (cons (loop-pop-source) forms))
+       (nextform (car *loop-source-code*) (car *loop-source-code*)))
+      ((atom nextform)
+       (if (null (cdr forms)) (car forms) (cons 'progn (nreverse forms))))))
 
 
-;; (defun loop-construct-return (form)
-;;   `(return-from ,(car *loop-names*) ,form))
+(defun loop-get-form ()
+  (if *loop-source-code*
+      (loop-pop-source)
+      (loop-error "LOOP code ran out where a form was expected.")))
 
 
-;; (defun loop-pseudo-body (form)
-;;   (cond ((or *loop-emitted-body* *loop-inside-conditional*) (push form *loop-body*))
-;; 	(t (push form *loop-before-loop*) (push form *loop-after-body*))))
-
-;; (defun loop-emit-body (form)
-;;   (setq *loop-emitted-body* t)
-;;   (loop-pseudo-body form))
-
-;; (defun loop-emit-final-value (form)
-;;   (push (loop-construct-return form) *loop-after-epilogue*)
-;;   (when *loop-final-value-culprit*
-;;     (loop-warn "LOOP clause is providing a value for the iteration,~@
-;; 	        however one was already established by a ~S clause."
-;; 	       *loop-final-value-culprit*))
-;;   (setq *loop-final-value-culprit* (car *loop-source-context*)))
+(defun loop-construct-return (form)
+  `(return-from ,(car *loop-names*) ,form))
 
 
-;; (defun loop-disallow-conditional (&optional kwd)
-;;   #+(or Genera CLOE) (declare (dbg:error-reporter))
-;;   (when *loop-inside-conditional*
-;;     (loop-error "~:[This LOOP~;The LOOP ~:*~S~] clause is not permitted inside a conditional." kwd)))
-;; 
+(defun loop-pseudo-body (form)
+  (cond ((or *loop-emitted-body* *loop-inside-conditional*) (push form *loop-body*))
+	(t (push form *loop-before-loop*) (push form *loop-after-body*))))
 
-;; ;;;; Loop Types
+(defun loop-emit-body (form)
+  (setq *loop-emitted-body* t)
+  (loop-pseudo-body form))
+
+(defun loop-emit-final-value (form)
+  (push (loop-construct-return form) *loop-after-epilogue*)
+  (when *loop-final-value-culprit*
+    (loop-warn "LOOP clause is providing a value for the iteration,~@
+	        however one was already established by a ~S clause."
+	       *loop-final-value-culprit*))
+  (setq *loop-final-value-culprit* (car *loop-source-context*)))
+
+
+(defun loop-disallow-conditional (&optional kwd)
+  #+(or Genera CLOE) (declare (dbg:error-reporter))
+  (when *loop-inside-conditional*
+    (loop-error "~:[This LOOP~;The LOOP ~:*~S~] clause is not permitted inside a conditional." kwd)))
+
+
+;;;; Loop Types
 
 
 ;; (defun loop-typed-init (data-type)
