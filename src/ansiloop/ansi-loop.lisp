@@ -1651,452 +1651,457 @@ collected result will be returned as the value of the LOOP."
 		   `(,first-endtest ,step () ,pseudo-step))))))))
 
 
-;; ;;;; Iteration Paths
+;;;; Iteration Paths
 
 
-;; (defstruct (loop-path
-;; 	     (:copier nil)
-;; 	     (:predicate nil))
-;;   names
-;;   preposition-groups
-;;   inclusive-permitted
-;;   function
-;;   user-data)
+(jscl::def!struct (loop-path
+	     (:copier nil)
+	     (:predicate nil))
+  names
+  preposition-groups
+  inclusive-permitted
+  function
+  user-data)
 
 
-;; (defun add-loop-path (names function universe &key preposition-groups inclusive-permitted user-data)
-;;   (unless (listp names) (setq names (list names)))
-;;   ;; Can't do this due to CLOS bootstrapping problems.
-;;   #-(or Genera (and CLOE Source-Bootstrap)) (check-type universe loop-universe)
-;;   (let ((ht (loop-universe-path-keywords universe))
-;; 	(lp (make-loop-path
-;; 	      :names (mapcar #'symbol-name names)
-;; 	      :function function
-;; 	      :user-data user-data
-;; 	      :preposition-groups (mapcar #'(lambda (x) (if (listp x) x (list x))) preposition-groups)
-;; 	      :inclusive-permitted inclusive-permitted)))
-;;     (dolist (name names) (setf (gethash (symbol-name name) ht) lp))
-;;     lp))
-;; 
+(defun add-loop-path (names function universe &key preposition-groups inclusive-permitted user-data)
+  (unless (listp names) (setq names (list names)))
+  ;; Can't do this due to CLOS bootstrapping problems.
+  #-(or Genera (and CLOE Source-Bootstrap)) (check-type universe loop-universe)
+  (let ((ht (loop-universe-path-keywords universe))
+	(lp (make-loop-path
+	      :names (mapcar #'symbol-name names)
+	      :function function
+	      :user-data user-data
+	      :preposition-groups (mapcar #'(lambda (x) (if (listp x) x (list x))) preposition-groups)
+	      :inclusive-permitted inclusive-permitted)))
+    (dolist (name names) (setf (gethash (symbol-name name) ht) lp))
+    lp))
+
 
-;; ;;; Note:  path functions are allowed to use loop-make-variable, hack
-;; ;;; the prologue, etc.
-;; (defun loop-for-being (var val data-type)
-;;   ;; FOR var BEING each/the pathname prep-phrases using-stuff...
-;;   ;; each/the = EACH or THE.  Not clear if it is optional, so I guess we'll warn.
-;;   (let ((path nil)
-;; 	(data nil)
-;; 	(inclusive nil)
-;; 	(stuff nil)
-;; 	(initial-prepositions nil))
-;;     (cond ((loop-tmember val '(:each :the)) (setq path (loop-pop-source)))
-;; 	  ((loop-tequal (car *loop-source-code*) :and)
-;; 	   (loop-pop-source)
-;; 	   (setq inclusive t)
-;; 	   (unless (loop-tmember (car *loop-source-code*) '(:its :each :his :her))
-;; 	     (loop-error "~S found where ITS or EACH expected in LOOP iteration path syntax."
-;; 			 (car *loop-source-code*)))
-;; 	   (loop-pop-source)
-;; 	   (setq path (loop-pop-source))
-;; 	   (setq initial-prepositions `((:in ,val))))
-;; 	  (t (loop-error "Unrecognizable LOOP iteration path syntax.  Missing EACH or THE?")))
-;;     (cond ((not (symbolp path))
-;; 	   (loop-error "~S found where a LOOP iteration path name was expected." path))
-;; 	  ((not (setq data (loop-lookup-keyword path (loop-universe-path-keywords *loop-universe*))))
-;; 	   (loop-error "~S is not the name of a LOOP iteration path." path))
-;; 	  ((and inclusive (not (loop-path-inclusive-permitted data)))
-;; 	   (loop-error "\"Inclusive\" iteration is not possible with the ~S LOOP iteration path." path)))
-;;     (let ((fun (loop-path-function data))
-;; 	  (preps (nconc initial-prepositions
-;; 			(loop-collect-prepositional-phrases (loop-path-preposition-groups data) t)))
-;; 	  (user-data (loop-path-user-data data)))
-;;       (when (symbolp fun) (setq fun (symbol-function fun)))
-;;       (setq stuff (if inclusive
-;; 		      (apply fun var data-type preps :inclusive t user-data)
-;; 		      (apply fun var data-type preps user-data))))
-;;     (when *loop-named-variables*
-;;       (loop-error "Unused USING variables: ~S." *loop-named-variables*))
-;;     ;; STUFF is now (bindings prologue-forms . stuff-to-pass-back).  Protect the system from the user
-;;     ;; and the user from himself.
-;;     (unless (member (length stuff) '(6 10))
-;;       (loop-error "Value passed back by LOOP iteration path function for path ~S has invalid length."
-;; 		  path))
-;;     (do ((l (car stuff) (cdr l)) (x)) ((null l))
-;;       (if (atom (setq x (car l)))
-;; 	  (loop-make-iteration-variable x nil nil)
-;; 	  (loop-make-iteration-variable (car x) (cadr x) (caddr x))))
-;;     (setq *loop-prologue* (nconc (reverse (cadr stuff)) *loop-prologue*))
-;;     (cddr stuff)))
-;; 
-
-
-;; ;;;INTERFACE:  Lucid, exported.
-;; ;;; i.e., this is part of our extended ansi-loop interface.
-;; (defun named-variable (name)
-;;   (let ((tem (loop-tassoc name *loop-named-variables*)))
-;;     (declare (list tem))
-;;     (cond ((null tem) (values (loop-gentemp) nil))
-;; 	  (t (setq *loop-named-variables* (delete tem *loop-named-variables*))
-;; 	     (values (cdr tem) t)))))
+;;; Note:  path functions are allowed to use loop-make-variable, hack
+;;; the prologue, etc.
+(defun loop-for-being (var val data-type)
+  ;; FOR var BEING each/the pathname prep-phrases using-stuff...
+  ;; each/the = EACH or THE.  Not clear if it is optional, so I guess we'll warn.
+  (let ((path nil)
+	(data nil)
+	(inclusive nil)
+	(stuff nil)
+	(initial-prepositions nil))
+    (cond ((loop-tmember val '(:each :the)) (setq path (loop-pop-source)))
+	  ((loop-tequal (car *loop-source-code*) :and)
+	   (loop-pop-source)
+	   (setq inclusive t)
+	   (unless (loop-tmember (car *loop-source-code*) '(:its :each :his :her))
+	     (loop-error "~S found where ITS or EACH expected in LOOP iteration path syntax."
+			 (car *loop-source-code*)))
+	   (loop-pop-source)
+	   (setq path (loop-pop-source))
+	   (setq initial-prepositions `((:in ,val))))
+	  (t (loop-error "Unrecognizable LOOP iteration path syntax.  Missing EACH or THE?")))
+    (cond ((not (symbolp path))
+	   (loop-error "~S found where a LOOP iteration path name was expected." path))
+	  ((not (setq data (loop-lookup-keyword path (loop-universe-path-keywords *loop-universe*))))
+	   (loop-error "~S is not the name of a LOOP iteration path." path))
+	  ((and inclusive (not (loop-path-inclusive-permitted data)))
+	   (loop-error "\"Inclusive\" iteration is not possible with the ~S LOOP iteration path." path)))
+    (let ((fun (loop-path-function data))
+	  (preps (nconc initial-prepositions
+			(loop-collect-prepositional-phrases (loop-path-preposition-groups data) t)))
+	  (user-data (loop-path-user-data data)))
+      (when (symbolp fun) (setq fun (symbol-function fun)))
+      (setq stuff (if inclusive
+		      (apply fun var data-type preps :inclusive t user-data)
+		      (apply fun var data-type preps user-data))))
+    (when *loop-named-variables*
+      (loop-error "Unused USING variables: ~S." *loop-named-variables*))
+    ;; STUFF is now (bindings prologue-forms . stuff-to-pass-back).  Protect the system from the user
+    ;; and the user from himself.
+    (unless (member (length stuff) '(6 10))
+      (loop-error "Value passed back by LOOP iteration path function for path ~S has invalid length."
+		  path))
+    (do ((l (car stuff) (cdr l)) (x)) ((null l))
+      (if (atom (setq x (car l)))
+	  (loop-make-iteration-variable x nil nil)
+	  (loop-make-iteration-variable (car x) (cadr x) (caddr x))))
+    (setq *loop-prologue* (nconc (reverse (cadr stuff)) *loop-prologue*))
+    (cddr stuff)))
+
 
 
-;; (defun loop-collect-prepositional-phrases (preposition-groups &optional USING-allowed initial-phrases)
-;;   (flet ((in-group-p (x group) (car (loop-tmember x group))))
-;;     (do ((token nil)
-;; 	 (prepositional-phrases initial-phrases)
-;; 	 (this-group nil nil)
-;; 	 (this-prep nil nil)
-;; 	 (disallowed-prepositions
-;; 	   (mapcan #'(lambda (x)
-;; 		       (loop-copylist*
-;; 			 (find (car x) preposition-groups :test #'in-group-p)))
-;; 		   initial-phrases))
-;; 	 (used-prepositions (mapcar #'car initial-phrases)))
-;; 	((null *loop-source-code*) (nreverse prepositional-phrases))
-;;       (declare (symbol this-prep))
-;;       (setq token (car *loop-source-code*))
-;;       (dolist (group preposition-groups)
-;; 	(when (setq this-prep (in-group-p token group))
-;; 	  (return (setq this-group group))))
-;;       (cond (this-group
-;; 	     (when (member this-prep disallowed-prepositions)
-;; 	       (loop-error
-;; 		 (if (member this-prep used-prepositions)
-;; 		     "A ~S prepositional phrase occurs multiply for some LOOP clause."
-;; 		     "Preposition ~S used when some other preposition has subsumed it.")
-;; 		 token))
-;; 	     (setq used-prepositions (if (listp this-group)
-;; 					 (append this-group used-prepositions)
-;; 					 (cons this-group used-prepositions)))
-;; 	     (loop-pop-source)
-;; 	     (push (list this-prep (loop-get-form)) prepositional-phrases))
-;; 	    ((and USING-allowed (loop-tequal token 'using))
-;; 	     (loop-pop-source)
-;; 	     (do ((z (loop-pop-source) (loop-pop-source)) (tem)) (nil)
-;; 	       (when (or (atom z)
-;; 			 (atom (cdr z))
-;; 			 (not (null (cddr z)))
-;; 			 (not (symbolp (car z)))
-;; 			 (and (cadr z) (not (symbolp (cadr z)))))
-;; 		 (loop-error "~S bad variable pair in path USING phrase." z))
-;; 	       (when (cadr z)
-;; 		 (if (setq tem (loop-tassoc (car z) *loop-named-variables*))
-;; 		     (loop-error
-;; 		       "The variable substitution for ~S occurs twice in a USING phrase,~@
-;; 		        with ~S and ~S."
-;; 		       (car z) (cadr z) (cadr tem))
-;; 		     (push (cons (car z) (cadr z)) *loop-named-variables*)))
-;; 	       (when (or (null *loop-source-code*) (symbolp (car *loop-source-code*)))
-;; 		 (return nil))))
-;; 	    (t (return (nreverse prepositional-phrases)))))))
-;; 
-
-;; ;;;; Master Sequencer Function
+;;;INTERFACE:  Lucid, exported.
+;;; i.e., this is part of our extended ansi-loop interface.
+(defun named-variable (name)
+  (let ((tem (loop-tassoc name *loop-named-variables*)))
+    (declare (list tem))
+    (cond ((null tem) (values (loop-gentemp) nil))
+	  (t (setq *loop-named-variables* (delete tem *loop-named-variables*))
+	     (values (cdr tem) t)))))
 
 
-;; (defun loop-sequencer (indexv indexv-type indexv-user-specified-p
-;; 			  variable variable-type
-;; 			  sequence-variable sequence-type
-;; 			  step-hack default-top
-;; 			  prep-phrases)
-;;    (let ((endform nil)				;Form (constant or variable) with limit value.
-;; 	 (sequencep nil)			;T if sequence arg has been provided.
-;; 	 (testfn nil)				;endtest function
-;; 	 (test nil)				;endtest form.
-;; 	 (stepby (1+ (or (loop-typed-init indexv-type) 0)))	;Our increment.
-;; 	 (stepby-constantp t)
-;; 	 (step nil)				;step form.
-;; 	 (dir nil)				;Direction of stepping: NIL, :UP, :DOWN.
-;; 	 (inclusive-iteration nil)		;T if include last index.
-;; 	 (start-given nil)			;T when prep phrase has specified start
-;; 	 (start-value nil)
-;; 	 (start-constantp nil)
-;; 	 (limit-given nil)			;T when prep phrase has specified end
-;; 	 (limit-constantp nil)
-;; 	 (limit-value nil)
-;; 	 )
-;;      (when variable (loop-make-iteration-variable variable nil variable-type))
-;;      (do ((l prep-phrases (cdr l)) (prep) (form) (odir)) ((null l))
-;;        (setq prep (caar l) form (cadar l))
-;;        (case prep
-;; 	 ((:of :in)
-;; 	  (setq sequencep t)
-;; 	  (loop-make-variable sequence-variable form sequence-type))
-;; 	 ((:from :downfrom :upfrom)
-;; 	  (setq start-given t)
-;; 	  (cond ((eq prep :downfrom) (setq dir ':down))
-;; 		((eq prep :upfrom) (setq dir ':up)))
-;; 	  (multiple-value-setq (form start-constantp start-value)
-;; 	    (loop-constant-fold-if-possible form indexv-type))
-;; 	  (loop-make-iteration-variable indexv form indexv-type))
-;; 	 ((:upto :to :downto :above :below)
-;; 	  (cond ((loop-tequal prep :upto) (setq inclusive-iteration (setq dir ':up)))
-;; 		((loop-tequal prep :to) (setq inclusive-iteration t))
-;; 		((loop-tequal prep :downto) (setq inclusive-iteration (setq dir ':down)))
-;; 		((loop-tequal prep :above) (setq dir ':down))
-;; 		((loop-tequal prep :below) (setq dir ':up)))
-;; 	  (setq limit-given t)
-;; 	  (multiple-value-setq (form limit-constantp limit-value)
-;; 	    (loop-constant-fold-if-possible form indexv-type))
-;; 	  (setq endform (if limit-constantp
-;; 			    `',limit-value
-;; 			    (loop-make-variable
-;; 			      (loop-gentemp 'loop-limit-) form indexv-type))))
-;; 	 (:by
-;; 	   (multiple-value-setq (form stepby-constantp stepby)
-;; 	     (loop-constant-fold-if-possible form indexv-type))
-;; 	   (unless stepby-constantp
-;; 	     (loop-make-variable (setq stepby (loop-gentemp 'loop-step-by-)) form indexv-type)))
-;; 	 (t (loop-error
-;; 	      "~S invalid preposition in sequencing or sequence path.~@
-;; 	       Invalid prepositions specified in iteration path descriptor or something?"
-;; 	      prep)))
-;;        (when (and odir dir (not (eq dir odir)))
-;; 	 (loop-error "Conflicting stepping directions in LOOP sequencing path"))
-;;        (setq odir dir))
-;;      (when (and sequence-variable (not sequencep))
-;;        (loop-error "Missing OF or IN phrase in sequence path"))
-;;      ;; Now fill in the defaults.
-;;      (unless start-given
-;;        (loop-make-iteration-variable
-;; 	 indexv
-;; 	 (setq start-constantp t start-value (or (loop-typed-init indexv-type) 0))
-;; 	 indexv-type))
-;;      (cond ((member dir '(nil :up))
-;; 	    (when (or limit-given default-top)
-;; 	      (unless limit-given
-;; 		(loop-make-variable (setq endform (loop-gentemp 'loop-seq-limit-))
-;; 				    nil indexv-type)
-;; 		(push `(setq ,endform ,default-top) *loop-prologue*))
-;; 	      (setq testfn (if inclusive-iteration '> '>=)))
-;; 	    (setq step (if (eql stepby 1) `(1+ ,indexv) `(+ ,indexv ,stepby))))
-;; 	   (t (unless start-given
-;; 		(unless default-top
-;; 		  (loop-error "Don't know where to start stepping."))
-;; 		(push `(setq ,indexv (1- ,default-top)) *loop-prologue*))
-;; 	      (when (and default-top (not endform))
-;; 		(setq endform (loop-typed-init indexv-type) inclusive-iteration t))
-;; 	      (when endform (setq testfn (if inclusive-iteration  '< '<=)))
-;; 	      (setq step (if (eql stepby 1) `(1- ,indexv) `(- ,indexv ,stepby)))))
-;;      (when testfn (setq test (hide-variable-reference t indexv `(,testfn ,indexv ,endform))))
-;;      (when step-hack
-;;        (setq step-hack `(,variable ,(hide-variable-reference indexv-user-specified-p indexv step-hack))))
-;;      (let ((first-test test) (remaining-tests test))
-;;        (when (and stepby-constantp start-constantp limit-constantp)
-;; 	 (when (setq first-test (funcall (symbol-function testfn) start-value limit-value))
-;; 	   (setq remaining-tests t)))
-;;        `(() (,indexv ,(hide-variable-reference t indexv step)) ,remaining-tests ,step-hack
-;; 	 () () ,first-test ,step-hack))))
-;; 
+(defun loop-collect-prepositional-phrases (preposition-groups &optional USING-allowed initial-phrases)
+  (flet ((in-group-p (x group) (car (loop-tmember x group))))
+    (do ((token nil)
+	 (prepositional-phrases initial-phrases)
+	 (this-group nil nil)
+	 (this-prep nil nil)
+	 (disallowed-prepositions
+	   (mapcan #'(lambda (x)
+		       (loop-copylist*
+			 (find (car x) preposition-groups :test #'in-group-p)))
+		   initial-phrases))
+	 (used-prepositions (mapcar #'car initial-phrases)))
+	((null *loop-source-code*) (nreverse prepositional-phrases))
+      (declare (symbol this-prep))
+      (setq token (car *loop-source-code*))
+      (dolist (group preposition-groups)
+	(when (setq this-prep (in-group-p token group))
+	  (return (setq this-group group))))
+      (cond (this-group
+	     (when (member this-prep disallowed-prepositions)
+	       (loop-error
+		 (if (member this-prep used-prepositions)
+		     "A ~S prepositional phrase occurs multiply for some LOOP clause."
+		     "Preposition ~S used when some other preposition has subsumed it.")
+		 token))
+	     (setq used-prepositions (if (listp this-group)
+					 (append this-group used-prepositions)
+					 (cons this-group used-prepositions)))
+	     (loop-pop-source)
+	     (push (list this-prep (loop-get-form)) prepositional-phrases))
+	    ((and USING-allowed (loop-tequal token 'using))
+	     (loop-pop-source)
+	     (do ((z (loop-pop-source) (loop-pop-source)) (tem)) (nil)
+	       (when (or (atom z)
+			 (atom (cdr z))
+			 (not (null (cddr z)))
+			 (not (symbolp (car z)))
+			 (and (cadr z) (not (symbolp (cadr z)))))
+		 (loop-error "~S bad variable pair in path USING phrase." z))
+	       (when (cadr z)
+		 (if (setq tem (loop-tassoc (car z) *loop-named-variables*))
+		     (loop-error
+		       "The variable substitution for ~S occurs twice in a USING phrase,~@
+		        with ~S and ~S."
+		       (car z) (cadr z) (cadr tem))
+		     (push (cons (car z) (cadr z)) *loop-named-variables*)))
+	       (when (or (null *loop-source-code*) (symbolp (car *loop-source-code*)))
+		 (return nil))))
+	    (t (return (nreverse prepositional-phrases)))))))
+
 
-;; ;;;; Interfaces to the Master Sequencer
+;;;; Master Sequencer Function
 
 
+(defun loop-sequencer (indexv indexv-type indexv-user-specified-p
+			  variable variable-type
+			  sequence-variable sequence-type
+			  step-hack default-top
+			  prep-phrases)
+   (let ((endform nil)				;Form (constant or variable) with limit value.
+	 (sequencep nil)			;T if sequence arg has been provided.
+	 (testfn nil)				;endtest function
+	 (test nil)				;endtest form.
+	 (stepby (1+ (or (loop-typed-init indexv-type) 0)))	;Our increment.
+	 (stepby-constantp t)
+	 (step nil)				;step form.
+	 (dir nil)				;Direction of stepping: NIL, :UP, :DOWN.
+	 (inclusive-iteration nil)		;T if include last index.
+	 (start-given nil)			;T when prep phrase has specified start
+	 (start-value nil)
+	 (start-constantp nil)
+	 (limit-given nil)			;T when prep phrase has specified end
+	 (limit-constantp nil)
+	 (limit-value nil)
+	 )
+     (when variable (loop-make-iteration-variable variable nil variable-type))
+     (do ((l prep-phrases (cdr l)) (prep) (form) (odir)) ((null l))
+       (setq prep (caar l) form (cadar l))
+       (case prep
+	 ((:of :in)
+	  (setq sequencep t)
+	  (loop-make-variable sequence-variable form sequence-type))
+	 ((:from :downfrom :upfrom)
+	  (setq start-given t)
+	  (cond ((eq prep :downfrom) (setq dir ':down))
+		((eq prep :upfrom) (setq dir ':up)))
+	  (multiple-value-setq (form start-constantp start-value)
+	    (loop-constant-fold-if-possible form indexv-type))
+	  (loop-make-iteration-variable indexv form indexv-type))
+	 ((:upto :to :downto :above :below)
+	  (cond ((loop-tequal prep :upto) (setq inclusive-iteration (setq dir ':up)))
+		((loop-tequal prep :to) (setq inclusive-iteration t))
+		((loop-tequal prep :downto) (setq inclusive-iteration (setq dir ':down)))
+		((loop-tequal prep :above) (setq dir ':down))
+		((loop-tequal prep :below) (setq dir ':up)))
+	  (setq limit-given t)
+	  (multiple-value-setq (form limit-constantp limit-value)
+	    (loop-constant-fold-if-possible form indexv-type))
+	  (setq endform (if limit-constantp
+			    `',limit-value
+			    (loop-make-variable
+			      (loop-gentemp 'loop-limit-) form indexv-type))))
+	 (:by
+	   (multiple-value-setq (form stepby-constantp stepby)
+	     (loop-constant-fold-if-possible form indexv-type))
+	   (unless stepby-constantp
+	     (loop-make-variable (setq stepby (loop-gentemp 'loop-step-by-)) form indexv-type)))
+	 (t (loop-error
+	      "~S invalid preposition in sequencing or sequence path.~@
+	       Invalid prepositions specified in iteration path descriptor or something?"
+	      prep)))
+       (when (and odir dir (not (eq dir odir)))
+	 (loop-error "Conflicting stepping directions in LOOP sequencing path"))
+       (setq odir dir))
+     (when (and sequence-variable (not sequencep))
+       (loop-error "Missing OF or IN phrase in sequence path"))
+     ;; Now fill in the defaults.
+     (unless start-given
+       (loop-make-iteration-variable
+	 indexv
+	 (setq start-constantp t start-value (or (loop-typed-init indexv-type) 0))
+	 indexv-type))
+     (cond ((member dir '(nil :up))
+	    (when (or limit-given default-top)
+	      (unless limit-given
+		(loop-make-variable (setq endform (loop-gentemp 'loop-seq-limit-))
+				    nil indexv-type)
+		(push `(setq ,endform ,default-top) *loop-prologue*))
+	      (setq testfn (if inclusive-iteration '> '>=)))
+	    (setq step (if (eql stepby 1) `(1+ ,indexv) `(+ ,indexv ,stepby))))
+	   (t (unless start-given
+		(unless default-top
+		  (loop-error "Don't know where to start stepping."))
+		(push `(setq ,indexv (1- ,default-top)) *loop-prologue*))
+	      (when (and default-top (not endform))
+		(setq endform (loop-typed-init indexv-type) inclusive-iteration t))
+	      (when endform (setq testfn (if inclusive-iteration  '< '<=)))
+	      (setq step (if (eql stepby 1) `(1- ,indexv) `(- ,indexv ,stepby)))))
+     (when testfn (setq test (hide-variable-reference t indexv `(,testfn ,indexv ,endform))))
+     (when step-hack
+       (setq step-hack `(,variable ,(hide-variable-reference indexv-user-specified-p indexv step-hack))))
+     (let ((first-test test) (remaining-tests test))
+       (when (and stepby-constantp start-constantp limit-constantp)
+	 (when (setq first-test (funcall (symbol-function testfn) start-value limit-value))
+	   (setq remaining-tests t)))
+       `(() (,indexv ,(hide-variable-reference t indexv step)) ,remaining-tests ,step-hack
+	 () () ,first-test ,step-hack))))
+
 
-;; (defun loop-for-arithmetic (var val data-type kwd)
-;;   (loop-sequencer
-;;     var (loop-check-data-type data-type *loop-real-data-type*) t
-;;     nil nil nil nil nil nil
-;;     (loop-collect-prepositional-phrases
-;;       '((:from :upfrom :downfrom) (:to :upto :downto :above :below) (:by))
-;;       nil (list (list kwd val)))))
-
-
-;; (defun loop-sequence-elements-path (variable data-type prep-phrases
-;; 				    &key fetch-function size-function sequence-type element-type)
-;;   (multiple-value-bind (indexv indexv-user-specified-p) (named-variable 'index)
-;;     (let ((sequencev (named-variable 'sequence)))
-;;       #+Genera (when (and sequencev
-;; 			  (symbolp sequencev)
-;; 			  sequence-type
-;; 			  (subtypep sequence-type 'vector)
-;; 			  (not (member (the symbol sequencev) *loop-nodeclare*)))
-;; 		 (push `(sys:array-register ,sequencev) *loop-declarations*))
-;;       (list* nil nil				; dummy bindings and prologue
-;; 	     (loop-sequencer
-;; 	       indexv 'fixnum indexv-user-specified-p
-;; 	       variable (or data-type element-type)
-;; 	       sequencev sequence-type
-;; 	       `(,fetch-function ,sequencev ,indexv) `(,size-function ,sequencev)
-;; 	       prep-phrases)))))
-;; 
-
-;; ;;;; Builtin LOOP Iteration Paths
-
-
-;; #||
-;; (loop for v being the hash-values of ht do (print v))
-;; (loop for k being the hash-keys of ht do (print k))
-;; (loop for v being the hash-values of ht using (hash-key k) do (print (list k v)))
-;; (loop for k being the hash-keys of ht using (hash-value v) do (print (list k v)))
-;; ||#
-
-;; (defun loop-hash-table-iteration-path (variable data-type prep-phrases &key which)
-;;   (check-type which (member hash-key hash-value))
-;;   (cond ((or (cdr prep-phrases) (not (member (caar prep-phrases) '(:in :of))))
-;; 	 (loop-error "Too many prepositions!"))
-;; 	((null prep-phrases) (loop-error "Missing OF or IN in ~S iteration path.")))
-;;   (let ((ht-var (loop-gentemp 'loop-hashtab-))
-;; 	(next-fn (loop-gentemp 'loop-hashtab-next-))
-;; 	(dummy-predicate-var nil)
-;; 	(post-steps nil))
-;;     (multiple-value-bind (other-var other-p)
-;; 	(named-variable (if (eq which 'hash-key) 'hash-value 'hash-key))
-;;       ;;@@@@ named-variable returns a second value of T if the name was actually
-;;       ;; specified, so clever code can throw away the gensym'ed up variable if
-;;       ;; it isn't really needed.
-;;       ;;The following is for those implementations in which we cannot put dummy NILs
-;;       ;; into multiple-value-setq variable lists.
-;;       #-Genera (setq other-p t
-;; 		     dummy-predicate-var (loop-when-it-variable))
-;;       (let ((key-var nil)
-;; 	    (val-var nil)
-;; 	    (bindings `((,variable nil ,data-type)
-;; 			(,ht-var ,(cadar prep-phrases))
-;; 			,@(and other-p other-var `((,other-var nil))))))
-;; 	(if (eq which 'hash-key)
-;; 	    (setq key-var variable val-var (and other-p other-var))
-;; 	    (setq key-var (and other-p other-var) val-var variable))
-;; 	(push `(with-hash-table-iterator (,next-fn ,ht-var)) *loop-wrappers*)
-;; 	(when (consp key-var)
-;; 	  (setq post-steps `(,key-var ,(setq key-var (loop-gentemp 'loop-hash-key-temp-))
-;; 			     ,@post-steps))
-;; 	  (push `(,key-var nil) bindings))
-;; 	(when (consp val-var)
-;; 	  (setq post-steps `(,val-var ,(setq val-var (loop-gentemp 'loop-hash-val-temp-))
-;; 			     ,@post-steps))
-;; 	  (push `(,val-var nil) bindings))
-;; 	`(,bindings				;bindings
-;; 	  ()					;prologue
-;; 	  ()					;pre-test
-;; 	  ()					;parallel steps
-;; 	  (not (multiple-value-setq (,dummy-predicate-var ,key-var ,val-var) (,next-fn)))	;post-test
-;; 	  ,post-steps)))))
-
-
-;; (defun loop-package-symbols-iteration-path (variable data-type prep-phrases &key symbol-types)
-;;   (cond ((or (cdr prep-phrases) (not (member (caar prep-phrases) '(:in :of))))
-;; 	 (loop-error "Too many prepositions!"))
-;; 	((null prep-phrases) (loop-error "Missing OF or IN in ~S iteration path.")))
-;;   (unless (symbolp variable)
-;;     (loop-error "Destructuring is not valid for package symbol iteration."))
-;;   (let ((pkg-var (loop-gentemp 'loop-pkgsym-))
-;; 	(next-fn (loop-gentemp 'loop-pkgsym-next-)))
-;;     (push `(with-package-iterator (,next-fn ,pkg-var ,@symbol-types)) *loop-wrappers*)
-;;     `(((,variable nil ,data-type) (,pkg-var ,(cadar prep-phrases)))
-;;       ()
-;;       ()
-;;       ()
-;;       (not (multiple-value-setq (,(progn
-;; 				    ;;@@@@ If an implementation can get away without actually
-;; 				    ;; using a variable here, so much the better.
-;; 				    #+Genera NIL
-;; 				    #-Genera (loop-when-it-variable))
-;; 				 ,variable)
-;; 	     (,next-fn)))
-;;       ())))
-;; 
-;; ;;;; ANSI Loop
-
-;; (defun make-ansi-loop-universe (extended-p)
-;;   (let ((w (make-standard-loop-universe
-;; 	     :keywords `((named (loop-do-named))
-;; 			 (initially (loop-do-initially))
-;; 			 (finally (loop-do-finally))
-;; 			 (do (loop-do-do))
-;; 			 (doing (loop-do-do))
-;; 			 (return (loop-do-return))
-;; 			 (collect (loop-list-collection list))
-;; 			 (collecting (loop-list-collection list))
-;; 			 (append (loop-list-collection append))
-;; 			 (appending (loop-list-collection append))
-;; 			 (nconc (loop-list-collection nconc))
-;; 			 (nconcing (loop-list-collection nconc))
-;; 			 (count (loop-sum-collection count ,*loop-real-data-type* fixnum))
-;; 			 (counting (loop-sum-collection count ,*loop-real-data-type* fixnum))
-;; 			 (sum (loop-sum-collection sum number number))
-;; 			 (summing (loop-sum-collection sum number number))
-;; 			 (maximize (loop-maxmin-collection max))
-;; 			 (minimize (loop-maxmin-collection min))
-;; 			 (maximizing (loop-maxmin-collection max))
-;; 			 (minimizing (loop-maxmin-collection min))
-;; 			 (always (loop-do-always t nil))	; Normal, do always
-;; 			 (never (loop-do-always t t))	; Negate the test on always.
-;; 			 (thereis (loop-do-thereis t))
-;; 			 (while (loop-do-while nil :while))	; Normal, do while
-;; 			 (until (loop-do-while t :until))	; Negate the test on while
-;; 			 (when (loop-do-if when nil))	; Normal, do when
-;; 			 (if (loop-do-if if nil))	; synonymous
-;; 			 (unless (loop-do-if unless t))	; Negate the test on when
-;; 			 (with (loop-do-with)))
-;; 	     :for-keywords '((= (loop-ansi-for-equals))
-;; 			     (across (loop-for-across))
-;; 			     (in (loop-for-in))
-;; 			     (on (loop-for-on))
-;; 			     (from (loop-for-arithmetic :from))
-;; 			     (downfrom (loop-for-arithmetic :downfrom))
-;; 			     (upfrom (loop-for-arithmetic :upfrom))
-;; 			     (below (loop-for-arithmetic :below))
-;; 			     (to (loop-for-arithmetic :to))
-;; 			     (upto (loop-for-arithmetic :upto))
-;; 			     (being (loop-for-being)))
-;; 	     :iteration-keywords '((for (loop-do-for))
-;; 				   (as (loop-do-for))
-;; 				   (repeat (loop-do-repeat)))
-;; 	     :type-symbols '(array atom bignum bit bit-vector character #| common |# compiled-function
-;; 				   complex cons double-float fixnum float
-;; 				   function hash-table integer keyword list long-float
-;; 				   nil null number package pathname random-state
-;; 				   ratio rational readtable sequence short-float
-;; 				   simple-array simple-bit-vector simple-string
-;; 				   simple-vector single-float standard-char
-;; 				   stream string string-char
-;; 				   symbol t vector)
-;; 	     :type-keywords nil
-;; 	     :ansi (if extended-p :extended t))))
-;;     (add-loop-path '(hash-key hash-keys) 'loop-hash-table-iteration-path w
-;; 		   :preposition-groups '((:of :in))
-;; 		   :inclusive-permitted nil
-;; 		   :user-data '(:which hash-key))
-;;     (add-loop-path '(hash-value hash-values) 'loop-hash-table-iteration-path w
-;; 		   :preposition-groups '((:of :in))
-;; 		   :inclusive-permitted nil
-;; 		   :user-data '(:which hash-value))
-;;     (add-loop-path '(symbol symbols) 'loop-package-symbols-iteration-path w
-;; 		   :preposition-groups '((:of :in))
-;; 		   :inclusive-permitted nil
-;; 		   :user-data '(:symbol-types (:internal :external :inherited)))
-;;     (add-loop-path '(external-symbol external-symbols) 'loop-package-symbols-iteration-path w
-;; 		   :preposition-groups '((:of :in))
-;; 		   :inclusive-permitted nil
-;; 		   :user-data '(:symbol-types (:external)))
-;;     (add-loop-path '(present-symbol present-symbols) 'loop-package-symbols-iteration-path w
-;; 		   :preposition-groups '((:of :in))
-;; 		   :inclusive-permitted nil
-;; 		   :user-data '(:symbol-types (:internal)))
-;;     w))
+;;;; Interfaces to the Master Sequencer
 
 
-;; (defparameter *loop-ansi-universe*
-;; 	      (make-ansi-loop-universe nil))
+
+(defun loop-for-arithmetic (var val data-type kwd)
+  (loop-sequencer
+    var (loop-check-data-type data-type *loop-real-data-type*) t
+    nil nil nil nil nil nil
+    (loop-collect-prepositional-phrases
+      '((:from :upfrom :downfrom) (:to :upto :downto :above :below) (:by))
+      nil (list (list kwd val)))))
 
 
-;; (defun loop-standard-expansion (keywords-and-forms environment universe)
-;;   (if (and keywords-and-forms (symbolp (car keywords-and-forms)))
-;;       (loop-translate keywords-and-forms environment universe)
-;;       (let ((tag (gensym)))
-;; 	`(block nil (tagbody ,tag (progn ,@keywords-and-forms) (go ,tag))))))
+(defun loop-sequence-elements-path (variable data-type prep-phrases
+				    &key fetch-function size-function sequence-type element-type)
+  (multiple-value-bind (indexv indexv-user-specified-p) (named-variable 'index)
+    (let ((sequencev (named-variable 'sequence)))
+      #+Genera (when (and sequencev
+			  (symbolp sequencev)
+			  sequence-type
+			  (subtypep sequence-type 'vector)
+			  (not (member (the symbol sequencev) *loop-nodeclare*)))
+		 (push `(sys:array-register ,sequencev) *loop-declarations*))
+      (list* nil nil				; dummy bindings and prologue
+	     (loop-sequencer
+	       indexv 'fixnum indexv-user-specified-p
+	       variable (or data-type element-type)
+	       sequencev sequence-type
+	       `(,fetch-function ,sequencev ,indexv) `(,size-function ,sequencev)
+	       prep-phrases)))))
+
+
+;;;; Builtin LOOP Iteration Paths
 
 
-;; ;;;INTERFACE: ANSI
-;; (defmacro loop (&environment env &rest keywords-and-forms)
-;;   #+Genera (declare (compiler:do-not-record-macroexpansions)
-;; 		    (zwei:indentation . zwei:indent-loop))
-;;   (loop-standard-expansion keywords-and-forms env *loop-ansi-universe*))
+#||
+(loop for v being the hash-values of ht do (print v))
+(loop for k being the hash-keys of ht do (print k))
+(loop for v being the hash-values of ht using (hash-key k) do (print (list k v)))
+(loop for k being the hash-keys of ht using (hash-value v) do (print (list k v)))
+||#
 
-;; #+allegro
-;; (defun excl::complex-loop-expander (body env)
-;;   (loop-standard-expansion body env *loop-ansi-universe*))
+(defun loop-hash-table-iteration-path (variable data-type prep-phrases &key which)
+  (check-type which (member hash-key hash-value))
+  (cond ((or (cdr prep-phrases) (not (member (caar prep-phrases) '(:in :of))))
+	 (loop-error "Too many prepositions!"))
+	((null prep-phrases) (loop-error "Missing OF or IN in ~S iteration path.")))
+  (let ((ht-var (loop-gentemp 'loop-hashtab-))
+	(next-fn (loop-gentemp 'loop-hashtab-next-))
+	(dummy-predicate-var nil)
+	(post-steps nil))
+    (multiple-value-bind (other-var other-p)
+	(named-variable (if (eq which 'hash-key) 'hash-value 'hash-key))
+      ;;@@@@ named-variable returns a second value of T if the name was actually
+      ;; specified, so clever code can throw away the gensym'ed up variable if
+      ;; it isn't really needed.
+      ;;The following is for those implementations in which we cannot put dummy NILs
+      ;; into multiple-value-setq variable lists.
+      #-Genera (setq other-p t
+		     dummy-predicate-var (loop-when-it-variable))
+      (let ((key-var nil)
+	    (val-var nil)
+	    (bindings `((,variable nil ,data-type)
+			(,ht-var ,(cadar prep-phrases))
+			,@(and other-p other-var `((,other-var nil))))))
+	(if (eq which 'hash-key)
+	    (setq key-var variable val-var (and other-p other-var))
+	    (setq key-var (and other-p other-var) val-var variable))
+	(push `(with-hash-table-iterator (,next-fn ,ht-var)) *loop-wrappers*)
+	(when (consp key-var)
+	  (setq post-steps `(,key-var ,(setq key-var (loop-gentemp 'loop-hash-key-temp-))
+			     ,@post-steps))
+	  (push `(,key-var nil) bindings))
+	(when (consp val-var)
+	  (setq post-steps `(,val-var ,(setq val-var (loop-gentemp 'loop-hash-val-temp-))
+			     ,@post-steps))
+	  (push `(,val-var nil) bindings))
+	`(,bindings				;bindings
+	  ()					;prologue
+	  ()					;pre-test
+	  ()					;parallel steps
+	  (not (multiple-value-setq (,dummy-predicate-var ,key-var ,val-var) (,next-fn)))	;post-test
+	  ,post-steps)))))
+
+
+(defun loop-package-symbols-iteration-path (variable data-type prep-phrases &key symbol-types)
+  (cond ((or (cdr prep-phrases) (not (member (caar prep-phrases) '(:in :of))))
+	 (loop-error "Too many prepositions!"))
+	((null prep-phrases) (loop-error "Missing OF or IN in ~S iteration path.")))
+  (unless (symbolp variable)
+    (loop-error "Destructuring is not valid for package symbol iteration."))
+  (let ((pkg-var (loop-gentemp 'loop-pkgsym-))
+	(next-fn (loop-gentemp 'loop-pkgsym-next-)))
+    (push `(with-package-iterator (,next-fn ,pkg-var ,@symbol-types)) *loop-wrappers*)
+    `(((,variable nil ,data-type) (,pkg-var ,(cadar prep-phrases)))
+      ()
+      ()
+      ()
+      (not (multiple-value-setq (,(progn
+				    ;;@@@@ If an implementation can get away without actually
+				    ;; using a variable here, so much the better.
+				    #+Genera NIL
+				    #-Genera (loop-when-it-variable))
+				 ,variable)
+	     (,next-fn)))
+      ())))
+
+;;;; ANSI Loop
+
+(defun make-ansi-loop-universe (extended-p)
+  (let ((w (make-standard-loop-universe
+	     :keywords `((named (loop-do-named))
+			 (initially (loop-do-initially))
+			 (finally (loop-do-finally))
+			 (do (loop-do-do))
+			 (doing (loop-do-do))
+			 (return (loop-do-return))
+			 (collect (loop-list-collection list))
+			 (collecting (loop-list-collection list))
+			 (append (loop-list-collection append))
+			 (appending (loop-list-collection append))
+			 (nconc (loop-list-collection nconc))
+			 (nconcing (loop-list-collection nconc))
+			 (count (loop-sum-collection count ,*loop-real-data-type* fixnum))
+			 (counting (loop-sum-collection count ,*loop-real-data-type* fixnum))
+			 (sum (loop-sum-collection sum number number))
+			 (summing (loop-sum-collection sum number number))
+			 (maximize (loop-maxmin-collection max))
+			 (minimize (loop-maxmin-collection min))
+			 (maximizing (loop-maxmin-collection max))
+			 (minimizing (loop-maxmin-collection min))
+			 (always (loop-do-always t nil))	; Normal, do always
+			 (never (loop-do-always t t))	; Negate the test on always.
+			 (thereis (loop-do-thereis t))
+			 (while (loop-do-while nil :while))	; Normal, do while
+			 (until (loop-do-while t :until))	; Negate the test on while
+			 (when (loop-do-if when nil))	; Normal, do when
+			 (if (loop-do-if if nil))	; synonymous
+			 (unless (loop-do-if unless t))	; Negate the test on when
+			 (with (loop-do-with)))
+	     :for-keywords '((= (loop-ansi-for-equals))
+			     (across (loop-for-across))
+			     (in (loop-for-in))
+			     (on (loop-for-on))
+			     (from (loop-for-arithmetic :from))
+			     (downfrom (loop-for-arithmetic :downfrom))
+			     (upfrom (loop-for-arithmetic :upfrom))
+			     (below (loop-for-arithmetic :below))
+			     (to (loop-for-arithmetic :to))
+			     (upto (loop-for-arithmetic :upto))
+			     (being (loop-for-being)))
+	     :iteration-keywords '((for (loop-do-for))
+				   (as (loop-do-for))
+				   (repeat (loop-do-repeat)))
+	     :type-symbols '(array atom bignum bit bit-vector character #| common |# compiled-function
+				   complex cons double-float fixnum float
+				   function hash-table integer keyword list long-float
+				   nil null number package pathname random-state
+				   ratio rational readtable sequence short-float
+				   simple-array simple-bit-vector simple-string
+				   simple-vector single-float standard-char
+				   stream string string-char
+				   symbol t vector)
+	     :type-keywords nil
+	     :ansi (if extended-p :extended t))))
+    (add-loop-path '(hash-key hash-keys) 'loop-hash-table-iteration-path w
+		   :preposition-groups '((:of :in))
+		   :inclusive-permitted nil
+		   :user-data '(:which hash-key))
+    (add-loop-path '(hash-value hash-values) 'loop-hash-table-iteration-path w
+		   :preposition-groups '((:of :in))
+		   :inclusive-permitted nil
+		   :user-data '(:which hash-value))
+    (add-loop-path '(symbol symbols) 'loop-package-symbols-iteration-path w
+		   :preposition-groups '((:of :in))
+		   :inclusive-permitted nil
+		   :user-data '(:symbol-types (:internal :external :inherited)))
+    (add-loop-path '(external-symbol external-symbols) 'loop-package-symbols-iteration-path w
+		   :preposition-groups '((:of :in))
+		   :inclusive-permitted nil
+		   :user-data '(:symbol-types (:external)))
+    (add-loop-path '(present-symbol present-symbols) 'loop-package-symbols-iteration-path w
+		   :preposition-groups '((:of :in))
+		   :inclusive-permitted nil
+		   :user-data '(:symbol-types (:internal)))
+    w))
+
+
+(defparameter *loop-ansi-universe*
+  ;; (make-ansi-loop-universe nil))
+  nil
+  )
+
+(defun loop-standard-expansion (keywords-and-forms environment universe)
+  (if (and keywords-and-forms (symbolp (car keywords-and-forms)))
+      (loop-translate keywords-and-forms environment universe)
+      (let ((tag (gensym)))
+        `(block nil
+           (tagbody
+              ,tag
+              (progn ,@keywords-and-forms)
+              (go ,tag))))))
+
+
+;; INTERFACE: ANSI
+(defmacro loop (&rest keywords-and-forms)
+  #+Genera (declare (compiler:do-not-record-macroexpansions)
+		    (zwei:indentation . zwei:indent-loop))
+  (loop-standard-expansion keywords-and-forms jscl::*environment* *loop-ansi-universe*))
+
+#+allegro
+(defun excl::complex-loop-expander (body env)
+  (loop-standard-expansion body env *loop-ansi-universe*))
 
 
 
