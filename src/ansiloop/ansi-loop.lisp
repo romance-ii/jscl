@@ -500,183 +500,183 @@ a LET-like macro, and a SETQ-like macro, which perform LOOP-style destructuring.
 	    var-val-pairs)))
 
 
-;; (defvar *loop-desetq-temporary*
-;; 	(make-symbol "LOOP-DESETQ-TEMP"))
+(defvar *loop-desetq-temporary*
+  (make-symbol "LOOP-DESETQ-TEMP"))
 
 
-;; (defmacro loop-really-desetq (&environment env &rest var-val-pairs)
-;;   (labels ((find-non-null (var)
-;; 	     ;; see if there's any non-null thing here
-;; 	     ;; recurse if the list element is itself a list
-;; 	     (do ((tail var)) ((not (consp tail)) tail)
-;; 	       (when (find-non-null (pop tail)) (return t))))
-;; 	   (loop-desetq-internal (var val &optional temp)
-;; 	     ;; returns a list of actions to be performed
-;; 	     (typecase var
-;; 	       (null
-;; 		 (when (consp val)
-;; 		   ;; don't lose possible side-effects
-;; 		   (if (eq (car val) 'prog1)
-;; 		       ;; these can come from psetq or desetq below.
-;; 		       ;; throw away the value, keep the side-effects.
-;; 		       ;;Special case is for handling an expanded POP.
-;; 		       (mapcan #'(lambda (x)
-;; 				   (and (consp x)
-;; 					(or (not (eq (car x) 'car))
-;; 					    (not (symbolp (cadr x)))
-;; 					    (not (symbolp (setq x (macroexpand x env)))))
-;; 					(cons x nil)))
-;; 			       (cdr val))
-;; 		       `(,val))))
-;; 	       (cons
-;; 		 (let* ((car (car var))
-;; 			(cdr (cdr var))
-;; 			(car-non-null (find-non-null car))
-;; 			(cdr-non-null (find-non-null cdr)))
-;; 		   (when (or car-non-null cdr-non-null)
-;; 		     (if cdr-non-null
-;; 			 (let* ((temp-p temp)
-;; 				(temp (or temp *loop-desetq-temporary*))
-;; 				(body #+LOOP-Prefer-POP `(,@(loop-desetq-internal
-;; 							      car
-;; 							      `(prog1 (car ,temp)
-;; 								      (setq ,temp (cdr ,temp))))
-;; 							  ,@(loop-desetq-internal cdr temp temp))
-;; 				      #-LOOP-Prefer-POP `(,@(loop-desetq-internal car `(car ,temp))
-;; 							  (setq ,temp (cdr ,temp))
-;; 							  ,@(loop-desetq-internal cdr temp temp))))
-;; 			   (if temp-p
-;; 			       `(,@(unless (eq temp val)
-;; 				     `((setq ,temp ,val)))
-;; 				 ,@body)
-;; 			       `((let ((,temp ,val))
-;; 				   ,@body))))
-;; 			 ;; no cdring to do
-;; 			 (loop-desetq-internal car `(car ,val) temp)))))
-;; 	       (otherwise
-;; 		 (unless (eq var val)
-;; 		   `((setq ,var ,val)))))))
-;;     (do ((actions))
-;; 	((null var-val-pairs)
-;; 	 (if (null (cdr actions)) (car actions) `(progn ,@(nreverse actions))))
-;;       (setq actions (revappend
-;; 		      (loop-desetq-internal (pop var-val-pairs) (pop var-val-pairs))
-;; 		      actions)))))
-;; 
+(defmacro loop-really-desetq (&environment env &rest var-val-pairs)
+  (labels ((find-non-null (var)
+	     ;; see if there's any non-null thing here
+	     ;; recurse if the list element is itself a list
+	     (do ((tail var)) ((not (consp tail)) tail)
+	       (when (find-non-null (pop tail)) (return t))))
+	   (loop-desetq-internal (var val &optional temp)
+	     ;; returns a list of actions to be performed
+	     (typecase var
+	       (null
+		 (when (consp val)
+		   ;; don't lose possible side-effects
+		   (if (eq (car val) 'prog1)
+		       ;; these can come from psetq or desetq below.
+		       ;; throw away the value, keep the side-effects.
+		       ;;Special case is for handling an expanded POP.
+		       (mapcan #'(lambda (x)
+				   (and (consp x)
+					(or (not (eq (car x) 'car))
+					    (not (symbolp (cadr x)))
+					    (not (symbolp (setq x (macroexpand x env)))))
+					(cons x nil)))
+			       (cdr val))
+		       `(,val))))
+	       (cons
+		 (let* ((car (car var))
+			(cdr (cdr var))
+			(car-non-null (find-non-null car))
+			(cdr-non-null (find-non-null cdr)))
+		   (when (or car-non-null cdr-non-null)
+		     (if cdr-non-null
+			 (let* ((temp-p temp)
+				(temp (or temp *loop-desetq-temporary*))
+				(body #+LOOP-Prefer-POP `(,@(loop-desetq-internal
+							      car
+							      `(prog1 (car ,temp)
+								      (setq ,temp (cdr ,temp))))
+							  ,@(loop-desetq-internal cdr temp temp))
+				      #-LOOP-Prefer-POP `(,@(loop-desetq-internal car `(car ,temp))
+							  (setq ,temp (cdr ,temp))
+							  ,@(loop-desetq-internal cdr temp temp))))
+			   (if temp-p
+			       `(,@(unless (eq temp val)
+				     `((setq ,temp ,val)))
+				 ,@body)
+			       `((let ((,temp ,val))
+				   ,@body))))
+			 ;; no cdring to do
+			 (loop-desetq-internal car `(car ,val) temp)))))
+	       (otherwise
+		 (unless (eq var val)
+		   `((setq ,var ,val)))))))
+    (do ((actions))
+	((null var-val-pairs)
+	 (if (null (cdr actions)) (car actions) `(progn ,@(nreverse actions))))
+      (setq actions (revappend
+		      (loop-desetq-internal (pop var-val-pairs) (pop var-val-pairs))
+		      actions)))))
+
 
-;; ;;;; LOOP-local variables
+;;;; LOOP-local variables
 
-;; ;;;This is the "current" pointer into the LOOP source code.
-;; (defvar *loop-source-code*)
-
-
-;; ;;;This is the pointer to the original, for things like NAMED that
-;; ;;;insist on being in a particular position
-;; (defvar *loop-original-source-code*)
+;;;This is the "current" pointer into the LOOP source code.
+(defvar *loop-source-code*)
 
 
-;; ;;;This is *loop-source-code* as of the "last" clause.  It is used
-;; ;;;primarily for generating error messages (see loop-error, loop-warn).
-;; (defvar *loop-source-context*)
+;;;This is the pointer to the original, for things like NAMED that
+;;;insist on being in a particular position
+(defvar *loop-original-source-code*)
 
 
-;; ;;;List of names for the LOOP, supplied by the NAMED clause.
-;; (defvar *loop-names*)
-
-;; ;;;The macroexpansion environment given to the macro.
-;; (defvar *loop-macro-environment*)
-
-;; ;;;This holds variable names specified with the USING clause.
-;; ;;; See LOOP-NAMED-VARIABLE.
-;; (defvar *loop-named-variables*)
-
-;; ;;; LETlist-like list being accumulated for one group of parallel bindings.
-;; (defvar *loop-variables*)
-
-;; ;;;List of declarations being accumulated in parallel with
-;; ;;;*loop-variables*.
-;; (defvar *loop-declarations*)
-
-;; ;;;Used by LOOP for destructuring binding, if it is doing that itself.
-;; ;;; See loop-make-variable.
-;; (defvar *loop-desetq-crocks*)
-
-;; ;;; List of wrapping forms, innermost first, which go immediately inside
-;; ;;; the current set of parallel bindings being accumulated in
-;; ;;; *loop-variables*.  The wrappers are appended onto a body.  E.g.,
-;; ;;; this list could conceivably has as its value ((with-open-file (g0001
-;; ;;; g0002 ...))), with g0002 being one of the bindings in
-;; ;;; *loop-variables* (this is why the wrappers go inside of the variable
-;; ;;; bindings).
-;; (defvar *loop-wrappers*)
-
-;; ;;;This accumulates lists of previous values of *loop-variables* and the
-;; ;;;other lists  above, for each new nesting of bindings.  See
-;; ;;;loop-bind-block.
-;; (defvar *loop-bind-stack*)
-
-;; ;;;This is a LOOP-global variable for the (obsolete) NODECLARE clause
-;; ;;;which inhibits  LOOP from actually outputting a type declaration for
-;; ;;;an iteration (or any) variable.
-;; (defvar *loop-nodeclare*)
-
-;; ;;;This is simply a list of LOOP iteration variables, used for checking
-;; ;;;for duplications.
-;; (defvar *loop-iteration-variables*)
+;;;This is *loop-source-code* as of the "last" clause.  It is used
+;;;primarily for generating error messages (see loop-error, loop-warn).
+(defvar *loop-source-context*)
 
 
-;; ;;;List of prologue forms of the loop, accumulated in reverse order.
-;; (defvar *loop-prologue*)
+;;;List of names for the LOOP, supplied by the NAMED clause.
+(defvar *loop-names*)
 
-;; (defvar *loop-before-loop*)
-;; (defvar *loop-body*)
-;; (defvar *loop-after-body*)
+;;;The macroexpansion environment given to the macro.
+(defvar *loop-macro-environment*)
 
-;; ;;;This is T if we have emitted any body code, so that iteration driving
-;; ;;;clauses can be disallowed.   This is not strictly the same as
-;; ;;;checking *loop-body*, because we permit some clauses  such as RETURN
-;; ;;;to not be considered "real" body (so as to permit the user to "code"
-;; ;;;an  abnormal return value "in loop").
-;; (defvar *loop-emitted-body*)
+;;;This holds variable names specified with the USING clause.
+;;; See LOOP-NAMED-VARIABLE.
+(defvar *loop-named-variables*)
+
+;;; LETlist-like list being accumulated for one group of parallel bindings.
+(defvar *loop-variables*)
+
+;;;List of declarations being accumulated in parallel with
+;;;*loop-variables*.
+(defvar *loop-declarations*)
+
+;;;Used by LOOP for destructuring binding, if it is doing that itself.
+;;; See loop-make-variable.
+(defvar *loop-desetq-crocks*)
+
+;;; List of wrapping forms, innermost first, which go immediately inside
+;;; the current set of parallel bindings being accumulated in
+;;; *loop-variables*.  The wrappers are appended onto a body.  E.g.,
+;;; this list could conceivably has as its value ((with-open-file (g0001
+;;; g0002 ...))), with g0002 being one of the bindings in
+;;; *loop-variables* (this is why the wrappers go inside of the variable
+;;; bindings).
+(defvar *loop-wrappers*)
+
+;;;This accumulates lists of previous values of *loop-variables* and the
+;;;other lists  above, for each new nesting of bindings.  See
+;;;loop-bind-block.
+(defvar *loop-bind-stack*)
+
+;;;This is a LOOP-global variable for the (obsolete) NODECLARE clause
+;;;which inhibits  LOOP from actually outputting a type declaration for
+;;;an iteration (or any) variable.
+(defvar *loop-nodeclare*)
+
+;;;This is simply a list of LOOP iteration variables, used for checking
+;;;for duplications.
+(defvar *loop-iteration-variables*)
 
 
-;; ;;;List of epilogue forms (supplied by FINALLY generally), accumulated
-;; ;;; in reverse order.
-;; (defvar *loop-epilogue*)
+;;;List of prologue forms of the loop, accumulated in reverse order.
+(defvar *loop-prologue*)
 
-;; ;;;List of epilogue forms which are supplied after the above "user"
-;; ;;;epilogue.  "normal" termination return values are provide by putting
-;; ;;;the return form in here.  Normally this is done using
-;; ;;;loop-emit-final-value, q.v.
-;; (defvar *loop-after-epilogue*)
+(defvar *loop-before-loop*)
+(defvar *loop-body*)
+(defvar *loop-after-body*)
 
-;; ;;;The "culprit" responsible for supplying a final value from the loop.
-;; ;;;This  is so loop-emit-final-value can moan about multiple return
-;; ;;;values being supplied.
-;; (defvar *loop-final-value-culprit*)
+;;;This is T if we have emitted any body code, so that iteration driving
+;;;clauses can be disallowed.   This is not strictly the same as
+;;;checking *loop-body*, because we permit some clauses  such as RETURN
+;;;to not be considered "real" body (so as to permit the user to "code"
+;;;an  abnormal return value "in loop").
+(defvar *loop-emitted-body*)
 
-;; ;;;If not NIL, we are in some branch of a conditional.  Some clauses may
-;; ;;;be disallowed.
-;; (defvar *loop-inside-conditional*)
 
-;; ;;;If not NIL, this is a temporary bound around the loop for holding the
-;; ;;;temporary  value for "it" in things like "when (f) collect it".  It
-;; ;;;may be used as a supertemporary by some other things.
-;; (defvar *loop-when-it-variable*)
+;;;List of epilogue forms (supplied by FINALLY generally), accumulated
+;;; in reverse order.
+(defvar *loop-epilogue*)
 
-;; ;;;Sometimes we decide we need to fold together parts of the loop, but
-;; ;;;some part of the generated iteration  code is different for the first
-;; ;;;and remaining iterations.  This variable will be the temporary which 
-;; ;;;is the flag used in the loop to tell whether we are in the first or
-;; ;;;remaining iterations.
-;; (defvar *loop-never-stepped-variable*)
+;;;List of epilogue forms which are supplied after the above "user"
+;;;epilogue.  "normal" termination return values are provide by putting
+;;;the return form in here.  Normally this is done using
+;;;loop-emit-final-value, q.v.
+(defvar *loop-after-epilogue*)
 
-;; ;;;List of all the value-accumulation descriptor structures in the loop.
-;; ;;; See loop-get-collection-info.
-;; (defvar *loop-collection-cruft*)		; for multiple COLLECTs (etc)
-;; 
+;;;The "culprit" responsible for supplying a final value from the loop.
+;;;This  is so loop-emit-final-value can moan about multiple return
+;;;values being supplied.
+(defvar *loop-final-value-culprit*)
 
-;; ;;;; Code Analysis Stuff
+;;;If not NIL, we are in some branch of a conditional.  Some clauses may
+;;;be disallowed.
+(defvar *loop-inside-conditional*)
+
+;;;If not NIL, this is a temporary bound around the loop for holding the
+;;;temporary  value for "it" in things like "when (f) collect it".  It
+;;;may be used as a supertemporary by some other things.
+(defvar *loop-when-it-variable*)
+
+;;;Sometimes we decide we need to fold together parts of the loop, but
+;;;some part of the generated iteration  code is different for the first
+;;;and remaining iterations.  This variable will be the temporary which 
+;;;is the flag used in the loop to tell whether we are in the first or
+;;;remaining iterations.
+(defvar *loop-never-stepped-variable*)
+
+;;;List of all the value-accumulation descriptor structures in the loop.
+;;; See loop-get-collection-info.
+(defvar *loop-collection-cruft*)		; for multiple COLLECTs (etc)
+
+
+;;;; Code Analysis Stuff
 
 
 ;; (defun loop-constant-fold-if-possible (form &optional expected-type)
