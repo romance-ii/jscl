@@ -214,93 +214,92 @@
        ,@body)))
 
 
-;; (defmacro loop-collect-rplacd (&environment env
-;; 			       (head-var tail-var &optional user-head-var) form)
-;;   (declare
-;;     #+LISPM (ignore head-var user-head-var)	;use locatives, unconditionally update through the tail.
-;;     )
-;;   (setq form (macroexpand form env))
-;;   (flet ((cdr-wrap (form n)
-;; 	   (declare (fixnum n))
-;; 	   (do () ((<= n 4) (setq form `(,(case n
-;; 					    (1 'cdr)
-;; 					    (2 'cddr)
-;; 					    (3 'cdddr)
-;; 					    (4 'cddddr))
-;; 					 ,form)))
-;; 	     (setq form `(cddddr ,form) n (- n 4)))))
-;;     (let ((tail-form form) (ncdrs nil))
-;;       ;;Determine if the form being constructed is a list of known length.
-;;       (when (consp form)
-;; 	(cond ((eq (car form) 'list)
-;; 	       (setq ncdrs (1- (length (cdr form))))
-;; 	       ;;@@@@ Because the last element is going to be RPLACDed,
-;; 	       ;; we don't want the cdr-coded implementations to use
-;; 	       ;; cdr-nil at the end (which would just force copying
-;; 	       ;; the whole list again).
-;; 	       #+LISPM (setq tail-form `(list* ,@(cdr form) nil)))
-;; 	      ((member (car form) '(list* cons))
-;; 	       (when (and (cddr form) (member (car (last form)) '(nil 'nil)))
-;; 		 (setq ncdrs (- (length (cdr form)) 2))))))
-;;       (let ((answer
-;; 	      (cond ((null ncdrs)
-;; 		     `(when (setf (cdr ,tail-var) ,tail-form)
-;; 			(setq ,tail-var (last (cdr ,tail-var)))))
-;; 		    ((< ncdrs 0) (return-from loop-collect-rplacd nil))
-;; 		    ((= ncdrs 0)
-;; 		     ;;@@@@ Here we have a choice of two idioms:
-;; 		     ;; (rplacd tail (setq tail tail-form))
-;; 		     ;; (setq tail (setf (cdr tail) tail-form)).
-;; 		     ;;Genera and most others I have seen do better with the former.
-;; 		     `(rplacd ,tail-var (setq ,tail-var ,tail-form)))
-;; 		    (t `(setq ,tail-var ,(cdr-wrap `(setf (cdr ,tail-var) ,tail-form)
-;; 						   ncdrs))))))
-;; 	;;If not using locatives or something similar to update the user's
-;; 	;; head variable, we've got to set it...  It's harmless to repeatedly set it
-;; 	;; unconditionally, and probably faster than checking.
-;; 	#-LISPM (when user-head-var
-;; 		  (setq answer `(progn ,answer (setq ,user-head-var (cdr ,head-var)))))
-;; 	answer))))
+(defmacro loop-collect-rplacd (&environment env
+			       (head-var tail-var &optional user-head-var) form)
+  (declare
+    #+LISPM (ignore head-var user-head-var)	;use locatives, unconditionally update through the tail.
+    )
+  (setq form (macroexpand form env))
+  (flet ((cdr-wrap (form n)
+	   (declare (fixnum n))
+	   (do () ((<= n 4) (setq form `(,(case n
+					    (1 'cdr)
+					    (2 'cddr)
+					    (3 'cdddr)
+					    (4 'cddddr))
+					 ,form)))
+	     (setq form `(cddddr ,form) n (- n 4)))))
+    (let ((tail-form form) (ncdrs nil))
+      ;;Determine if the form being constructed is a list of known length.
+      (when (consp form)
+	(cond ((eq (car form) 'list)
+	       (setq ncdrs (1- (length (cdr form))))
+	       ;;@@@@ Because the last element is going to be RPLACDed,
+	       ;; we don't want the cdr-coded implementations to use
+	       ;; cdr-nil at the end (which would just force copying
+	       ;; the whole list again).
+	       #+LISPM (setq tail-form `(list* ,@(cdr form) nil)))
+	      ((member (car form) '(list* cons))
+	       (when (and (cddr form) (member (car (last form)) '(nil 'nil)))
+		 (setq ncdrs (- (length (cdr form)) 2))))))
+      (let ((answer
+	      (cond ((null ncdrs)
+		     `(when (setf (cdr ,tail-var) ,tail-form)
+			(setq ,tail-var (last (cdr ,tail-var)))))
+		    ((< ncdrs 0) (return-from loop-collect-rplacd nil))
+		    ((= ncdrs 0)
+		     ;;@@@@ Here we have a choice of two idioms:
+		     ;; (rplacd tail (setq tail tail-form))
+		     ;; (setq tail (setf (cdr tail) tail-form)).
+		     ;;Genera and most others I have seen do better with the former.
+		     `(rplacd ,tail-var (setq ,tail-var ,tail-form)))
+		    (t `(setq ,tail-var ,(cdr-wrap `(setf (cdr ,tail-var) ,tail-form)
+						   ncdrs))))))
+	;;If not using locatives or something similar to update the user's
+	;; head variable, we've got to set it...  It's harmless to repeatedly set it
+	;; unconditionally, and probably faster than checking.
+	#-LISPM (when user-head-var
+		  (setq answer `(progn ,answer (setq ,user-head-var (cdr ,head-var)))))
+	answer))))
 
 
-;; (defmacro loop-collect-answer (head-var &optional user-head-var)
-;;   (or user-head-var
-;;       (progn
-;; 	;;If we use locatives to get tail-updating to update the head var,
-;; 	;; then the head var itself contains the answer.  Otherwise we
-;; 	;; have to cdr it.
-;; 	#+LISPM head-var
-;; 	#-LISPM `(cdr ,head-var))))
-;; 
+(defmacro loop-collect-answer (head-var &optional user-head-var)
+  (or user-head-var
+      (progn
+	;;If we use locatives to get tail-updating to update the head var,
+	;; then the head var itself contains the answer.  Otherwise we
+	;; have to cdr it.
+	#+LISPM head-var
+	#-LISPM `(cdr ,head-var))))
+
 
-;; ;;;; Maximization Technology
-
-
-;; #|
-;; The basic idea of all this minimax randomness here is that we have to
-;; have constructed all uses of maximize and minimize to a particular
-;; "destination" before we can decide how to code them.  The goal is to not
-;; have to have any kinds of flags, by knowing both that (1) the type is
-;; something which we can provide an initial minimum or maximum value for
-;; and (2) know that a MAXIMIZE and MINIMIZE are not being combined.
-
-;; SO, we have a datastructure which we annotate with all sorts of things,
-;; incrementally updating it as we generate loop body code, and then use
-;; a wrapper and internal macros to do the coding when the loop has been
-;; constructed.
-;; |#
+;;;; Maximization Technology
 
 
-;; (defstruct (loop-minimax
-;; 	     (:constructor make-loop-minimax-internal)
-;; 	     (:copier nil)
-;; 	     (:predicate nil))
-;;   answer-variable
-;;   type
-;;   temp-variable
-;;   flag-variable
-;;   operations
-;;   infinity-data)
+#|
+The basic idea of all this minimax randomness here is that we have to
+have constructed all uses of maximize and minimize to a particular
+"destination" before we can decide how to code them.  The goal is to not
+have to have any kinds of flags, by knowing both that (1) the type is
+something which we can provide an initial minimum or maximum value for
+and (2) know that a MAXIMIZE and MINIMIZE are not being combined.
+
+SO, we have a datastructure which we annotate with all sorts of things,
+incrementally updating it as we generate loop body code, and then use
+a wrapper and internal macros to do the coding when the loop has been
+constructed.
+|#
+
+(jscl::def!struct (loop-minimax
+	     (:constructor make-loop-minimax-internal)
+	     (:copier nil)
+	     (:predicate nil))
+  answer-variable
+  type
+  temp-variable
+  flag-variable
+  operations
+  infinity-data)
 
 
 ;; (defvar *loop-minimax-type-infinities-alist*
