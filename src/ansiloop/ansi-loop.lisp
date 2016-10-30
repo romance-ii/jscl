@@ -846,54 +846,54 @@ a LET-like macro, and a SETQ-like macro, which perform LOOP-style destructuring.
     (estimate-code-size-1 x env)))
 
 
-;; (defun estimate-code-size-1 (x env)
-;;   (flet ((list-size (l)
-;; 	   (let ((n 0))
-;; 	     (declare (fixnum n))
-;; 	     (dolist (x l n) (incf n (estimate-code-size-1 x env))))))
-;;     ;;@@@@ ???? (declare (function list-size (list) fixnum))
-;;     (cond ((constantp x #+Genera env) 1)
-;; 	  ((symbolp x) (multiple-value-bind (new-form expanded-p) (macroexpand-1 x env)
-;; 			 (if expanded-p (estimate-code-size-1 new-form env) 1)))
-;; 	  ((atom x) 1)				;??? self-evaluating???
-;; 	  ((symbolp (car x))
-;; 	   (let ((fn (car x)) (tem nil) (n 0))
-;; 	     (declare (symbol fn) (fixnum n))
-;; 	     (macrolet ((f (overhead &optional (args nil args-p))
-;; 			  `(the fixnum (+ (the fixnum ,overhead)
-;; 					  (the fixnum (list-size ,(if args-p args '(cdr x))))))))
-;; 	       (cond ((setq tem (get fn 'estimate-code-size))
-;; 		      (typecase tem
-;; 			(fixnum (f tem))
-;; 			(t (funcall tem x env))))
-;; 		     ((setq tem (assoc fn *special-code-sizes*)) (f (second tem)))
-;; 		     #+Genera
-;; 		     ((eq fn 'compiler:invisible-references) (list-size (cddr x)))
-;; 		     ((eq fn 'cond)
-;; 		      (dolist (clause (cdr x) n) (incf n (list-size clause)) (incf n)))
-;; 		     ((eq fn 'desetq)
-;; 		      (do ((l (cdr x) (cdr l))) ((null l) n)
-;; 			(setq n (+ n (destructuring-size (car l)) (estimate-code-size-1 (cadr l) env)))))
-;; 		     ((member fn '(setq psetq))
-;; 		      (do ((l (cdr x) (cdr l))) ((null l) n)
-;; 			(setq n (+ n (estimate-code-size-1 (cadr l) env) 1))))
-;; 		     ((eq fn 'go) 1)
-;; 		     ((eq fn 'function)
-;; 		      ;;This skirts the issue of implementationally-defined lambda macros
-;; 		      ;; by recognizing CL function names and nothing else.
-;; 		      (if (or (symbolp (cadr x))
-;; 			      (and (consp (cadr x)) (eq (caadr x) 'setf)))
-;; 			  1
-;; 			  (throw 'duplicatable-code-p nil)))
-;; 		     ((eq fn 'multiple-value-setq) (f (length (second x)) (cddr x)))
-;; 		     ((eq fn 'return-from) (1+ (estimate-code-size-1 (third x) env)))
-;; 		     ((or (special-operator-p fn) (member fn *estimate-code-size-punt*))
-;; 		      (throw 'estimate-code-size nil))
-;; 		     (t (multiple-value-bind (new-form expanded-p) (macroexpand-1 x env)
-;; 			  (if expanded-p
-;; 			      (estimate-code-size-1 new-form env)
-;; 			      (f 3))))))))
-;; 	  (t (throw 'estimate-code-size nil)))))
+(defun estimate-code-size-1 (x env)
+  (flet ((list-size (l)
+	   (let ((n 0))
+	     (declare (fixnum n))
+	     (dolist (x l n) (incf n (estimate-code-size-1 x env))))))
+    ;;@@@@ ???? (declare (function list-size (list) fixnum))
+    (cond ((constantp x #+Genera env) 1)
+	  ((symbolp x) (multiple-value-bind (new-form expanded-p) (macroexpand-1 x env)
+			 (if expanded-p (estimate-code-size-1 new-form env) 1)))
+	  ((atom x) 1)				;??? self-evaluating???
+	  ((symbolp (car x))
+	   (let ((fn (car x)) (tem nil) (n 0))
+	     (declare (symbol fn) (fixnum n))
+	     (macrolet ((f (overhead &optional (args nil args-p))
+			  `(the fixnum (+ (the fixnum ,overhead)
+					  (the fixnum (list-size ,(if args-p args '(cdr x))))))))
+	       (cond ((setq tem (get fn 'estimate-code-size))
+		      (typecase tem
+			(fixnum (f tem))
+			(t (funcall tem x env))))
+		     ((setq tem (assoc fn *special-code-sizes*)) (f (second tem)))
+		     #+Genera
+		     ((eq fn 'compiler:invisible-references) (list-size (cddr x)))
+		     ((eq fn 'cond)
+		      (dolist (clause (cdr x) n) (incf n (list-size clause)) (incf n)))
+		     ((eq fn 'desetq)
+		      (do ((l (cdr x) (cdr l))) ((null l) n)
+			(setq n (+ n (destructuring-size (car l)) (estimate-code-size-1 (cadr l) env)))))
+		     ((member fn '(setq psetq))
+		      (do ((l (cdr x) (cdr l))) ((null l) n)
+			(setq n (+ n (estimate-code-size-1 (cadr l) env) 1))))
+		     ((eq fn 'go) 1)
+		     ((eq fn 'function)
+		      ;;This skirts the issue of implementationally-defined lambda macros
+		      ;; by recognizing CL function names and nothing else.
+		      (if (or (symbolp (cadr x))
+			      (and (consp (cadr x)) (eq (caadr x) 'setf)))
+			  1
+			  (throw 'duplicatable-code-p nil)))
+		     ((eq fn 'multiple-value-setq) (f (length (second x)) (cddr x)))
+		     ((eq fn 'return-from) (1+ (estimate-code-size-1 (third x) env)))
+		     ((or (special-operator-p fn) (member fn *estimate-code-size-punt*))
+		      (throw 'estimate-code-size nil))
+		     (t (multiple-value-bind (new-form expanded-p) (macroexpand-1 x env)
+			  (if expanded-p
+			      (estimate-code-size-1 new-form env)
+			      (f 3))))))))
+	  (t (throw 'estimate-code-size nil)))))
 
 
 ;; ;;;; Loop Errors
