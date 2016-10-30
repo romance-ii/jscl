@@ -302,131 +302,112 @@ constructed.
   infinity-data)
 
 
-;; (defvar *loop-minimax-type-infinities-alist*
-;; 	;;@@@@ This is the sort of value this should take on for a Lisp that has
-;; 	;; "eminently usable" infinities.  n.b. there are neither constants nor
-;; 	;; printed representations for infinities defined by CL.
-;; 	;;@@@@ This grotesque read-from-string below is to help implementations
-;; 	;; which croak on the infinity character when it appears in a token, even
-;; 	;; conditionalized out.
-;; 	#+Genera
-;; 	  '#.(read-from-string
-;; 	      "((fixnum 	most-positive-fixnum	 most-negative-fixnum)
-;; 		(short-float 	+1s			 -1s)
-;; 		(single-float	+1f			 -1f)
-;; 		(double-float	+1d			 -1d)
-;; 		(long-float	+1l			 -1l))")
-;; 	;;This is how the alist should look for a lisp that has no infinities.  In
-;; 	;; that case, MOST-POSITIVE-x-FLOAT really IS the most positive.
-;; 	#+(or CLOE-Runtime Minima)
-;; 	  '((fixnum   		most-positive-fixnum		most-negative-fixnum)
-;; 	    (short-float	most-positive-short-float	most-negative-short-float)
-;; 	    (single-float	most-positive-single-float	most-negative-single-float)
-;; 	    (double-float	most-positive-double-float	most-negative-double-float)
-;; 	    (long-float		most-positive-long-float	most-negative-long-float))
-;; 	;;If we don't know, then we cannot provide "infinite" initial values for any of the
-;; 	;; types but FIXNUM:
-;; 	#-(or Genera CLOE-Runtime Minima)
-;; 	  '((fixnum   		most-positive-fixnum		most-negative-fixnum))
-;; 	  )
+(defvar *loop-minimax-type-infinities-alist*
+	;;@@@@ This is the sort of value this should take on for a Lisp that has
+	;; "eminently usable" infinities.  n.b. there are neither constants nor
+	;; printed representations for infinities defined by CL.
+	;;@@@@ This grotesque read-from-string below is to help implementations
+	;; which croak on the infinity character when it appears in a token, even
+	;; conditionalized out.
+  '((fixnum most-positive-fixnum most-negative-fixnum)))
 
 
-;; (defun make-loop-minimax (answer-variable type)
-;;   (let ((infinity-data (cdr (assoc type *loop-minimax-type-infinities-alist* :test #'subtypep))))
-;;     (make-loop-minimax-internal
-;;       :answer-variable answer-variable
-;;       :type type
-;;       :temp-variable (loop-gentemp 'loop-maxmin-temp-)
-;;       :flag-variable (and (not infinity-data) (loop-gentemp 'loop-maxmin-flag-))
-;;       :operations nil
-;;       :infinity-data infinity-data)))
+(defun make-loop-minimax (answer-variable type)
+  (let ((infinity-data (cdr (assoc type *loop-minimax-type-infinities-alist* :test #'subtypep))))
+    (make-loop-minimax-internal
+      :answer-variable answer-variable
+      :type type
+      :temp-variable (loop-gentemp 'loop-maxmin-temp-)
+      :flag-variable (and (not infinity-data) (loop-gentemp 'loop-maxmin-flag-))
+      :operations nil
+      :infinity-data infinity-data)))
 
 
-;; (defun loop-note-minimax-operation (operation minimax)
-;;   (pushnew (the symbol operation) (loop-minimax-operations minimax))
-;;   (when (and (cdr (loop-minimax-operations minimax))
-;; 	     (not (loop-minimax-flag-variable minimax)))
-;;     (setf (loop-minimax-flag-variable minimax) (loop-gentemp 'loop-maxmin-flag-)))
-;;   operation)
+(defun loop-note-minimax-operation (operation minimax)
+  (pushnew (the symbol operation) (loop-minimax-operations minimax))
+  (when (and (cdr (loop-minimax-operations minimax))
+             (not (loop-minimax-flag-variable minimax)))
+    (setf (loop-minimax-flag-variable minimax) (loop-gentemp 'loop-maxmin-flag-)))
+  operation)
 
 
-;; (defmacro with-minimax-value (lm &body body)
-;;   (let ((init (loop-typed-init (loop-minimax-type lm)))
-;; 	(which (car (loop-minimax-operations lm)))
-;; 	(infinity-data (loop-minimax-infinity-data lm))
-;; 	(answer-var (loop-minimax-answer-variable lm))
-;; 	(temp-var (loop-minimax-temp-variable lm))
-;; 	(flag-var (loop-minimax-flag-variable lm))
-;; 	(type (loop-minimax-type lm)))
-;;     (if flag-var
-;; 	`(let ((,answer-var ,init) (,temp-var ,init) (,flag-var nil))
-;; 	   (declare (type ,type ,answer-var ,temp-var))
-;; 	   ,@body)
-;; 	`(let ((,answer-var ,(if (eq which 'min) (first infinity-data) (second infinity-data)))
-;; 	       (,temp-var ,init))
-;; 	   (declare (type ,type ,answer-var ,temp-var))
-;; 	   ,@body))))
+(defmacro with-minimax-value (lm &body body)
+  (let ((init (loop-typed-init (loop-minimax-type lm)))
+        (which (car (loop-minimax-operations lm)))
+        (infinity-data (loop-minimax-infinity-data lm))
+        (answer-var (loop-minimax-answer-variable lm))
+        (temp-var (loop-minimax-temp-variable lm))
+        (flag-var (loop-minimax-flag-variable lm))
+        (type (loop-minimax-type lm)))
+    (if flag-var
+        `(let ((,answer-var ,init) (,temp-var ,init) (,flag-var nil))
+           (declare (type ,type ,answer-var ,temp-var))
+           ,@body)
+        `(let ((,answer-var ,(if (eq which 'min) (first infinity-data) (second infinity-data)))
+               (,temp-var ,init))
+           (declare (type ,type ,answer-var ,temp-var))
+           ,@body))))
 
 
-;; (defmacro loop-accumulate-minimax-value (lm operation form)
-;;   (let* ((answer-var (loop-minimax-answer-variable lm))
-;; 	 (temp-var (loop-minimax-temp-variable lm))
-;; 	 (flag-var (loop-minimax-flag-variable lm))
-;; 	 (test
-;; 	   (hide-variable-reference
-;; 	     t (loop-minimax-answer-variable lm)
-;; 	     `(,(ecase operation
-;; 		  (min '<)
-;; 		  (max '>))
-;; 	       ,temp-var ,answer-var))))
-;;     `(progn
-;;        (setq ,temp-var ,form)
-;;        (when ,(if flag-var `(or (not ,flag-var) ,test) test)
-;; 	 (setq ,@(and flag-var `(,flag-var t))
-;; 	       ,answer-var ,temp-var)))))
-;; 
+(defmacro loop-accumulate-minimax-value (lm operation form)
+  (let* ((answer-var (loop-minimax-answer-variable lm))
+	 (temp-var (loop-minimax-temp-variable lm))
+	 (flag-var (loop-minimax-flag-variable lm))
+	 (test
+	   (hide-variable-reference
+	     t (loop-minimax-answer-variable lm)
+	     `(,(ecase operation
+		  (min '<)
+		  (max '>))
+	       ,temp-var ,answer-var))))
+    `(progn
+       (setq ,temp-var ,form)
+       (when ,(if flag-var `(or (not ,flag-var) ,test) test)
+	 (setq ,@(and flag-var `(,flag-var t))
+	       ,answer-var ,temp-var)))))
+
 
 
-;; ;;;; Loop Keyword Tables
+;;;; Loop Keyword Tables
 
 
-;; #|
-;; LOOP keyword tables are hash tables string keys and a test of EQUAL.
+#|
+LOOP keyword tables are hash tables string keys and a test of EQUAL.
 
-;; The actual descriptive/dispatch structure used by LOOP is called a "loop
-;; universe" contains a few tables and parameterizations.  The basic idea is
-;; that we can provide a non-extensible ANSI-compatible loop environment,
-;; an extensible ANSI-superset loop environment, and (for such environments
-;; as CLOE) one which is "sufficiently close" to the old Genera-vintage
-;; LOOP for use by old user programs without requiring all of the old LOOP
-;; code to be loaded.
-;; |#
-
-
-;; ;;;; Token Hackery
+The actual descriptive/dispatch structure used by LOOP is called a "loop
+universe" contains a few tables and parameterizations.  The basic idea is
+that we can provide a non-extensible ANSI-compatible loop environment,
+an extensible ANSI-superset loop environment, and (for such environments
+as CLOE) one which is "sufficiently close" to the old Genera-vintage
+LOOP for use by old user programs without requiring all of the old LOOP
+code to be loaded.
+|#
 
 
-;; ;;;Compare two "tokens".  The first is the frob out of *LOOP-SOURCE-CODE*,
-;; ;;; the second a symbol to check against.
-;; (defun loop-tequal (x1 x2)
-;;   (and (symbolp x1) (string= x1 x2)))
+;;;; Token Hackery
 
 
-;; (defun loop-tassoc (kwd alist)
-;;   (and (symbolp kwd) (assoc kwd alist :test #'string=)))
+;;;Compare two "tokens".  The first is the frob out of *LOOP-SOURCE-CODE*,
+;;; the second a symbol to check against.
+(defun loop-tequal (x1 x2)
+  (and (symbolp x1) (string= x1 x2)))
 
 
-;; (defun loop-tmember (kwd list)
-;;   (and (symbolp kwd) (member kwd list :test #'string=)))
+(defun loop-tassoc (kwd alist)
+  (and (symbolp kwd) (assoc kwd alist :test #'string=)))
 
 
-;; (defun loop-lookup-keyword (loop-token table)
-;;   (and (symbolp loop-token)
-;;        (values (gethash (symbol-name loop-token) table))))
+(defun loop-tmember (kwd list)
+  (and (symbolp kwd) (member kwd list :test #'string=)))
 
 
-;; (defmacro loop-store-table-data (symbol table datum)
-;;   `(setf (gethash (symbol-name ,symbol) ,table) ,datum))
+(defun loop-lookup-keyword (loop-token table)
+  (and (symbolp loop-token)
+       (values (gethash (symbol-name loop-token) table))))
+
+
+(defmacro loop-store-table-data (symbol table datum)
+  `(setf (gethash (symbol-name ,symbol) ,table) ,datum))
 
 
 ;; (defstruct (loop-universe
