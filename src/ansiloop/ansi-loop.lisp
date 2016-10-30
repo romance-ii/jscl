@@ -410,92 +410,94 @@ code to be loaded.
   `(setf (gethash (symbol-name ,symbol) ,table) ,datum))
 
 
-;; (defstruct (loop-universe
-;; 	     (:print-function print-loop-universe)
-;; 	     (:copier nil)
-;; 	     (:predicate nil))
-;;   keywords					;hash table, value = (fn-name . extra-data).
-;;   iteration-keywords				;hash table, value = (fn-name . extra-data).
-;;   for-keywords					;hash table, value = (fn-name . extra-data).
-;;   path-keywords					;hash table, value = (fn-name . extra-data).
-;;   type-symbols					;hash table of type SYMBOLS, test EQ, value = CL type specifier.
-;;   type-keywords					;hash table of type STRINGS, test EQUAL, value = CL type spec.
-;;   ansi						;NIL, T, or :EXTENDED.
-;;   implicit-for-required				;see loop-hack-iteration
-;;   )
+(jscl::def!struct (loop-universe
+              ;; FIXME: Implement me in JSCL!
+              ;; (:print-function print-loop-universe)
+              (:copier nil)
+              (:predicate nil))
+  keywords					;hash table, value = (fn-name . extra-data).
+  iteration-keywords				;hash table, value = (fn-name . extra-data).
+  for-keywords					;hash table, value = (fn-name . extra-data).
+  path-keywords					;hash table, value = (fn-name . extra-data).
+  type-symbols					;hash table of type SYMBOLS, test EQ, value = CL type specifier.
+  type-keywords					;hash table of type STRINGS, test EQUAL, value = CL type spec.
+  ansi						;NIL, T, or :EXTENDED.
+  implicit-for-required				;see loop-hack-iteration
+  )
 
 
-;; (defun print-loop-universe (u stream level)
-;;   (declare (ignore level))
-;;   (let ((str (case (loop-universe-ansi u)
-;; 	       ((nil) "Non-ANSI")
-;; 	       ((t) "ANSI")
-;; 	       (:extended "Extended-ANSI")
-;; 	       (t (loop-universe-ansi u)))))
-;;     ;;Cloe could be done with the above except for bootstrap lossage...
-;;     #+CLOE
-;;     (format stream "#<~S ~A ~X>" (type-of u) str (sys::address-of u))
-;;     #+Genera					;@@@@ This is reallly the ANSI definition.
-;;     (print-unreadable-object (u stream :type t :identity t)
-;;       (princ str stream))
-;;     #-(or Genera CLOE)
-;;     (format stream "#<~S ~A>" (type-of u) str)
-;;     ))
+(defun print-loop-universe (u stream level)
+  (declare (ignore level))
+  (let ((str (case (loop-universe-ansi u)
+	       ((nil) "Non-ANSI")
+	       ((t) "ANSI")
+	       (:extended "Extended-ANSI")
+	       (t (loop-universe-ansi u)))))
+    ;;Cloe could be done with the above except for bootstrap lossage...
+    #+CLOE
+    (format stream "#<~S ~A ~X>" (type-of u) str (sys::address-of u))
+    #+Genera					;@@@@ This is reallly the ANSI definition.
+    (print-unreadable-object (u stream :type t :identity t)
+      (princ str stream))
+    #-(or Genera CLOE)
+    (format stream "#<~S ~A>" (type-of u) str)
+    ))
 
 
-;; ;;;This is the "current" loop context in use when we are expanding a
-;; ;;;loop.  It gets bound on each invocation of LOOP.
-;; (defvar *loop-universe*)
+;;;This is the "current" loop context in use when we are expanding a
+;;;loop.  It gets bound on each invocation of LOOP.
+(defvar *loop-universe*)
 
 
-;; (defun make-standard-loop-universe (&key keywords for-keywords iteration-keywords path-keywords
-;; 				    type-keywords type-symbols ansi)
-;;   #-(and CLOE Source-Bootstrap) (check-type ansi (member nil t :extended))
-;;   (flet ((maketable (entries)
-;; 	   (let* ((size (length entries))
-;; 		  (ht (make-hash-table :size (if (< size 10) 10 size) :test #'equal)))
-;; 	     (dolist (x entries) (setf (gethash (symbol-name (car x)) ht) (cadr x)))
-;; 	     ht)))
-;;     (make-loop-universe
-;;       :keywords (maketable keywords)
-;;       :for-keywords (maketable for-keywords)
-;;       :iteration-keywords (maketable iteration-keywords)
-;;       :path-keywords (maketable path-keywords)
-;;       :ansi ansi
-;;       :implicit-for-required (not (null ansi))
-;;       :type-keywords (maketable type-keywords)
-;;       :type-symbols (let* ((size (length type-symbols))
-;; 			   (ht (make-hash-table :size (if (< size 10) 10 size) :test #'eq)))
-;; 		      (dolist (x type-symbols)
-;; 			(if (atom x) (setf (gethash x ht) x) (setf (gethash (car x) ht) (cadr x))))
-;; 		      ht)))) 
-;; 
+(defun make-standard-loop-universe (&key keywords for-keywords iteration-keywords path-keywords
+				    type-keywords type-symbols ansi)
+  #-(and CLOE Source-Bootstrap)
+  (check-type ansi (member nil t :extended))
+  (flet ((maketable (entries)
+	   (let* ((size (length entries))
+		  (ht (make-hash-table :size (if (< size 10) 10 size) :test #'equal)))
+	     (dolist (x entries) (setf (gethash (symbol-name (car x)) ht) (cadr x)))
+	     ht)))
+    (make-loop-universe
+      :keywords (maketable keywords)
+      :for-keywords (maketable for-keywords)
+      :iteration-keywords (maketable iteration-keywords)
+      :path-keywords (maketable path-keywords)
+      :ansi ansi
+      :implicit-for-required (not (null ansi))
+      :type-keywords (maketable type-keywords)
+      :type-symbols (let* ((size (length type-symbols))
+			   (ht (make-hash-table :size (if (< size 10) 10 size) :test #'eq)))
+		      (dolist (x type-symbols)
+			(if (atom x) (setf (gethash x ht) x) (setf (gethash (car x) ht) (cadr x))))
+		      ht)))) 
+
 
-;; ;;;; Setq Hackery
-
-
-;; (defvar *loop-destructuring-hooks*
-;; 	nil
-;;   "If not NIL, this must be a list of two things:
-;; a LET-like macro, and a SETQ-like macro, which perform LOOP-style destructuring.")
+;;;; Setq Hackery
 
 
-;; (defun loop-make-psetq (frobs)
-;;   (and frobs
-;;        (loop-make-desetq
-;; 	 (list (car frobs)
-;; 	       (if (null (cddr frobs)) (cadr frobs)
-;; 		   `(prog1 ,(cadr frobs)
-;; 			   ,(loop-make-psetq (cddr frobs))))))))
+(defvar *loop-destructuring-hooks*
+	nil
+  "If not NIL, this must be a list of two things:
+a LET-like macro, and a SETQ-like macro, which perform LOOP-style destructuring.")
 
 
-;; (defun loop-make-desetq (var-val-pairs)
-;;   (if (null var-val-pairs)
-;;       nil
-;;       (cons (if *loop-destructuring-hooks*
-;; 		(cadr *loop-destructuring-hooks*)
-;; 		'loop-really-desetq)
-;; 	    var-val-pairs)))
+(defun loop-make-psetq (frobs)
+  (and frobs
+       (loop-make-desetq
+	 (list (car frobs)
+	       (if (null (cddr frobs)) (cadr frobs)
+		   `(prog1 ,(cadr frobs)
+			   ,(loop-make-psetq (cddr frobs))))))))
+
+
+(defun loop-make-desetq (var-val-pairs)
+  (if (null var-val-pairs)
+      nil
+      (cons (if *loop-destructuring-hooks*
+		(cadr *loop-destructuring-hooks*)
+		'loop-really-desetq)
+	    var-val-pairs)))
 
 
 ;; (defvar *loop-desetq-temporary*
