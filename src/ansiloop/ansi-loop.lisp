@@ -1270,386 +1270,386 @@ collected result will be returned as the value of the LOOP."
 ;;;; Value Accumulation: List
 
 
-;; (defstruct (loop-collector
-;; 	     (:copier nil)
-;; 	     (:predicate nil))
-;;   name
-;;   class
-;;   (history nil)
-;;   (tempvars nil)
-;;   dtype
-;;   (data nil))						;collector-specific data
+(jscl::def!struct (loop-collector
+	     (:copier nil)
+	     (:predicate nil))
+  name
+  class
+  (history nil)
+  (tempvars nil)
+  dtype
+  (data nil))						;collector-specific data
 
 
-;; (defun loop-get-collection-info (collector class default-type)
-;;   (let ((form (loop-get-form))
-;; 	(dtype (and (not (loop-universe-ansi *loop-universe*)) (loop-optional-type)))
-;; 	(name (when (loop-tequal (car *loop-source-code*) 'into)
-;; 		(loop-pop-source)
-;; 		(loop-pop-source))))
-;;     (when (not (symbolp name))
-;;       (loop-error "Value accumulation recipient name, ~S, is not a symbol." name))
-;;     (unless dtype
-;;       (setq dtype (or (loop-optional-type) default-type)))
-;;     (let ((cruft (find (the symbol name) *loop-collection-cruft*
-;; 		       :key #'loop-collector-name)))
-;;       (cond ((not cruft)
-;; 	     (push (setq cruft (make-loop-collector
-;; 				 :name name :class class
-;; 				 :history (list collector) :dtype dtype))
-;; 		   *loop-collection-cruft*))
-;; 	    (t (unless (eq (loop-collector-class cruft) class)
-;; 		 (loop-error
-;; 		   "Incompatible kinds of LOOP value accumulation specified for collecting~@
-;; 		    ~:[as the value of the LOOP~;~:*INTO ~S~]: ~S and ~S."
-;; 		   name (car (loop-collector-history cruft)) collector))
-;; 	       (unless (equal dtype (loop-collector-dtype cruft))
-;; 		 (loop-warn
-;; 		   "Unequal datatypes specified in different LOOP value accumulations~@
-;; 		   into ~S: ~S and ~S."
-;; 		   name dtype (loop-collector-dtype cruft))
-;; 		 (when (eq (loop-collector-dtype cruft) t)
-;; 		   (setf (loop-collector-dtype cruft) dtype)))
-;; 	       (push collector (loop-collector-history cruft))))
-;;       (values cruft form))))
+(defun loop-get-collection-info (collector class default-type)
+  (let ((form (loop-get-form))
+	(dtype (and (not (loop-universe-ansi *loop-universe*)) (loop-optional-type)))
+	(name (when (loop-tequal (car *loop-source-code*) 'into)
+		(loop-pop-source)
+		(loop-pop-source))))
+    (when (not (symbolp name))
+      (loop-error "Value accumulation recipient name, ~S, is not a symbol." name))
+    (unless dtype
+      (setq dtype (or (loop-optional-type) default-type)))
+    (let ((cruft (find (the symbol name) *loop-collection-cruft*
+		       :key #'loop-collector-name)))
+      (cond ((not cruft)
+	     (push (setq cruft (make-loop-collector
+				 :name name :class class
+				 :history (list collector) :dtype dtype))
+		   *loop-collection-cruft*))
+	    (t (unless (eq (loop-collector-class cruft) class)
+		 (loop-error
+		   "Incompatible kinds of LOOP value accumulation specified for collecting~@
+		    ~:[as the value of the LOOP~;~:*INTO ~S~]: ~S and ~S."
+		   name (car (loop-collector-history cruft)) collector))
+	       (unless (equal dtype (loop-collector-dtype cruft))
+		 (loop-warn
+		   "Unequal datatypes specified in different LOOP value accumulations~@
+		   into ~S: ~S and ~S."
+		   name dtype (loop-collector-dtype cruft))
+		 (when (eq (loop-collector-dtype cruft) t)
+		   (setf (loop-collector-dtype cruft) dtype)))
+	       (push collector (loop-collector-history cruft))))
+      (values cruft form))))
 
 
-;; (defun loop-list-collection (specifically)	;NCONC, LIST, or APPEND
-;;   (multiple-value-bind (lc form) (loop-get-collection-info specifically 'list 'list)
-;;     (let ((tempvars (loop-collector-tempvars lc)))
-;;       (unless tempvars
-;; 	(setf (loop-collector-tempvars lc)
-;; 	      (setq tempvars (list* (loop-gentemp 'loop-list-head-)
-;; 				    (loop-gentemp 'loop-list-tail-)
-;; 				    (and (loop-collector-name lc)
-;; 					 (list (loop-collector-name lc))))))
-;; 	(push `(with-loop-list-collection-head ,tempvars) *loop-wrappers*)
-;; 	(unless (loop-collector-name lc)
-;; 	  (loop-emit-final-value `(loop-collect-answer ,(car tempvars) ,@(cddr tempvars)))))
-;;       (ecase specifically
-;; 	(list (setq form `(list ,form)))
-;; 	(nconc nil)
-;; 	(append (unless (and (consp form) (eq (car form) 'list))
-;; 		  (setq form `(loop-copylist* ,form)))))
-;;       (loop-emit-body `(loop-collect-rplacd ,tempvars ,form)))))
-;; 
+(defun loop-list-collection (specifically)	;NCONC, LIST, or APPEND
+  (multiple-value-bind (lc form) (loop-get-collection-info specifically 'list 'list)
+    (let ((tempvars (loop-collector-tempvars lc)))
+      (unless tempvars
+	(setf (loop-collector-tempvars lc)
+	      (setq tempvars (list* (loop-gentemp 'loop-list-head-)
+				    (loop-gentemp 'loop-list-tail-)
+				    (and (loop-collector-name lc)
+					 (list (loop-collector-name lc))))))
+	(push `(with-loop-list-collection-head ,tempvars) *loop-wrappers*)
+	(unless (loop-collector-name lc)
+	  (loop-emit-final-value `(loop-collect-answer ,(car tempvars) ,@(cddr tempvars)))))
+      (ecase specifically
+	(list (setq form `(list ,form)))
+	(nconc nil)
+	(append (unless (and (consp form) (eq (car form) 'list))
+		  (setq form `(loop-copylist* ,form)))))
+      (loop-emit-body `(loop-collect-rplacd ,tempvars ,form)))))
+
 
-;; ;;;; Value Accumulation: max, min, sum, count.
-
-
-
-;; (defun loop-sum-collection (specifically required-type default-type)	;SUM, COUNT
-;;   (multiple-value-bind (lc form)
-;;       (loop-get-collection-info specifically 'sum default-type)
-;;     (loop-check-data-type (loop-collector-dtype lc) required-type)
-;;     (let ((tempvars (loop-collector-tempvars lc)))
-;;       (unless tempvars
-;; 	(setf (loop-collector-tempvars lc)
-;; 	      (setq tempvars (list (loop-make-variable
-;; 				     (or (loop-collector-name lc)
-;; 					 (loop-gentemp 'loop-sum-))
-;; 				     nil (loop-collector-dtype lc)))))
-;; 	(unless (loop-collector-name lc)
-;; 	  (loop-emit-final-value (car (loop-collector-tempvars lc)))))
-;;       (loop-emit-body
-;; 	(if (eq specifically 'count)
-;; 	    `(when ,form
-;; 	       (setq ,(car tempvars)
-;; 		     ,(hide-variable-reference t (car tempvars) `(1+ ,(car tempvars)))))
-;; 	    `(setq ,(car tempvars)
-;; 		   (+ ,(hide-variable-reference t (car tempvars) (car tempvars))
-;; 		      ,form)))))))
+;;;; Value Accumulation: max, min, sum, count.
 
 
 
-;; (defun loop-maxmin-collection (specifically)
-;;   (multiple-value-bind (lc form)
-;;       (loop-get-collection-info specifically 'maxmin *loop-real-data-type*)
-;;     (loop-check-data-type (loop-collector-dtype lc) *loop-real-data-type*)
-;;     (let ((data (loop-collector-data lc)))
-;;       (unless data
-;; 	(setf (loop-collector-data lc)
-;; 	      (setq data (make-loop-minimax
-;; 			   (or (loop-collector-name lc) (loop-gentemp 'loop-maxmin-))
-;; 			   (loop-collector-dtype lc))))
-;; 	(unless (loop-collector-name lc)
-;; 	  (loop-emit-final-value (loop-minimax-answer-variable data))))
-;;       (loop-note-minimax-operation specifically data)
-;;       (push `(with-minimax-value ,data) *loop-wrappers*)
-;;       (loop-emit-body `(loop-accumulate-minimax-value ,data ,specifically ,form))
-;;       )))
-;; 
-
-;; ;;;; Value Accumulation:  Aggregate Booleans
-
-;; ;;;ALWAYS and NEVER.
-;; ;;; Under ANSI these are not permitted to appear under conditionalization.
-;; (defun loop-do-always (restrictive negate)
-;;   (let ((form (loop-get-form)))
-;;     (when restrictive (loop-disallow-conditional))
-;;     (loop-emit-body `(,(if negate 'when 'unless) ,form
-;; 		      ,(loop-construct-return nil)))
-;;     (loop-emit-final-value t)))
+(defun loop-sum-collection (specifically required-type default-type)	;SUM, COUNT
+  (multiple-value-bind (lc form)
+      (loop-get-collection-info specifically 'sum default-type)
+    (loop-check-data-type (loop-collector-dtype lc) required-type)
+    (let ((tempvars (loop-collector-tempvars lc)))
+      (unless tempvars
+	(setf (loop-collector-tempvars lc)
+	      (setq tempvars (list (loop-make-variable
+				     (or (loop-collector-name lc)
+					 (loop-gentemp 'loop-sum-))
+				     nil (loop-collector-dtype lc)))))
+	(unless (loop-collector-name lc)
+	  (loop-emit-final-value (car (loop-collector-tempvars lc)))))
+      (loop-emit-body
+	(if (eq specifically 'count)
+	    `(when ,form
+	       (setq ,(car tempvars)
+		     ,(hide-variable-reference t (car tempvars) `(1+ ,(car tempvars)))))
+	    `(setq ,(car tempvars)
+		   (+ ,(hide-variable-reference t (car tempvars) (car tempvars))
+		      ,form)))))))
 
 
 
-;; ;;;THERIS.
-;; ;;; Under ANSI this is not permitted to appear under conditionalization.
-;; (defun loop-do-thereis (restrictive)
-;;   (when restrictive (loop-disallow-conditional))
-;;   (loop-emit-body `(when (setq ,(loop-when-it-variable) ,(loop-get-form))
-;; 		     ,(loop-construct-return *loop-when-it-variable*))))
-;; 
+(defun loop-maxmin-collection (specifically)
+  (multiple-value-bind (lc form)
+      (loop-get-collection-info specifically 'maxmin *loop-real-data-type*)
+    (loop-check-data-type (loop-collector-dtype lc) *loop-real-data-type*)
+    (let ((data (loop-collector-data lc)))
+      (unless data
+	(setf (loop-collector-data lc)
+	      (setq data (make-loop-minimax
+			   (or (loop-collector-name lc) (loop-gentemp 'loop-maxmin-))
+			   (loop-collector-dtype lc))))
+	(unless (loop-collector-name lc)
+	  (loop-emit-final-value (loop-minimax-answer-variable data))))
+      (loop-note-minimax-operation specifically data)
+      (push `(with-minimax-value ,data) *loop-wrappers*)
+      (loop-emit-body `(loop-accumulate-minimax-value ,data ,specifically ,form))
+      )))
+
 
-;; (defun loop-do-while (negate kwd &aux (form (loop-get-form)))
-;;   (loop-disallow-conditional kwd)
-;;   (loop-pseudo-body `(,(if negate 'when 'unless) ,form (go end-loop))))
+;;;; Value Accumulation:  Aggregate Booleans
 
-
-;; (defun loop-do-with ()
-;;   (loop-disallow-conditional :with)
-;;   (do ((var) (val) (dtype)) (nil)
-;;     (setq var (loop-pop-source)
-;; 	  dtype (loop-optional-type var)
-;; 	  val (cond ((loop-tequal (car *loop-source-code*) :=)
-;; 		     (loop-pop-source)
-;; 		     (loop-get-form))
-;; 		    (t nil)))
-;;     (loop-make-variable var val dtype)
-;;     (if (loop-tequal (car *loop-source-code*) :and)
-;; 	(loop-pop-source)
-;; 	(return (loop-bind-block)))))
-;; 
-
-;; ;;;; The iteration driver
-
-;; (defun loop-hack-iteration (entry)
-;;   (flet ((make-endtest (list-of-forms)
-;; 	   (cond ((null list-of-forms) nil)
-;; 		 ((member t list-of-forms) '(go end-loop))
-;; 		 (t `(when ,(if (null (cdr (setq list-of-forms (nreverse list-of-forms))))
-;; 				(car list-of-forms)
-;; 				(cons 'or list-of-forms))
-;; 		       (go end-loop))))))
-;;     (do ((pre-step-tests nil)
-;; 	 (steps nil)
-;; 	 (post-step-tests nil)
-;; 	 (pseudo-steps nil)
-;; 	 (pre-loop-pre-step-tests nil)
-;; 	 (pre-loop-steps nil)
-;; 	 (pre-loop-post-step-tests nil)
-;; 	 (pre-loop-pseudo-steps nil)
-;; 	 (tem) (data))
-;; 	(nil)
-;;       ;; Note we collect endtests in reverse order, but steps in correct
-;;       ;; order.  MAKE-ENDTEST does the nreverse for us.
-;;       (setq tem (setq data (apply (symbol-function (first entry)) (rest entry))))
-;;       (and (car tem) (push (car tem) pre-step-tests))
-;;       (setq steps (nconc steps (loop-copylist* (car (setq tem (cdr tem))))))
-;;       (and (car (setq tem (cdr tem))) (push (car tem) post-step-tests))
-;;       (setq pseudo-steps (nconc pseudo-steps (loop-copylist* (car (setq tem (cdr tem))))))
-;;       (setq tem (cdr tem))
-;;       (when *loop-emitted-body*
-;; 	(loop-error "Iteration in LOOP follows body code."))
-;;       (unless tem (setq tem data))
-;;       (when (car tem) (push (car tem) pre-loop-pre-step-tests))
-;;       (setq pre-loop-steps (nconc pre-loop-steps (loop-copylist* (car (setq tem (cdr tem))))))
-;;       (when (car (setq tem (cdr tem))) (push (car tem) pre-loop-post-step-tests))
-;;       (setq pre-loop-pseudo-steps (nconc pre-loop-pseudo-steps (loop-copylist* (cadr tem))))
-;;       (unless (loop-tequal (car *loop-source-code*) :and)
-;; 	(setq *loop-before-loop* (list* (loop-make-desetq pre-loop-pseudo-steps)
-;; 					(make-endtest pre-loop-post-step-tests)
-;; 					(loop-make-psetq pre-loop-steps)
-;; 					(make-endtest pre-loop-pre-step-tests)
-;; 					*loop-before-loop*)
-;; 	      *loop-after-body* (list* (loop-make-desetq pseudo-steps)
-;; 				       (make-endtest post-step-tests)
-;; 				       (loop-make-psetq steps)
-;; 				       (make-endtest pre-step-tests)
-;; 				       *loop-after-body*))
-;; 	(loop-bind-block)
-;; 	(return nil))
-;;       (loop-pop-source)				; flush the "AND"
-;;       (when (and (not (loop-universe-implicit-for-required *loop-universe*))
-;; 		 (setq tem (loop-lookup-keyword
-;; 			     (car *loop-source-code*)
-;; 			     (loop-universe-iteration-keywords *loop-universe*))))
-;; 	;;Latest ANSI clarification is that the FOR/AS after the AND must NOT be supplied.
-;; 	(loop-pop-source)
-;; 	(setq entry tem)))))
-;; 
-
-;; ;;;; Main Iteration Drivers
+;;;ALWAYS and NEVER.
+;;; Under ANSI these are not permitted to appear under conditionalization.
+(defun loop-do-always (restrictive negate)
+  (let ((form (loop-get-form)))
+    (when restrictive (loop-disallow-conditional))
+    (loop-emit-body `(,(if negate 'when 'unless) ,form
+		      ,(loop-construct-return nil)))
+    (loop-emit-final-value t)))
 
 
-;; ;FOR variable keyword ..args..
-;; (defun loop-do-for ()
-;;   (let* ((var (loop-pop-source))
-;; 	 (data-type (loop-optional-type var))
-;; 	 (keyword (loop-pop-source))
-;; 	 (first-arg nil)
-;; 	 (tem nil))
-;;     (setq first-arg (loop-get-form))
-;;     (unless (and (symbolp keyword)
-;; 		 (setq tem (loop-lookup-keyword
-;; 			     keyword
-;; 			     (loop-universe-for-keywords *loop-universe*))))
-;;       (loop-error "~S is an unknown keyword in FOR or AS clause in LOOP." keyword))
-;;     (apply (car tem) var first-arg data-type (cdr tem))))
+
+;;;THERIS.
+;;; Under ANSI this is not permitted to appear under conditionalization.
+(defun loop-do-thereis (restrictive)
+  (when restrictive (loop-disallow-conditional))
+  (loop-emit-body `(when (setq ,(loop-when-it-variable) ,(loop-get-form))
+		     ,(loop-construct-return *loop-when-it-variable*))))
+
+
+(defun loop-do-while (negate kwd &aux (form (loop-get-form)))
+  (loop-disallow-conditional kwd)
+  (loop-pseudo-body `(,(if negate 'when 'unless) ,form (go end-loop))))
 
 
-;; (defun loop-do-repeat ()
-;;   (let ((form (loop-get-form))
-;; 	(type (loop-check-data-type (loop-optional-type) *loop-real-data-type*)))
-;;     (when (and (consp form) (eq (car form) 'the) (subtypep (second form) type))
-;;       (setq type (second form)))
-;;     (multiple-value-bind (number constantp value)
-;; 	(loop-constant-fold-if-possible form type)
-;;       (cond ((and constantp (<= value 1)) `(t () () () ,(<= value 0) () () ()))
-;; 	    (t (let ((var (loop-make-variable (loop-gentemp 'loop-repeat-) number type)))
-;; 		 (if constantp
-;; 		     `((not (plusp (setq ,var (1- ,var)))) () () () () () () ())
-;; 		     `((minusp (setq ,var (1- ,var))) () () ()))))))))
+(defun loop-do-with ()
+  (loop-disallow-conditional :with)
+  (do ((var) (val) (dtype)) (nil)
+    (setq var (loop-pop-source)
+	  dtype (loop-optional-type var)
+	  val (cond ((loop-tequal (car *loop-source-code*) :=)
+		     (loop-pop-source)
+		     (loop-get-form))
+		    (t nil)))
+    (loop-make-variable var val dtype)
+    (if (loop-tequal (car *loop-source-code*) :and)
+	(loop-pop-source)
+	(return (loop-bind-block)))))
+
+
+;;;; The iteration driver
+
+(defun loop-hack-iteration (entry)
+  (flet ((make-endtest (list-of-forms)
+	   (cond ((null list-of-forms) nil)
+		 ((member t list-of-forms) '(go end-loop))
+		 (t `(when ,(if (null (cdr (setq list-of-forms (nreverse list-of-forms))))
+				(car list-of-forms)
+				(cons 'or list-of-forms))
+		       (go end-loop))))))
+    (do ((pre-step-tests nil)
+	 (steps nil)
+	 (post-step-tests nil)
+	 (pseudo-steps nil)
+	 (pre-loop-pre-step-tests nil)
+	 (pre-loop-steps nil)
+	 (pre-loop-post-step-tests nil)
+	 (pre-loop-pseudo-steps nil)
+	 (tem) (data))
+	(nil)
+      ;; Note we collect endtests in reverse order, but steps in correct
+      ;; order.  MAKE-ENDTEST does the nreverse for us.
+      (setq tem (setq data (apply (symbol-function (first entry)) (rest entry))))
+      (and (car tem) (push (car tem) pre-step-tests))
+      (setq steps (nconc steps (loop-copylist* (car (setq tem (cdr tem))))))
+      (and (car (setq tem (cdr tem))) (push (car tem) post-step-tests))
+      (setq pseudo-steps (nconc pseudo-steps (loop-copylist* (car (setq tem (cdr tem))))))
+      (setq tem (cdr tem))
+      (when *loop-emitted-body*
+	(loop-error "Iteration in LOOP follows body code."))
+      (unless tem (setq tem data))
+      (when (car tem) (push (car tem) pre-loop-pre-step-tests))
+      (setq pre-loop-steps (nconc pre-loop-steps (loop-copylist* (car (setq tem (cdr tem))))))
+      (when (car (setq tem (cdr tem))) (push (car tem) pre-loop-post-step-tests))
+      (setq pre-loop-pseudo-steps (nconc pre-loop-pseudo-steps (loop-copylist* (cadr tem))))
+      (unless (loop-tequal (car *loop-source-code*) :and)
+	(setq *loop-before-loop* (list* (loop-make-desetq pre-loop-pseudo-steps)
+					(make-endtest pre-loop-post-step-tests)
+					(loop-make-psetq pre-loop-steps)
+					(make-endtest pre-loop-pre-step-tests)
+					*loop-before-loop*)
+	      *loop-after-body* (list* (loop-make-desetq pseudo-steps)
+				       (make-endtest post-step-tests)
+				       (loop-make-psetq steps)
+				       (make-endtest pre-step-tests)
+				       *loop-after-body*))
+	(loop-bind-block)
+	(return nil))
+      (loop-pop-source)				; flush the "AND"
+      (when (and (not (loop-universe-implicit-for-required *loop-universe*))
+		 (setq tem (loop-lookup-keyword
+			     (car *loop-source-code*)
+			     (loop-universe-iteration-keywords *loop-universe*))))
+	;;Latest ANSI clarification is that the FOR/AS after the AND must NOT be supplied.
+	(loop-pop-source)
+	(setq entry tem)))))
+
+
+;;;; Main Iteration Drivers
 
 
-;; (defun loop-when-it-variable ()
-;;   (or *loop-when-it-variable*
-;;       (setq *loop-when-it-variable*
-;; 	    (loop-make-variable (loop-gentemp 'loop-it-) nil nil))))
-;; 
-
-;; ;;;; Various FOR/AS Subdispatches
-
-
-;; ;;;ANSI "FOR x = y [THEN z]" is sort of like the old Genera one when the THEN
-;; ;;; is omitted (other than being more stringent in its placement), and like
-;; ;;; the old "FOR x FIRST y THEN z" when the THEN is present.  I.e., the first
-;; ;;; initialization occurs in the loop body (first-step), not in the variable binding
-;; ;;; phase.
-;; (defun loop-ansi-for-equals (var val data-type)
-;;   (loop-make-iteration-variable var nil data-type)
-;;   (cond ((loop-tequal (car *loop-source-code*) :then)
-;; 	 ;;Then we are the same as "FOR x FIRST y THEN z".
-;; 	 (loop-pop-source)
-;; 	 `(() (,var ,(loop-get-form)) () ()
-;; 	   () (,var ,val) () ()))
-;; 	(t ;;We are the same as "FOR x = y".
-;; 	 `(() (,var ,val) () ()))))
+;FOR variable keyword ..args..
+(defun loop-do-for ()
+  (let* ((var (loop-pop-source))
+	 (data-type (loop-optional-type var))
+	 (keyword (loop-pop-source))
+	 (first-arg nil)
+	 (tem nil))
+    (setq first-arg (loop-get-form))
+    (unless (and (symbolp keyword)
+		 (setq tem (loop-lookup-keyword
+			     keyword
+			     (loop-universe-for-keywords *loop-universe*))))
+      (loop-error "~S is an unknown keyword in FOR or AS clause in LOOP." keyword))
+    (apply (car tem) var first-arg data-type (cdr tem))))
 
 
-;; (defun loop-for-across (var val data-type)
-;;   (loop-make-iteration-variable var nil data-type)
-;;   (let ((vector-var (loop-gentemp 'loop-across-vector-))
-;; 	(index-var (loop-gentemp 'loop-across-index-)))
-;;     (multiple-value-bind (vector-form constantp vector-value)
-;; 	(loop-constant-fold-if-possible val 'vector)
-;;       (loop-make-variable
-;; 	vector-var vector-form
-;; 	(if (and (consp vector-form) (eq (car vector-form) 'the))
-;; 	    (cadr vector-form)
-;; 	    'vector))
-;;       #+Genera (push `(system:array-register ,vector-var) *loop-declarations*)
-;;       (loop-make-variable index-var 0 'fixnum)
-;;       (let* ((length 0)
-;; 	     (length-form (cond ((not constantp)
-;; 				 (let ((v (loop-gentemp 'loop-across-limit-)))
-;; 				   (push `(setq ,v (length ,vector-var)) *loop-prologue*)
-;; 				   (loop-make-variable v 0 'fixnum)))
-;; 				(t (setq length (length vector-value)))))
-;; 	     (first-test `(>= ,index-var ,length-form))
-;; 	     (other-test first-test)
-;; 	     (step `(,var (aref ,vector-var ,index-var)))
-;; 	     (pstep `(,index-var (1+ ,index-var))))
-;; 	(declare (fixnum length))
-;; 	(when constantp
-;; 	  (setq first-test (= length 0))
-;; 	  (when (<= length 1)
-;; 	    (setq other-test t)))
-;; 	`(,other-test ,step () ,pstep
-;; 	  ,@(and (not (eq first-test other-test)) `(,first-test ,step () ,pstep)))))))
-;; 
+(defun loop-do-repeat ()
+  (let ((form (loop-get-form))
+	(type (loop-check-data-type (loop-optional-type) *loop-real-data-type*)))
+    (when (and (consp form) (eq (car form) 'the) (subtypep (second form) type))
+      (setq type (second form)))
+    (multiple-value-bind (number constantp value)
+	(loop-constant-fold-if-possible form type)
+      (cond ((and constantp (<= value 1)) `(t () () () ,(<= value 0) () () ()))
+	    (t (let ((var (loop-make-variable (loop-gentemp 'loop-repeat-) number type)))
+		 (if constantp
+		     `((not (plusp (setq ,var (1- ,var)))) () () () () () () ())
+		     `((minusp (setq ,var (1- ,var))) () () ()))))))))
 
 
-;; ;;;; List Iteration
+(defun loop-when-it-variable ()
+  (or *loop-when-it-variable*
+      (setq *loop-when-it-variable*
+	    (loop-make-variable (loop-gentemp 'loop-it-) nil nil))))
+
+
+;;;; Various FOR/AS Subdispatches
 
 
-;; (defun loop-list-step (listvar)
-;;   ;;We are not equipped to analyze whether 'FOO is the same as #'FOO here in any
-;;   ;; sensible fashion, so let's give an obnoxious warning whenever 'FOO is used
-;;   ;; as the stepping function.
-;;   ;;While a Discerning Compiler may deal intelligently with (funcall 'foo ...), not
-;;   ;; recognizing FOO may defeat some LOOP optimizations.
-;;   (let ((stepper (cond ((loop-tequal (car *loop-source-code*) :by)
-;; 			(loop-pop-source)
-;; 			(loop-get-form))
-;; 		       (t '(function cdr)))))
-;;     (cond ((and (consp stepper) (eq (car stepper) 'quote))
-;; 	   (loop-warn "Use of QUOTE around stepping function in LOOP will be left verbatim.")
-;; 	   (values `(funcall ,stepper ,listvar) nil))
-;; 	  ((and (consp stepper) (eq (car stepper) 'function))
-;; 	   (values (list (cadr stepper) listvar) (cadr stepper)))
-;; 	  (t (values `(funcall ,(loop-make-variable (loop-gentemp 'loop-fn-) stepper 'function)
-;; 			       ,listvar)
-;; 		     nil)))))
+;;;ANSI "FOR x = y [THEN z]" is sort of like the old Genera one when the THEN
+;;; is omitted (other than being more stringent in its placement), and like
+;;; the old "FOR x FIRST y THEN z" when the THEN is present.  I.e., the first
+;;; initialization occurs in the loop body (first-step), not in the variable binding
+;;; phase.
+(defun loop-ansi-for-equals (var val data-type)
+  (loop-make-iteration-variable var nil data-type)
+  (cond ((loop-tequal (car *loop-source-code*) :then)
+	 ;;Then we are the same as "FOR x FIRST y THEN z".
+	 (loop-pop-source)
+	 `(() (,var ,(loop-get-form)) () ()
+	   () (,var ,val) () ()))
+	(t ;;We are the same as "FOR x = y".
+	 `(() (,var ,val) () ()))))
 
 
-;; (defun loop-for-on (var val data-type)
-;;   (multiple-value-bind (list constantp list-value) (loop-constant-fold-if-possible val)
-;;     (let ((listvar var))
-;;       (cond ((and var (symbolp var)) (loop-make-iteration-variable var list data-type))
-;; 	    (t (loop-make-variable (setq listvar (loop-gentemp)) list 'list)
-;; 	       (loop-make-iteration-variable var nil data-type)))
-;;       (multiple-value-bind (list-step step-function) (loop-list-step listvar)
-;; 	(declare #+(and (not LOOP-Prefer-POP) (not CLOE)) (ignore step-function))
-;; 	;;@@@@ The CLOE problem above has to do with bug in macroexpansion of multiple-value-bind.
-;; 	(let* ((first-endtest
-;; 		(hide-variable-reference
-;; 		 (eq var listvar)
-;; 		 listvar
-;; 		 ;; the following should use `atom' instead of `endp', per
-;; 		 ;; [bug2428]
-;; 		 `(atom ,listvar)))
-;; 	       (other-endtest first-endtest))
-;; 	  (when (and constantp (listp list-value))
-;; 	    (setq first-endtest (null list-value)))
-;; 	  (cond ((eq var listvar)
-;; 		 ;;Contour of the loop is different because we use the user's variable...
-;; 		 `(() (,listvar ,(hide-variable-reference t listvar list-step)) ,other-endtest
-;; 		   () () () ,first-endtest ()))
-;; 		#+LOOP-Prefer-POP
-;; 		((and step-function
-;; 		      (let ((n (cdr (assoc step-function '((cdr . 1) (cddr . 2)
-;; 							   (cdddr . 3) (cddddr . 4))))))
-;; 			(and n (do ((l var (cdr l)) (i 0 (1+ i)))
-;; 				   ((atom l) (and (null l) (= i n)))
-;; 				 (declare (fixnum i))))))
-;; 		 (let ((step (mapcan #'(lambda (x) (list x `(pop ,listvar))) var)))
-;; 		   `(,other-endtest () () ,step ,first-endtest () () ,step)))
-;; 		(t (let ((step `(,var ,listvar)) (pseudo `(,listvar ,list-step)))
-;; 		     `(,other-endtest ,step () ,pseudo
-;; 		       ,@(and (not (eq first-endtest other-endtest))
-;; 			      `(,first-endtest ,step () ,pseudo)))))))))))
+(defun loop-for-across (var val data-type)
+  (loop-make-iteration-variable var nil data-type)
+  (let ((vector-var (loop-gentemp 'loop-across-vector-))
+	(index-var (loop-gentemp 'loop-across-index-)))
+    (multiple-value-bind (vector-form constantp vector-value)
+	(loop-constant-fold-if-possible val 'vector)
+      (loop-make-variable
+	vector-var vector-form
+	(if (and (consp vector-form) (eq (car vector-form) 'the))
+	    (cadr vector-form)
+	    'vector))
+      #+Genera (push `(system:array-register ,vector-var) *loop-declarations*)
+      (loop-make-variable index-var 0 'fixnum)
+      (let* ((length 0)
+	     (length-form (cond ((not constantp)
+				 (let ((v (loop-gentemp 'loop-across-limit-)))
+				   (push `(setq ,v (length ,vector-var)) *loop-prologue*)
+				   (loop-make-variable v 0 'fixnum)))
+				(t (setq length (length vector-value)))))
+	     (first-test `(>= ,index-var ,length-form))
+	     (other-test first-test)
+	     (step `(,var (aref ,vector-var ,index-var)))
+	     (pstep `(,index-var (1+ ,index-var))))
+	(declare (fixnum length))
+	(when constantp
+	  (setq first-test (= length 0))
+	  (when (<= length 1)
+	    (setq other-test t)))
+	`(,other-test ,step () ,pstep
+	  ,@(and (not (eq first-test other-test)) `(,first-test ,step () ,pstep)))))))
+
 
 
-;; (defun loop-for-in (var val data-type)
-;;   (multiple-value-bind (list constantp list-value) (loop-constant-fold-if-possible val)
-;;     (let ((listvar (loop-gentemp 'loop-list-)))
-;;       (loop-make-iteration-variable var nil data-type)
-;;       (loop-make-variable listvar list 'list)
-;;       (multiple-value-bind (list-step step-function) (loop-list-step listvar)
-;; 	#-LOOP-Prefer-POP (declare (ignore step-function))
-;; 	(let* ((first-endtest `(endp ,listvar))
-;; 	       (other-endtest first-endtest)
-;; 	       (step `(,var (car ,listvar)))
-;; 	       (pseudo-step `(,listvar ,list-step)))
-;; 	  (when (and constantp (listp list-value))
-;; 	    (setq first-endtest (null list-value)))
-;; 	  #+LOOP-Prefer-POP (when (eq step-function 'cdr)
-;; 			      (setq step `(,var (pop ,listvar)) pseudo-step nil))
-;; 	  `(,other-endtest ,step () ,pseudo-step
-;; 	    ,@(and (not (eq first-endtest other-endtest))
-;; 		   `(,first-endtest ,step () ,pseudo-step))))))))
-;; 
+;;;; List Iteration
+
+
+(defun loop-list-step (listvar)
+  ;;We are not equipped to analyze whether 'FOO is the same as #'FOO here in any
+  ;; sensible fashion, so let's give an obnoxious warning whenever 'FOO is used
+  ;; as the stepping function.
+  ;;While a Discerning Compiler may deal intelligently with (funcall 'foo ...), not
+  ;; recognizing FOO may defeat some LOOP optimizations.
+  (let ((stepper (cond ((loop-tequal (car *loop-source-code*) :by)
+			(loop-pop-source)
+			(loop-get-form))
+		       (t '(function cdr)))))
+    (cond ((and (consp stepper) (eq (car stepper) 'quote))
+	   (loop-warn "Use of QUOTE around stepping function in LOOP will be left verbatim.")
+	   (values `(funcall ,stepper ,listvar) nil))
+	  ((and (consp stepper) (eq (car stepper) 'function))
+	   (values (list (cadr stepper) listvar) (cadr stepper)))
+	  (t (values `(funcall ,(loop-make-variable (loop-gentemp 'loop-fn-) stepper 'function)
+			       ,listvar)
+		     nil)))))
+
+
+(defun loop-for-on (var val data-type)
+  (multiple-value-bind (list constantp list-value) (loop-constant-fold-if-possible val)
+    (let ((listvar var))
+      (cond ((and var (symbolp var)) (loop-make-iteration-variable var list data-type))
+	    (t (loop-make-variable (setq listvar (loop-gentemp)) list 'list)
+	       (loop-make-iteration-variable var nil data-type)))
+      (multiple-value-bind (list-step step-function) (loop-list-step listvar)
+	(declare #+(and (not LOOP-Prefer-POP) (not CLOE)) (ignore step-function))
+	;;@@@@ The CLOE problem above has to do with bug in macroexpansion of multiple-value-bind.
+	(let* ((first-endtest
+		(hide-variable-reference
+		 (eq var listvar)
+		 listvar
+		 ;; the following should use `atom' instead of `endp', per
+		 ;; [bug2428]
+		 `(atom ,listvar)))
+	       (other-endtest first-endtest))
+	  (when (and constantp (listp list-value))
+	    (setq first-endtest (null list-value)))
+	  (cond ((eq var listvar)
+		 ;;Contour of the loop is different because we use the user's variable...
+		 `(() (,listvar ,(hide-variable-reference t listvar list-step)) ,other-endtest
+		   () () () ,first-endtest ()))
+		#+LOOP-Prefer-POP
+		((and step-function
+		      (let ((n (cdr (assoc step-function '((cdr . 1) (cddr . 2)
+							   (cdddr . 3) (cddddr . 4))))))
+			(and n (do ((l var (cdr l)) (i 0 (1+ i)))
+				   ((atom l) (and (null l) (= i n)))
+				 (declare (fixnum i))))))
+		 (let ((step (mapcan #'(lambda (x) (list x `(pop ,listvar))) var)))
+		   `(,other-endtest () () ,step ,first-endtest () () ,step)))
+		(t (let ((step `(,var ,listvar)) (pseudo `(,listvar ,list-step)))
+		     `(,other-endtest ,step () ,pseudo
+		       ,@(and (not (eq first-endtest other-endtest))
+			      `(,first-endtest ,step () ,pseudo)))))))))))
+
+
+(defun loop-for-in (var val data-type)
+  (multiple-value-bind (list constantp list-value) (loop-constant-fold-if-possible val)
+    (let ((listvar (loop-gentemp 'loop-list-)))
+      (loop-make-iteration-variable var nil data-type)
+      (loop-make-variable listvar list 'list)
+      (multiple-value-bind (list-step step-function) (loop-list-step listvar)
+	#-LOOP-Prefer-POP (declare (ignore step-function))
+	(let* ((first-endtest `(endp ,listvar))
+	       (other-endtest first-endtest)
+	       (step `(,var (car ,listvar)))
+	       (pseudo-step `(,listvar ,list-step)))
+	  (when (and constantp (listp list-value))
+	    (setq first-endtest (null list-value)))
+	  #+LOOP-Prefer-POP (when (eq step-function 'cdr)
+			      (setq step `(,var (pop ,listvar)) pseudo-step nil))
+	  `(,other-endtest ,step () ,pseudo-step
+	    ,@(and (not (eq first-endtest other-endtest))
+		   `(,first-endtest ,step () ,pseudo-step))))))))
+
 
 ;; ;;;; Iteration Paths
 
