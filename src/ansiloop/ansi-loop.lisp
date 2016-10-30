@@ -1065,209 +1065,209 @@ collected result will be returned as the value of the LOOP."
 ;;;; Loop Types
 
 
-;; (defun loop-typed-init (data-type)
-;;   (when (and data-type (subtypep data-type 'number))
-;;     (if (or (subtypep data-type 'float) (subtypep data-type '(complex float)))
-;; 	(coerce 0 data-type)
-;; 	0)))
+(defun loop-typed-init (data-type)
+  (when (and data-type (subtypep data-type 'number))
+    (if (or (subtypep data-type 'float) (subtypep data-type '(complex float)))
+	(coerce 0 data-type)
+	0)))
 
 
-;; (defun loop-optional-type (&optional variable)
-;;   ;;No variable specified implies that no destructuring is permissible.
-;;   (and *loop-source-code*			;Don't get confused by NILs...
-;;        (let ((z (car *loop-source-code*)))
-;; 	 (cond ((loop-tequal z 'of-type)
-;; 		;;This is the syntactically unambigous form in that the form of the
-;; 		;; type specifier does not matter.  Also, it is assumed that the
-;; 		;; type specifier is unambiguously, and without need of translation,
-;; 		;; a common lisp type specifier or pattern (matching the variable) thereof.
-;; 		(loop-pop-source)
-;; 		(loop-pop-source))
-;; 	       ((symbolp z)
-;; 		;;This is the (sort of) "old" syntax, even though we didn't used to support all of
-;; 		;; these type symbols.
-;; 		(let ((type-spec (or (gethash z (loop-universe-type-symbols *loop-universe*))
-;; 				     (gethash (symbol-name z) (loop-universe-type-keywords *loop-universe*)))))
-;; 		  (when type-spec
-;; 		    (loop-pop-source)
-;; 		    type-spec)))
-;; 	       (t 
-;; 		;;This is our sort-of old syntax.  But this is only valid for when we are destructuring,
-;; 		;; so we will be compulsive (should we really be?) and require that we in fact be
-;; 		;; doing variable destructuring here.  We must translate the old keyword pattern typespec
-;; 		;; into a fully-specified pattern of real type specifiers here.
-;; 		(if (consp variable)
-;; 		    (unless (consp z)
-;; 		     (loop-error
-;; 			"~S found where a LOOP keyword, LOOP type keyword, or LOOP type pattern expected."
-;; 			z))
-;; 		    (loop-error "~S found where a LOOP keyword or LOOP type keyword expected." z))
-;; 		(loop-pop-source)
-;; 		(labels ((translate (k v)
-;; 			   (cond ((null k) nil)
-;; 				 ((atom k)
-;; 				  (replicate
-;; 				    (or (gethash k (loop-universe-type-symbols *loop-universe*))
-;; 					(gethash (symbol-name k) (loop-universe-type-keywords *loop-universe*))
-;; 					(loop-error
-;; 					  "Destructuring type pattern ~S contains unrecognized type keyword ~S."
-;; 					  z k))
-;; 				    v))
-;; 				 ((atom v)
-;; 				  (loop-error
-;; 				    "Destructuring type pattern ~S doesn't match variable pattern ~S."
-;; 				    z variable))
-;; 				 (t (cons (translate (car k) (car v)) (translate (cdr k) (cdr v))))))
-;; 			 (replicate (typ v)
-;; 			   (if (atom v) typ (cons (replicate typ (car v)) (replicate typ (cdr v))))))
-;; 		  (translate z variable)))))))
-;; 
+(defun loop-optional-type (&optional variable)
+  ;;No variable specified implies that no destructuring is permissible.
+  (and *loop-source-code*			;Don't get confused by NILs...
+       (let ((z (car *loop-source-code*)))
+	 (cond ((loop-tequal z 'of-type)
+		;;This is the syntactically unambigous form in that the form of the
+		;; type specifier does not matter.  Also, it is assumed that the
+		;; type specifier is unambiguously, and without need of translation,
+		;; a common lisp type specifier or pattern (matching the variable) thereof.
+		(loop-pop-source)
+		(loop-pop-source))
+	       ((symbolp z)
+		;;This is the (sort of) "old" syntax, even though we didn't used to support all of
+		;; these type symbols.
+		(let ((type-spec (or (gethash z (loop-universe-type-symbols *loop-universe*))
+				     (gethash (symbol-name z) (loop-universe-type-keywords *loop-universe*)))))
+		  (when type-spec
+		    (loop-pop-source)
+		    type-spec)))
+	       (t 
+		;;This is our sort-of old syntax.  But this is only valid for when we are destructuring,
+		;; so we will be compulsive (should we really be?) and require that we in fact be
+		;; doing variable destructuring here.  We must translate the old keyword pattern typespec
+		;; into a fully-specified pattern of real type specifiers here.
+		(if (consp variable)
+		    (unless (consp z)
+		     (loop-error
+			"~S found where a LOOP keyword, LOOP type keyword, or LOOP type pattern expected."
+			z))
+		    (loop-error "~S found where a LOOP keyword or LOOP type keyword expected." z))
+		(loop-pop-source)
+		(labels ((translate (k v)
+			   (cond ((null k) nil)
+				 ((atom k)
+				  (replicate
+				    (or (gethash k (loop-universe-type-symbols *loop-universe*))
+					(gethash (symbol-name k) (loop-universe-type-keywords *loop-universe*))
+					(loop-error
+					  "Destructuring type pattern ~S contains unrecognized type keyword ~S."
+					  z k))
+				    v))
+				 ((atom v)
+				  (loop-error
+				    "Destructuring type pattern ~S doesn't match variable pattern ~S."
+				    z variable))
+				 (t (cons (translate (car k) (car v)) (translate (cdr k) (cdr v))))))
+			 (replicate (typ v)
+			   (if (atom v) typ (cons (replicate typ (car v)) (replicate typ (cdr v))))))
+		  (translate z variable)))))))
+
 
 
-;; ;;;; Loop Variables
+;;;; Loop Variables
 
 
-;; (defun loop-bind-block ()
-;;   (when (or *loop-variables* *loop-declarations* *loop-wrappers*)
-;;     (push (list (nreverse *loop-variables*) *loop-declarations* *loop-desetq-crocks* *loop-wrappers*)
-;; 	  *loop-bind-stack*)
-;;     (setq *loop-variables* nil
-;; 	  *loop-declarations* nil
-;; 	  *loop-desetq-crocks* nil
-;; 	  *loop-wrappers* nil)))
+(defun loop-bind-block ()
+  (when (or *loop-variables* *loop-declarations* *loop-wrappers*)
+    (push (list (nreverse *loop-variables*) *loop-declarations* *loop-desetq-crocks* *loop-wrappers*)
+	  *loop-bind-stack*)
+    (setq *loop-variables* nil
+	  *loop-declarations* nil
+	  *loop-desetq-crocks* nil
+	  *loop-wrappers* nil)))
 
 
-;; (defun loop-make-variable (name initialization dtype &optional iteration-variable-p)
-;;   (cond ((null name)
-;; 	 (cond ((not (null initialization))
-;; 		(push (list (setq name (loop-gentemp 'loop-ignore-))
-;; 			    initialization)
-;; 		      *loop-variables*)
-;; 		(push `(ignore ,name) *loop-declarations*))))
-;; 	((atom name)
-;; 	 (cond (iteration-variable-p
-;; 		(if (member name *loop-iteration-variables*)
-;; 		    (loop-error "Duplicated LOOP iteration variable ~S." name)
-;; 		    (push name *loop-iteration-variables*)))
-;; 	       ((assoc name *loop-variables*)
-;; 		(loop-error "Duplicated variable ~S in LOOP parallel binding." name)))
-;; 	 (unless (symbolp name)
-;; 	   (loop-error "Bad variable ~S somewhere in LOOP." name))
-;; 	 (loop-declare-variable name dtype)
-;; 	 ;; We use ASSOC on this list to check for duplications (above),
-;; 	 ;; so don't optimize out this list:
-;; 	 (push (list name (or initialization (loop-typed-init dtype)))
-;; 	       *loop-variables*))
-;; 	(initialization
-;; 	 (cond (*loop-destructuring-hooks*
-;; 		(loop-declare-variable name dtype)
-;; 		(push (list name initialization) *loop-variables*))
-;; 	       (t (let ((newvar (loop-gentemp 'loop-destructure-)))
-;; 		    (push (list newvar initialization) *loop-variables*)
-;; 		    ;; *LOOP-DESETQ-CROCKS* gathered in reverse order.
-;; 		    (setq *loop-desetq-crocks*
-;; 		      (list* name newvar *loop-desetq-crocks*))
-;; 		    #+ignore
-;; 		    (loop-make-variable name nil dtype iteration-variable-p)))))
-;; 	(t (let ((tcar nil) (tcdr nil))
-;; 	     (if (atom dtype) (setq tcar (setq tcdr dtype))
-;; 		 (setq tcar (car dtype) tcdr (cdr dtype)))
-;; 	     (loop-make-variable (car name) nil tcar iteration-variable-p)
-;; 	     (loop-make-variable (cdr name) nil tcdr iteration-variable-p))))
-;;   name)
+(defun loop-make-variable (name initialization dtype &optional iteration-variable-p)
+  (cond ((null name)
+	 (cond ((not (null initialization))
+		(push (list (setq name (loop-gentemp 'loop-ignore-))
+			    initialization)
+		      *loop-variables*)
+		(push `(ignore ,name) *loop-declarations*))))
+	((atom name)
+	 (cond (iteration-variable-p
+		(if (member name *loop-iteration-variables*)
+		    (loop-error "Duplicated LOOP iteration variable ~S." name)
+		    (push name *loop-iteration-variables*)))
+	       ((assoc name *loop-variables*)
+		(loop-error "Duplicated variable ~S in LOOP parallel binding." name)))
+	 (unless (symbolp name)
+	   (loop-error "Bad variable ~S somewhere in LOOP." name))
+	 (loop-declare-variable name dtype)
+	 ;; We use ASSOC on this list to check for duplications (above),
+	 ;; so don't optimize out this list:
+	 (push (list name (or initialization (loop-typed-init dtype)))
+	       *loop-variables*))
+	(initialization
+	 (cond (*loop-destructuring-hooks*
+		(loop-declare-variable name dtype)
+		(push (list name initialization) *loop-variables*))
+	       (t (let ((newvar (loop-gentemp 'loop-destructure-)))
+		    (push (list newvar initialization) *loop-variables*)
+		    ;; *LOOP-DESETQ-CROCKS* gathered in reverse order.
+		    (setq *loop-desetq-crocks*
+		      (list* name newvar *loop-desetq-crocks*))
+		    #+ignore
+		    (loop-make-variable name nil dtype iteration-variable-p)))))
+	(t (let ((tcar nil) (tcdr nil))
+	     (if (atom dtype) (setq tcar (setq tcdr dtype))
+		 (setq tcar (car dtype) tcdr (cdr dtype)))
+	     (loop-make-variable (car name) nil tcar iteration-variable-p)
+	     (loop-make-variable (cdr name) nil tcdr iteration-variable-p))))
+  name)
 
 
-;; (defun loop-make-iteration-variable (name initialization dtype)
-;;   (loop-make-variable name initialization dtype t))
+(defun loop-make-iteration-variable (name initialization dtype)
+  (loop-make-variable name initialization dtype t))
 
 
-;; (defun loop-declare-variable (name dtype)
-;;   (cond ((or (null name) (null dtype) (eq dtype t)) nil)
-;; 	((symbolp name)
-;; 	 (unless (or (eq dtype t) (member (the symbol name) *loop-nodeclare*))
-;; 	   (push `(type ,dtype ,name) *loop-declarations*)))
-;; 	((consp name)
-;; 	 (cond ((consp dtype)
-;; 		(loop-declare-variable (car name) (car dtype))
-;; 		(loop-declare-variable (cdr name) (cdr dtype)))
-;; 	       (t (loop-declare-variable (car name) dtype)
-;; 		  (loop-declare-variable (cdr name) dtype))))
-;; 	(t (error "Invalid LOOP variable passed in: ~S." name))))
+(defun loop-declare-variable (name dtype)
+  (cond ((or (null name) (null dtype) (eq dtype t)) nil)
+	((symbolp name)
+	 (unless (or (eq dtype t) (member (the symbol name) *loop-nodeclare*))
+	   (push `(type ,dtype ,name) *loop-declarations*)))
+	((consp name)
+	 (cond ((consp dtype)
+		(loop-declare-variable (car name) (car dtype))
+		(loop-declare-variable (cdr name) (cdr dtype)))
+	       (t (loop-declare-variable (car name) dtype)
+		  (loop-declare-variable (cdr name) dtype))))
+	(t (error "Invalid LOOP variable passed in: ~S." name))))
 
 
-;; (defun loop-maybe-bind-form (form data-type)
-;;   (if (loop-constantp form)
-;;       form
-;;       (loop-make-variable (loop-gentemp 'loop-bind-) form data-type)))
-;; 
+(defun loop-maybe-bind-form (form data-type)
+  (if (loop-constantp form)
+      form
+      (loop-make-variable (loop-gentemp 'loop-bind-) form data-type)))
+
 
 
-;; (defun loop-do-if (for negatep)
-;;   (let ((form (loop-get-form)) (*loop-inside-conditional* t) (it-p nil))
-;;     (flet ((get-clause (for)
-;; 	     (do ((body nil)) (nil)
-;; 	       (let ((key (car *loop-source-code*)) (*loop-body* nil) data)
-;; 		 (cond ((not (symbolp key))
-;; 			(loop-error
-;; 			  "~S found where keyword expected getting LOOP clause after ~S."
-;; 			  key for))
-;; 		       (t (setq *loop-source-context* *loop-source-code*)
-;; 			  (loop-pop-source)
-;; 			  (when (loop-tequal (car *loop-source-code*) 'it)
-;; 			    (setq *loop-source-code*
-;; 				  (cons (or it-p (setq it-p (loop-when-it-variable)))
-;; 					(cdr *loop-source-code*))))
-;; 			  (cond ((or (not (setq data (loop-lookup-keyword
-;; 						       key (loop-universe-keywords *loop-universe*))))
-;; 				     (progn (apply (symbol-function (car data)) (cdr data))
-;; 					    (null *loop-body*)))
-;; 				 (loop-error
-;; 				   "~S does not introduce a LOOP clause that can follow ~S."
-;; 				   key for))
-;; 				(t (setq body (nreconc *loop-body* body)))))))
-;; 	       (if (loop-tequal (car *loop-source-code*) :and)
-;; 		   (loop-pop-source)
-;; 		   (return (if (cdr body) `(progn ,@(nreverse body)) (car body)))))))
-;;       (let ((then (get-clause for))
-;; 	    (else (when (loop-tequal (car *loop-source-code*) :else)
-;; 		    (loop-pop-source)
-;; 		    (list (get-clause :else)))))
-;; 	(when (loop-tequal (car *loop-source-code*) :end)
-;; 	  (loop-pop-source))
-;; 	(when it-p (setq form `(setq ,it-p ,form)))
-;; 	(loop-pseudo-body
-;; 	  `(if ,(if negatep `(not ,form) form)
-;; 	       ,then
-;; 	       ,@else))))))
+(defun loop-do-if (for negatep)
+  (let ((form (loop-get-form)) (*loop-inside-conditional* t) (it-p nil))
+    (flet ((get-clause (for)
+	     (do ((body nil)) (nil)
+	       (let ((key (car *loop-source-code*)) (*loop-body* nil) data)
+		 (cond ((not (symbolp key))
+			(loop-error
+			  "~S found where keyword expected getting LOOP clause after ~S."
+			  key for))
+		       (t (setq *loop-source-context* *loop-source-code*)
+			  (loop-pop-source)
+			  (when (loop-tequal (car *loop-source-code*) 'it)
+			    (setq *loop-source-code*
+				  (cons (or it-p (setq it-p (loop-when-it-variable)))
+					(cdr *loop-source-code*))))
+			  (cond ((or (not (setq data (loop-lookup-keyword
+						       key (loop-universe-keywords *loop-universe*))))
+				     (progn (apply (symbol-function (car data)) (cdr data))
+					    (null *loop-body*)))
+				 (loop-error
+				   "~S does not introduce a LOOP clause that can follow ~S."
+				   key for))
+				(t (setq body (nreconc *loop-body* body)))))))
+	       (if (loop-tequal (car *loop-source-code*) :and)
+		   (loop-pop-source)
+		   (return (if (cdr body) `(progn ,@(nreverse body)) (car body)))))))
+      (let ((then (get-clause for))
+	    (else (when (loop-tequal (car *loop-source-code*) :else)
+		    (loop-pop-source)
+		    (list (get-clause :else)))))
+	(when (loop-tequal (car *loop-source-code*) :end)
+	  (loop-pop-source))
+	(when it-p (setq form `(setq ,it-p ,form)))
+	(loop-pseudo-body
+	  `(if ,(if negatep `(not ,form) form)
+	       ,then
+	       ,@else))))))
 
 
-;; (defun loop-do-initially ()
-;;   (loop-disallow-conditional :initially)
-;;   (push (loop-get-progn) *loop-prologue*))
+(defun loop-do-initially ()
+  (loop-disallow-conditional :initially)
+  (push (loop-get-progn) *loop-prologue*))
 
-;; (defun loop-do-finally ()
-;;   (loop-disallow-conditional :finally)
-;;   (push (loop-get-progn) *loop-epilogue*))
+(defun loop-do-finally ()
+  (loop-disallow-conditional :finally)
+  (push (loop-get-progn) *loop-epilogue*))
 
-;; (defun loop-do-do ()
-;;   (loop-emit-body (loop-get-progn)))
+(defun loop-do-do ()
+  (loop-emit-body (loop-get-progn)))
 
-;; (defun loop-do-named ()
-;;   (let ((name (loop-pop-source)))
-;;     (unless (symbolp name)
-;;       (loop-error "~S is an invalid name for your LOOP." name))
-;;     (when (or *loop-before-loop* *loop-body* *loop-after-epilogue* *loop-inside-conditional*)
-;;       (loop-error "The NAMED ~S clause occurs too late." name))
-;;     (when *loop-names*
-;;       (loop-error "You may only use one NAMED clause in your loop: NAMED ~S ... NAMED ~S."
-;; 		  (car *loop-names*) name))
-;;     (setq *loop-names* (list name nil))))
+(defun loop-do-named ()
+  (let ((name (loop-pop-source)))
+    (unless (symbolp name)
+      (loop-error "~S is an invalid name for your LOOP." name))
+    (when (or *loop-before-loop* *loop-body* *loop-after-epilogue* *loop-inside-conditional*)
+      (loop-error "The NAMED ~S clause occurs too late." name))
+    (when *loop-names*
+      (loop-error "You may only use one NAMED clause in your loop: NAMED ~S ... NAMED ~S."
+		  (car *loop-names*) name))
+    (setq *loop-names* (list name nil))))
 
-;; (defun loop-do-return ()
-;;   (loop-pseudo-body (loop-construct-return (loop-get-form))))
-;; 
+(defun loop-do-return ()
+  (loop-pseudo-body (loop-construct-return (loop-get-form))))
+
 
-;; ;;;; Value Accumulation: List
+;;;; Value Accumulation: List
 
 
 ;; (defstruct (loop-collector
