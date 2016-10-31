@@ -78,6 +78,8 @@
      ("codegen"      :both)
      ("compiler"     :both))
     ("documentation" :target)
+    ("ansiloop"
+     ("ansi-loop"    :target))
     ("toplevel"      :target)))
 
 (defun source-pathname (filename &key (directory '(:relative "src")) (type nil) (defaults filename))
