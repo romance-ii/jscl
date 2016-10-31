@@ -31,16 +31,19 @@
 (test (char>= #\d #\d #\c #\a))
 (test (not (char> #\e #\d #\b #\c #\a)))
 (test (not (char>= #\e #\d #\b #\c #\a)))
-;; (char> #\z #\A) => implementation-dependent (char> #\Z #\a) => implementation-dependent
+;; (char>  #\z  #\A)  =>  implementation-dependent (char>  #\Z  #\a)  =>
+;; implementation-dependent
 (test (char-equal #\A #\a))
-;; (stable-sort  (list #\b  #\A  #\B  #\a #\c  #\C)  #'char-lessp)  => (#\A  #\a  #\b  #\B #\c  #\C)
-;; (stable-sort (list #\b #\A #\B #\a #\c #\C) #'char<) => implementation-dependent
+;; (stable-sort (list #\b #\A #\B #\a #\c #\C) #'char-lessp) => (#\A #\a
+;; #\b #\B #\c #\C) (stable-sort (list #\b #\A #\B #\a #\c #\C) #'char<)
+;; => implementation-dependent
 
 ;; CHARACTER
 (test (equal #\a (character #\a)))
 (test (equal #\a (character "a")))
-;; (test (equal #\A (character 'a))) (test (equal #\a (character '\a))) (expected-failure (character
-;; 65.)) (expected-failure (character 'apple))
+;; (test (equal #\A (character 'a)))  (test (equal #\a (character '\a)))
+;; (expected-failure   (character  65.))   (expected-failure  (character
+;; 'apple))
 
 ;; CHARACTERP
 (test (characterp #\a))
@@ -104,13 +107,13 @@
 (test (char= #\A (char-upcase #\a)))
 (test (char= #\A (char-upcase #\A)))
 (test (char= (code-char 223) (char-upcase (code-char 223))))  ;; changes length, so you get the original back
-(test (char= (code-char 127744) (char-upcase (code-char 127744))))  ;; no upper case
+(test (char= (code-char 127744) (char-upcase (code-char 127744))))  ;;no upper case
 
 ;; CHAR-DOWNCASE
 (test (char= #\a (char-downcase #\a)))
 (test (char= #\a (char-downcase #\A)))
-(test (char= (code-char 223) (char-downcase (code-char 223))))  ;; already lower case
-(test (char= (code-char 127744) (char-downcase (code-char 127744))))  ;; no lower case
+(test (char= (code-char 223) (char-downcase (code-char 223))))  ; already lower case
+(test (char= (code-char 127744) (char-downcase (code-char 127744))))  ; no lower case
 
 ;; UPPER-CASE-P, LOWER-CASE-P, BOTH-CASE-P
 (test (upper-case-p #\A))
@@ -127,7 +130,7 @@
 (test (= 127744 (char-code (code-char 127744))))
 
 ;; CHAR-INT
-(test (= (char-int #\A) (char-int #\A)))  ;; can be pretty much anything, as long as it's consistent
+(test (= (char-int #\A) (char-int #\A)))  ; can be pretty much anything, as long as it's consistent
 
 (test (= 1 (length (string (code-char 127744)))))
 
@@ -178,6 +181,6 @@
 (test (vectorp "string"))
 (test (stringp "string"))
 
-;; (test (= 2 (char-code #u+2))) CRASHER
+;; (test (= 2 (char-code #u+2))) FIXME
 (test (= 0 (char-code #\Null)))
 (test (= 10 (char-code #\Newline)))

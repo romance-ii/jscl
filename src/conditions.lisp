@@ -1,19 +1,22 @@
 ;;; conditions.lisp ---
 
-;; JSCL is  free software:  you can  redistribute it  and/or modify it  under the  terms of  the GNU
-;; General Public  License as published  by the  Free Software Foundation,  either version 3  of the
-;; License, or (at your option) any later version.
+;; JSCL is free software: you can redistribute it and/or modify it under
+;; the terms of the GNU General  Public License as published by the Free
+;; Software Foundation,  either version  3 of the  License, or  (at your
+;; option) any later version.
 ;;
-;; JSCL is distributed  in the hope that it  will be useful, but WITHOUT ANY  WARRANTY; without even
-;; the implied warranty of MERCHANTABILITY or FITNESS  FOR A PARTICULAR PURPOSE. See the GNU General
-;; Public License for more details.
+;; JSCL is distributed  in the hope that it will  be useful, but WITHOUT
+;; ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+;; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+;; for more details.
 ;;
-;; You should have  received a copy of the GNU  General Public License along with JSCL.  If not, see
-;; <http://www.gnu.org/licenses/>.
+;; You should  have received a  copy of  the GNU General  Public License
+;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
 
 
-;;; Follow here a straighforward implementation of the  condition system of Common Lisp, except that
-;;; any value will work as a condition. Because, well, we do not have conditions at this point.
+;;; Follow here a straighforward  implementation of the condition system
+;;; of Common  Lisp, except  that any  value will  work as  a condition.
+;;; Because, well, we do not have conditions at this point.
 
 
 (defvar *handler-bindings* nil)
@@ -64,7 +67,7 @@
          (let (,datum)
            (tagbody
               (%handler-bind ,(mapcar #'translate-case cases)
-                             (return-from ,nlx ,form))
+                (return-from ,nlx ,form))
               ,@(reverse tagbody-content)))))))
 
 
@@ -80,7 +83,7 @@
                  (block ,normal-return
                    (return-from ,error-return
                      (%handler-case-1 (return-from ,normal-return ,form)
-                                      ,@(butlast cases))))))))
+                       ,@(butlast cases))))))))
         `(%handler-case-1 ,form ,@cases))))
 
 
@@ -89,7 +92,7 @@
 ;;; final implementation would require CLOS.
 
 (def!struct !condition
-    type
+  type
   args)
 
 (defun condition-type-p (x type)

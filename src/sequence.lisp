@@ -1,15 +1,17 @@
 ;;; sequence.lisp
 
-;; JSCL is  free software:  you can  redistribute it  and/or modify it  under the  terms of  the GNU
-;; General Public  License as published  by the  Free Software Foundation,  either version 3  of the
-;; License, or (at your option) any later version.
+;; JSCL is free software: you can redistribute it and/or modify it under
+;; the terms of the GNU General  Public License as published by the Free
+;; Software Foundation,  either version  3 of the  License, or  (at your
+;; option) any later version.
 ;;
-;; JSCL is distributed  in the hope that it  will be useful, but WITHOUT ANY  WARRANTY; without even
-;; the implied warranty of MERCHANTABILITY or FITNESS  FOR A PARTICULAR PURPOSE. See the GNU General
-;; Public License for more details.
+;; JSCL is distributed  in the hope that it will  be useful, but WITHOUT
+;; ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+;; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+;; for more details.
 ;;
-;; You should have  received a copy of the GNU  General Public License along with JSCL.  If not, see
-;; <http://www.gnu.org/licenses/>.
+;; You should  have received a  copy of  the GNU General  Public License
+;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
 
 (/debug "loading sequence.lisp!")
 
@@ -44,6 +46,24 @@
   (etypecase sequence
     (list (revappend sequence '()))
     (vector (vector-reverse sequence))))
+
+
+(defun list-nreverse (list)
+  (do ((1st (cdr list) (if (endp 1st) 1st (cdr 1st)))
+       (2nd list 1st)
+       (3rd '() 2nd))
+      ((atom 2nd) 3rd)
+    (rplacd 2nd 3rd)))
+
+(defun nreverse (sequence)
+  (etypecase sequence
+    (list (list-nreverse sequence))
+    (vector
+     (let ((size (length sequence)))
+       (do ((i 0 (1+ i)))
+           ((< i (/ size 2)) sequence)
+         (set (elt sequence i) (elt sequence (- size i 1))))))))
+
 
 (defmacro do-sequence ((elt seq &optional (index (gensym "i") index-p)) &body body)
   (let ((nseq (gensym "seq")))
@@ -108,12 +128,12 @@
 
 (defun count-if-not (predicate sequence &key from-end (start 0) end key)
   (count-if (complement predicate) sequence :from-end from-end
-            :start start :end end :key key))
+                                            :start start :end end :key key))
 
 (defun find (item seq &key key (test #'eql testp) (test-not #'eql test-not-p))
   (do-sequence (x seq)
     (when (satisfies-test-p item x :key key :test test :testp testp
-                            :test-not test-not :test-not-p test-not-p)
+                                   :test-not test-not :test-not-p test-not-p)
       (return x))))
 
 (defun find-if (predicate sequence &key key)
@@ -234,7 +254,7 @@
             (tail head))
        (do-sequence (elt seq)
          (unless (satisfies-test-p x elt :key key :test test :testp testp
-                                   :test-not test-not :test-not-p test-not-p)
+                                         :test-not test-not :test-not-p test-not-p)
            (let ((new (list elt)))
              (rplacd tail new)
              (setq tail new))))
@@ -243,7 +263,7 @@
      (let (vector)
        (do-sequence (elt seq index)
          (if (satisfies-test-p x elt :key key :test test :testp testp
-                               :test-not test-not :test-not-p test-not-p)
+                                     :test-not test-not :test-not-p test-not-p)
              ;; Copy the beginning of the vector only when we find an element
              ;; that does not match.
              (unless vector

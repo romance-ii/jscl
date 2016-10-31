@@ -1,6 +1,7 @@
 (/debug "loading char.lisp!")
 
-;; These comparison functions heavily borrowed from SBCL/CMUCL (public domain).
+;; These comparison  functions heavily borrowed from  SBCL/CMUCL (public
+;; domain).
 
 (defun char= (character &rest more-characters)
   (dolist (c more-characters t)
@@ -205,7 +206,7 @@ For the first 32 characters ('C0 controls'), the first
     (if (<= code 127)
         (aref +ascii-names+ code)
         (format nil #-jscl "U+~4,'0x" ; HACK until padding works right.
-                #+jscl "U+~x" code))))
+                    #+jscl "U+~x" code))))
 
 (defun name-char (name)
   (let ((name (string name)))

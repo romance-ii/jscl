@@ -1,5 +1,4 @@
-                                        ; Functions    used   as    :KEY
-                                        ; argument in tests
+;; Functions used as :KEY argument in tests
 (defvar halve  (lambda (x) (/ x 2)))
 (defvar double (lambda (x) (* x 2)))
 
@@ -68,7 +67,7 @@
 (expected-failure (equal (substitute-if 9 #'evenp '(1 2 4 1 3 4 5) :count 1 :from-end t)
                          '(1 2 4 1 3 9 5)))
 
-                                        ; POSITION
+;; POSITION
 (test (= (position 1 #(1 2 3))  0))
 (test (= (position 1 '(1 2 3))  0))
 (test (= (position 1 #(1 2 3 1)) 0))
@@ -87,9 +86,9 @@
 
 ;; POSITION-IF, POSITION-IF-NOT
 (test (= 2 (position-if #'oddp '((1) (2) (3) (4)) :start 1 :key #'car)))
-(test (= 4 (position-if-not #'integerp '(1 2 3 4 X))))  ;; (hyperspec example used "5.0", but we don't have a full numeric tower yet!)
+(test (= 4 (position-if-not #'integerp '(1 2 3 4 X))))  ;; (hyperspec example used "5.0", but we don't have a full numeric tower yet!) TODO
 (test (= 4 (position-if #'oddp '((1) (2) (3) (4) (5)) :start 1 :key #'car :from-end t)))
-(test (= 4 (position-if-not #'integerp '(1 2 3 4 X Y))))  ;; (hyperspec example used "5.0", but we don't have a full numeric tower yet!)
+(test (= 4 (position-if-not #'integerp '(1 2 3 4 X Y))))  ;; (hyperspec example used "5.0", but we don't have a full numeric tower yet!) TODO
 (test (= 5 (position-if-not #'integerp '(1 2 3 4 X Y) :from-end t)))
 
                                         ; REMOVE-IF
@@ -101,11 +100,11 @@
 (test (every #'zerop (remove-if-not #'zerop #(1 0 2 0 3))))
 (test (every #'= '(0 1 2 3) '(0 1 2 3))) ; test “every” with two seqs
 
-                                        ; SUBSEQ
+;; SUBSEQ
 (let ((nums '(1 2 3 4 5)))
   (test (equal (subseq nums 3) '(4 5)))
   (test (equal (subseq nums 2 4) '(3 4)))
-                                        ; Test that nums hasn't been altered: SUBSEQ should construct fresh lists
+  ;; Test that nums hasn't been altered: SUBSEQ should construct fresh lists
   (test (equal nums '(1 2 3 4 5))))
 
 ;; REVERSE
@@ -159,16 +158,16 @@
 (test (equal (reduce #'cons '(a b c d e f) :start 1 :end 4 :from-end t)
              '(b c . d)))
 (test (equal (reduce #'cons '(a b c d e f) :start 1 :end 4 :from-end t
-                     :initial-value nil)
+                                           :initial-value nil)
              '(b c d)))
 
-                                        ; MISMATCH
+;; MISMATCH
 (test (= (mismatch '(1 2 3) '(1 2 3 4 5 6)) 3))
 (test (= (mismatch '(1 2 3) #(1 2 3 4 5 6)) 3))
 (test (= (mismatch #(1 2 3) '(1 2 3 4 5 6)) 3))
 (test (= (mismatch #(1 2 3) #(1 2 3 4 5 6)) 3))
 
-                                        ; SEARCH
+;; SEARCH
 (test (= (search '(1 2 3) '(4 5 6 1 2 3)) 3))
 (test (= (search '(1 2 3) #(4 5 6 1 2 3)) 3))
 (test (= (search #(1 2 3) '(4 5 6 1 2 3)) 3))
@@ -205,7 +204,7 @@
  (map 'list #'list "123")
  '((#\1) (#\2) (#\3)))
 
-                                        ; CHAR-UPCASE cannot be sharp-quoted currently
+;; CHAR-UPCASE cannot be sharp-quoted currently
 (test-equal
  (map 'string (lambda (c) (char-upcase c)) '(#\a #\b #\c))
  "ABC")

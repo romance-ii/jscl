@@ -2,45 +2,48 @@
 
 ;; Copyright (C) 2012, 2013 David Vazquez Copyright (C) 2012 Raimon Grau
 
-;; JSCL is  free software:  you can  redistribute it  and/or modify it  under the  terms of  the GNU
-;; General Public  License as published  by the  Free Software Foundation,  either version 3  of the
-;; License, or (at your option) any later version.
+;; JSCL is free software: you can redistribute it and/or modify it under
+;; the terms of the GNU General  Public License as published by the Free
+;; Software Foundation,  either version  3 of the  License, or  (at your
+;; option) any later version.
 ;;
-;; JSCL is distributed  in the hope that it  will be useful, but WITHOUT ANY  WARRANTY; without even
-;; the implied warranty of MERCHANTABILITY or FITNESS  FOR A PARTICULAR PURPOSE. See the GNU General
-;; Public License for more details.
+;; JSCL is distributed  in the hope that it will  be useful, but WITHOUT
+;; ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+;; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+;; for more details.
 ;;
-;; You should have  received a copy of the GNU  General Public License along with JSCL.  If not, see
-;; <http://www.gnu.org/licenses/>.
+;; You should  have received a  copy of  the GNU General  Public License
+;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
 
-;;; This code is executed when JSCL compiles  this file itself. The compiler provides compilation of
-;;; some special forms, as well as funcalls and  macroexpansion, but no functions. So, we define the
-;;; Lisp world  from scratch. This  code has to  define enough language to  the compiler to  be able
-;;; to run.
+;;; This  code  is  executed  when   JSCL  compiles  this  file  itself.
+;;; The compiler provides compilation of  some special forms, as well as
+;;; funcalls and  macroexpansion, but  no functions.  So, we  define the
+;;; Lisp world from scratch. This code  has to define enough language to
+;;; the compiler to be able to run.
 
 (/debug "loading boot.lisp!")
 
 (eval-when (:compile-toplevel)
   (let ((defmacro-macroexpander
-         '#'(lambda (form)
-              (destructuring-bind (name args &body body)
-                  form
-                (let* ((whole (gensym))
-                       (expander `(function
-                                   (lambda (,whole)
-                                    (block ,name
-                                      (destructuring-bind ,args ,whole
-                                        ,@body))))))
+          '#'(lambda (form)
+               (destructuring-bind (name args &body body)
+                   form
+                 (let* ((whole (gensym))
+                        (expander `(function
+                                    (lambda (,whole)
+                                     (block ,name
+                                       (destructuring-bind ,args ,whole
+                                         ,@body))))))
 
-                  ;; If we  are boostrapping JSCL, we  need to quote the  macroexpander, because the
-                  ;; macroexpander will need to be dumped in the final environment somehow.
-                  (when (find :jscl-xc *features*)
-                    (setq expander `(quote ,expander)))
+                   ;; If we  are boostrapping JSCL, we  need to quote the  macroexpander, because the
+                   ;; macroexpander will need to be dumped in the final environment somehow.
+                   (when (find :jscl-xc *features*)
+                     (setq expander `(quote ,expander)))
 
-                  `(eval-when (:compile-toplevel :execute)
-                     (%compile-defmacro ',name ,expander))
+                   `(eval-when (:compile-toplevel :execute)
+                      (%compile-defmacro ',name ,expander))
 
-                  )))))
+                   )))))
 
     (%compile-defmacro 'defmacro defmacro-macroexpander)))
 
@@ -117,6 +120,9 @@
 
 (defun apply (function arg &rest args)
   (apply function (apply #'list* arg args)))
+
+(defun symbol-name (x)
+  (symbol-name x))
 
 ;; Basic macros
 
@@ -323,6 +329,18 @@ macro cache is so aggressive that it cannot be redefined."
 (defun atom (x)
   (not (consp x)))
 
+(defun alpha-char-p (x)
+  (or (<= (char-code #\a) (char-code x) (char-code #\z))
+      (<= (char-code #\A) (char-code x) (char-code #\Z))))
+
+(defun digit-char-p (x)
+  (and (<= (char-code #\0) (char-code x) (char-code #\9))
+       (- (char-code x) (char-code #\0))))
+
+(defun digit-char (weight)
+  (and (<= 0 weight 9)
+       (char "0123456789" weight)))
+
 (defun equal (x y)
   (cond
     ((eql x y) t)
@@ -375,6 +393,21 @@ macro cache is so aggressive that it cannot be redefined."
   `(multiple-value-call #'list ,value-from))
 
 
+(defmacro multiple-value-setq ((&rest vars) &rest form)
+  (let ((gvars (mapcar (lambda (x) (gensym)) vars))
+        (setqs '()))
+
+    (do ((vars vars (cdr vars))
+         (gvars gvars (cdr gvars)))
+        ((or (null vars) (null gvars)))
+      (push `(setq ,(car vars) ,(car gvars))
+            setqs))
+    (setq setqs (reverse setqs))
+
+    `(multiple-value-call (lambda ,gvars ,@setqs)
+       ,@form)))
+
+
 ;; Incorrect typecase, but used in NCONC.
 (defmacro typecase (x &rest clausules)
   (let ((value (gensym)))
@@ -384,23 +417,24 @@ macro cache is so aggressive that it cannot be redefined."
                      (if (find (car c) '(t otherwise))
                          `(t ,@(rest c))
                          `((,(ecase (car c)
-                                    (number 'numberp)
-                                    (integer 'integerp)
-                                    (cons 'consp)
-                                    (list 'listp)
-                                    (vector 'vectorp)
-                                    (character 'characterp)
-                                    (sequence 'sequencep)
-                                    (symbol 'symbolp)
-                                    (keyword 'keywordp)
-                                    (function 'functionp)
-                                    (float 'floatp)
-                                    (array 'arrayp)
-                                    (string 'stringp)
-                                    (atom 'atom)
-                                    (null 'null)
-                                    (package 'packagep))
-                             ,value)
+                               (number 'numberp)
+                               (fixnum 'integerp)
+                               (integer 'integerp)
+                               (cons 'consp)
+                               (list 'listp)
+                               (vector 'vectorp)
+                               (character 'characterp)
+                               (sequence 'sequencep)
+                               (symbol 'symbolp)
+                               (keyword 'keywordp)
+                               (function 'functionp)
+                               (float 'floatp)
+                               (array 'arrayp)
+                               (string 'stringp)
+                               (atom 'atom)
+                               (null 'null)
+                               (package 'packagep))
+                            ,value)
                            ,@(or (rest c)
                                  (list nil)))))
                    clausules)))))
@@ -411,6 +445,11 @@ macro cache is so aggressive that it cannot be redefined."
        (typecase ,g!x
          ,@clausules
          (t (error "~S fell through etypecase expression." ,g!x))))))
+
+
+;;; No type system is implemented yet.
+(defun subtypep (type1 type2)
+  (values nil nil))
 
 (defun notany (fn seq)
   (not (some fn seq)))
@@ -442,6 +481,18 @@ macro cache is so aggressive that it cannot be redefined."
      ,form))
 
 
+(defun constantp (x)
+  ;; TODO: Consider quoted forms, &environment and many other
+  ;; semantics of this function.
+  (cond
+    ((symbolp x)
+     (cond
+       ((eq x t) t)
+       ((setq x nil) t)))
+    ((atom x)
+     t)
+    (t
+     nil)))
 
 (defvar *print-escape* t)
 (defvar *print-readably* t)

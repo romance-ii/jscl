@@ -24,38 +24,48 @@
 (test (= (string< "" "a") 0))
 (test (= (string< "aaa" "aaaaa") 3))
 
-;;; BUG: The  compiler will macroexpand the  forms below (char str  N) will expand to  internal SBCL
-;;; code instead  of our (setf  char). It is because  macrodefinitions during bootstrapping  are not
-;;; included in  the host's  environment. It should,  but we  have to think  how to  avoid conflicts
-;;; (package renaming??)
+;;; BUG: The compiler will macroexpand the forms below (char str N) will
+;;; expand  to internal  SBCL code  instead of  our (setf  char). It  is
+;;; because macrodefinitions  during bootstrapping  are not  included in
+;;; the host's environment. It should, but we have to think how to avoid
+;;; conflicts (package renaming??)
 
-;; (let  ((str "hello"))  (setf  (char str  0)  #\X) (setf  (char  str 4)  #\X)  (test (string=  str
-;;   "XellX")))
+;; (let ((str "hello")) (setf (char str  0) #\X) (setf (char str 4) #\X)
+;;   (test (string= str "XellX")))
 
-;; ---------------------------------------- The following  tests in this file were  derived from the
-;; file   "must-string.lisp",   part  of   SACLA   <http://homepage1.nifty.com/bmonkey/lisp/sacla/>.
-;; The origial copyright notice appears below:
+;; ---------------------------------------- The following  tests in this
+;; file were  derived from  the file  "must-string.lisp", part  of SACLA
+;; <http://homepage1.nifty.com/bmonkey/lisp/sacla/>.     The     origial
+;; copyright notice appears below:
 
-;; Copyright (C) 2002-2004, Yuji Minejima <ggb01164@nifty.ne.jp> ALL RIGHTS RESERVED.
+;; Copyright  (C) 2002-2004,  Yuji  Minejima <ggb01164@nifty.ne.jp>  ALL
+;; RIGHTS RESERVED.
 ;;
 ;; $Id: must-string.lisp,v 1.7 2004/02/20 07:23:42 yuji Exp $
 ;;
-;; Redistribution and use  in source and binary  forms, with or without  modification, are permitted
-;; provided that the following conditions are met:
+;; Redistribution and  use in source  and binary forms, with  or without
+;; modification, are  permitted provided  that the  following conditions
+;; are met:
 ;;
-;;  * Redistributions of source code must retain the above copyright notice, this list of conditions
-;;    and  the following  disclaimer. *  Redistributions  in binary  form must  reproduce the  above
-;;    copyright notice,  this list of conditions  and the following disclaimer  in the documentation
-;;    and/or other materials provided with the distribution.
+;;  * Redistributions  of source  code must  retain the  above copyright
+;;    notice, this list of conditions and the following disclaimer.
+;; 
+;;  * Redistributions in binary form  must reproduce the above copyright
+;;    notice, this  list of conditions  and the following  disclaimer in
+;;    the   documentation   and/or   other   materials   provided   with
+;;    the distribution.
 ;;
-;; THIS SOFTWARE IS  PROVIDED BY THE COPYRIGHT HOLDERS  AND CONTRIBUTORS "AS IS" AND  ANY EXPRESS OR
-;; IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED  TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
-;; FITNESS  FOR A  PARTICULAR PURPOSE  ARE DISCLAIMED.  IN  NO EVENT  SHALL THE  COPYRIGHT OWNER  OR
-;; CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-;; DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-;; DATA,  OR PROFITS;  OR BUSINESS  INTERRUPTION) HOWEVER  CAUSED AND  ON ANY  THEORY OF  LIABILITY,
-;; WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY
-;; WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+;; THIS SOFTWARE IS  PROVIDED BY THE COPYRIGHT  HOLDERS AND CONTRIBUTORS
+;; "AS IS"  AND ANY  EXPRESS OR IMPLIED  WARRANTIES, INCLUDING,  BUT NOT
+;; LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+;; A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT
+;; OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+;; SPECIAL,  EXEMPLARY, OR  CONSEQUENTIAL  DAMAGES  (INCLUDING, BUT  NOT
+;; LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+;; DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+;; THEORY OF LIABILITY,  WHETHER IN CONTRACT, STRICT  LIABILITY, OR TORT
+;; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+;; OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; JSCL: no SIMPLE-STRING-P yet, so disabled
 ;; (test (simple-string-p ""))

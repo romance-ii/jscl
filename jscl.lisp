@@ -35,13 +35,13 @@
   ;; and we are not using ASDF yet.
   (with-open-file (in (merge-pathnames "package.json" *base-directory*))
     (loop
-       for line = (read-line in nil)
-       while line
-       when (search "\"version\":" line)
-       do (let ((colon (position #\: line))
-                (comma (position #\, line)))
-            (return (string-trim '(#\newline #\" #\tab #\space)
-                                 (subseq line (1+ colon) comma)))))))
+      for line = (read-line in nil)
+      while line
+      when (search "\"version\":" line)
+        do (let ((colon (position #\: line))
+                 (comma (position #\, line)))
+             (return (string-trim '(#\newline #\" #\tab #\space)
+                                  (subseq line (1+ colon) comma)))))))
 
 
 ;;; List of all the source files that need to  be compiled, and whether they are to be compiled just
@@ -78,6 +78,8 @@
      ("codegen"      :both)
      ("compiler"     :both))
     ("documentation" :target)
+    ("ansiloop"
+     ("ansi-loop"    :target))
     ("toplevel"      :target)))
 
 (defun source-pathname (filename &key (directory '(:relative "src")) (type nil) (defaults filename))
@@ -151,14 +153,14 @@
     (let ((in (make-string-stream (read-whole-file filename))))
       (format t "Compiling ~a...~%" (enough-namestring filename))
       (loop
-         with eof-mark = (gensym)
-         for form = (ls-read in nil eof-mark)
-         until (eq form eof-mark)
-         do (let ((compilation (compile-toplevel form)))
-              (if (possibly-valid-js-p compilation)
-                  (when (plusp (length compilation))
-                    (write-string compilation out))
-                  (complain-about-illegal-chars form in compilation)))))))
+        with eof-mark = (gensym)
+        for form = (ls-read in nil eof-mark)
+        until (eq form eof-mark)
+        do (let ((compilation (compile-toplevel form)))
+             (if (possibly-valid-js-p compilation)
+                 (when (plusp (length compilation))
+                   (write-string compilation out))
+                 (complain-about-illegal-chars form in compilation)))))))
 
 (defun dump-global-environment (stream)
   (flet ((late-compile (form)
@@ -202,8 +204,8 @@
 (defun compile-test-suite ()
   (compile-application
    `(,(source-pathname "tests.lisp" :directory nil)
-      ,@(directory (source-pathname "*" :directory '(:relative "tests") :type "lisp"))
-      ,(source-pathname "tests-report.lisp" :directory nil))
+     ,@(directory (source-pathname "*" :directory '(:relative "tests") :type "lisp"))
+     ,(source-pathname "tests-report.lisp" :directory nil))
    (merge-pathnames "tests.js" *base-directory*)))
 
 (defun compile-web-repl ()
