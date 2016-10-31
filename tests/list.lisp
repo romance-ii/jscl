@@ -1,4 +1,4 @@
-;; Tests for list functions
+;;;; Tests for list functions
 
 ;; CONS
 (test (equal (cons 1 2) '(1 . 2)))
@@ -144,32 +144,32 @@
   (test (= (ninth   nums) 9))
   (test (= (tenth   nums) 10)))
 
-                                        ; TAILP
+;; TAILP
 (let* ((a (list 1 2 3))
        (b (cdr a)))
   (test (tailp b a))
   (test (tailp a a)))
 (test (tailp 'a (cons 'b 'a)))
 
-                                        ; ACONS
+;; ACONS
 (test (equal '((1 . 2) (3 . 4))
              (acons 1 2 '((3 . 4)))))
 (test (equal '((1 . 2)) (acons 1 2 ())))
 
-                                        ; PAIRLIS
+;; PAIRLIS
 (test (equal '((1 . 3) (0 . 2))
              (pairlis '(0 1) '(2 3))))
 (test (equal '((1 . 2) (a . b))
              (pairlis '(1) '(2) '((a . b)))))
 
-                                        ; COPY-ALIST
+;; COPY-ALIST
 (let* ((alist '((1 . 2) (3 . 4)))
        (copy (copy-alist alist)))
   (test (not (eql alist copy)))
   (test (not (eql (car alist) (car copy))))
   (test (equal alist copy)))
 
-                                        ; ASSOC and RASSOC
+;; ASSOC and RASSOC
 (let ((alist '((1 . 2) (3 . 4))))
   (test (equal (assoc  1 alist) '(1 . 2)))
   (test (equal (rassoc 2 alist) '(1 . 2)))
@@ -180,7 +180,7 @@
   (test (equal (assoc  1 alist :key (lambda (x) (/ x 3))) '(3 . 4)))
   (test (equal (rassoc 2 alist :key (lambda (x) (/ x 2))) '(3 . 4))))
 
-                                        ; MEMBER
+;; MEMBER
 (test (equal (member 2 '(1 2 3)) '(2 3)))
 (test (not   (member 4 '(1 2 3))))
 (test (equal (member 4 '((1 . 2) (3 . 4)) :key #'cdr) '((3 . 4))))
@@ -200,7 +200,7 @@
              (intersection '((1 . 2) (2 . 3)) '((9 . 2) (9 . 4))
                            :test #'equal :key #'cdr)))
 
-                                        ; POP
+;; POP
 (test (let* ((foo '(1 2 3))
              (bar (pop foo)))
         (and (= bar 1)

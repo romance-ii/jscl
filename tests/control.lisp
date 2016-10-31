@@ -1,5 +1,4 @@
-
-;;; Returning from a "dynamically" nested non local exists
+ ;;; Returning from a "dynamically" nested non local exists
 
 (defun foo (x)
   (when x (funcall x))
