@@ -30,8 +30,7 @@
   (:use :cl #+sbcl :sb-gray)
   (:export #:bootstrap #:bootstrap-core
            #:run-tests-in-host #:with-sharp-j #:read-#j
-           #:write-javascript-for-files #:compile-application
-           #:appendf))
+           #:write-javascript-for-files #:compile-application))
 
 (defpackage :jscl/ffi
   (:use :cl :jscl)

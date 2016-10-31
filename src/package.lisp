@@ -104,11 +104,11 @@
       (dolist (option options)
         (ecase (car option)
           (:use
-           (appendf use (cdr option)))
+           (push use (cdr option)))
           (:export
-           (appendf exports (cdr option)))
+           (push exports (cdr option)))
           (:nicknames
-           (appendf nicknames (cdr option )))))
+           (push nicknames (cdr option )))))
       (list use exports nicknames))))
 
 (defmacro defpackage (package &rest options)

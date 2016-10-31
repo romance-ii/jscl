@@ -132,16 +132,6 @@
                 ,@(cdr newval))
          ,setter))))
 
-(defmacro appendf (x place)
-  (multiple-value-bind (dummies vals newval setter getter)
-      (!get-setf-expansion place)
-    (let ((g (gensym "VALUE-")))
-      `(let* ((,g ,x)
-              ,@(mapcar #'list dummies vals)
-              (,(car newval) (cons ,getter ,g))
-              ,@(cdr newval))
-         ,setter))))
-
 (defmacro push (x place)
   (multiple-value-bind (dummies vals newval setter getter)
       (!get-setf-expansion place)
