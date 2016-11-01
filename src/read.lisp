@@ -248,7 +248,7 @@
           (dotimes (i index)
             (aset result (decf index) (pop elements)))
           result)
-       (let* ((ix index) ; Can't just use index: the same var would be captured in all fixups
+       (let* ((ix index)      ; Can't just use index: the same var would be captured in all fixups
               (*make-fixup-function* (lambda ()
                                        (lambda (obj)
                                          (aset result ix obj))))
@@ -262,9 +262,9 @@
         (read-escaped-until stream #'terminalp)))))
     (#\\
      (cond ((and (char-equal #\U (%peek-char stream))
-                 (char= #\+ (%peek-char stream 1)))
-            (%read-char stream)       ; U (or u)
-            (%read-char stream)       ; +
+                 (char=      #\+ (%peek-char stream 1)))
+            (%read-char stream)          ; U (or u)
+            (%read-char stream)          ; +
             (let ((*read-base* 16))
               (code-char (read-integer-from-stream stream))))
            (t (let ((cname

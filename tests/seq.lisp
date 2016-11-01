@@ -86,7 +86,13 @@
 
 ;; POSITION-IF, POSITION-IF-NOT
 (test (= 2 (position-if #'oddp '((1) (2) (3) (4)) :start 1 :key #'car)))
-(test (= 4 (position-if-not #'integerp '(1 2 3 4 X))))  ;; (hyperspec example used "5.0", but we don't have a full numeric tower yet!)
+(test (=  4 (position-if-not #'integerp '(1  2 3 4 X))))   ;; (hyperspec
+;; example  used
+;; "5.0", but we
+;; don't    have
+;; a        full
+;; numeric
+;; tower yet!)
 (test (= 4 (position-if #'oddp '((1) (2) (3) (4) (5)) :start 1 :key #'car :from-end t)))
 (test (= 4 (position-if-not #'integerp '(1 2 3 4 X Y))))  ;; (hyperspec example used "5.0", but we don't have a full numeric tower yet!)
 (test (= 5 (position-if-not #'integerp '(1 2 3 4 X Y) :from-end t)))

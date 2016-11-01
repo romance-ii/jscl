@@ -83,7 +83,7 @@
                           (unless (,predicate x)
                             (error "The object `~S' is not of type `~S'" x ,name-string))
                           (nth ,index x)))
-                   ;; TODO:  Implement   this  with  a   higher  level
+                   ;; TODO: Implement this with a higher level
                    ;; abstraction like defsetf or (defun (setf …))
                    (collect
                        `(define-setf-expander ,accessor-name (x)

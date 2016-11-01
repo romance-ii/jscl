@@ -217,10 +217,10 @@
 
 ;;; Validate a list of keyword arguments.
 (defun validate-keyvars (list keyword-list &optional allow-other-keys)
-  (let   (;;    If  it is non-NIL, we have to  check for unknown keyword
-          ;;    arguments in the list to signal an error in that case.
-          (allow-other-keys
-            (or allow-other-keys (keyword-lookup :allow-other-keys list))))
+  (let (;; If it is non-NIL, we have to check for unknown keyword
+        ;; arguments in the list to signal an error in that case.
+        (allow-other-keys
+          (or allow-other-keys (keyword-lookup :allow-other-keys list))))
     (unless allow-other-keys
       (do-keywords key value list
         (declare (ignore value))
@@ -329,14 +329,14 @@
 
                    whole)))
 
-        ;; Macroexpansion. Compute  bindings and generate code  for them
+        ;; Macroexpansion. Compute bindings and generate code for them
         ;; and some necessary checking.
         (compute-bindings ll expression)
         `(let* ,(reverse bindings)
            ,@body)))))
 
 
-;;; Because DEFMACRO  uses destructuring-bind to parse  the arguments of
+;;; Because DEFMACRO uses destructuring-bind to parse the arguments of
 ;;; the macro-function, we can't define DESTRUCTURING-BIND with defmacro
 ;;; to    avoid   a    circularity.   So    just   define    the   macro
 ;;; function explicitly.

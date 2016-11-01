@@ -354,7 +354,7 @@ to streams."
     (prog1 (prin1 x stream)
       (terpri stream))))
 
-
+
 ;;; FORMAT
 
 (defun format-aesthetic (arg colonp atp &optional (min-column 1))
@@ -378,26 +378,26 @@ STRING is a string of digits with an optional leading + or - sign."
         ((<= (length string) group-length)
          string)
         (t (let* ((rev (reverse string))
-         (len (length string))
+                  (len (length string))
                   (out-len (+ len (floor (1- len) group-length)))
-         (i 0) (j out-len)
-         (out (make-string out-len :initial-element comma)))
+                  (i 0) (j out-len)
+                  (out (make-string out-len :initial-element comma)))
              (while (< i len)
                (setf (aref out (decf j)) (char rev i))
                (incf i)
                (when (zerop (mod i group-length))
-        (decf j)))
+                 (decf j)))
              out))))
 
 (defun format-pad-to-right (string min-column &optional (pad-char #\space))
   "Pad a  string, right-flush, to  at least MIN-COLUMN  characters wide;
-pad  with PAD-CHAR  (or  #\Space). 
+pad  with PAD-CHAR  (or  #\Space).
 
 If the length of STRING is known, passing it in can save a few cycles."
   (let ((min-column (or min-column 1))
         (length (length string)))
     (if (< length min-column)
-            (concatenate 'string
+        (concatenate 'string
                      (make-string (- min-column length) :initial-element (or pad-char #\space))
                      string)
         string)))
@@ -416,7 +416,7 @@ bound accordingly."
   (let* ((digits (integer-to-string number *print-base* atp))
          (grouped (if colonp
                       (group-digits (or group-comma #\,) (or group-length 3) digits)
-                      digits))) 
+                      digits)))
     (format-pad-to-right grouped min-column pad-char)))
 
 (defun format-hex (arg colonp atp &optional (min-column 1) (pad-char #\space)
@@ -536,28 +536,28 @@ dispatching on the CHR ending the format sequence."
   (apply (case (char-upcase chr)
            (#\$ #'format-float-$)
            (#\( #'format-letter-case)
-           (#\< #'format-justify)
-           (#\A #'format-aesthetic)
-           (#\B #'format-binary)
-           (#\C #'format-char)
-           (#\D #'format-decimal)
-           (#\E #'format-float-e)
-           (#\F #'format-float-f)
-           (#\G #'format-float-g)
-           (#\O #'format-octal)
-           (#\R #'format-radix)
-           (#\S #'format-syntax)
-           (#\W #'format-write)
-           (#\X #'format-hex)
-           (#\[ #'format-conditional)
-           (#\{ #'format-repeat)
-           (t (warn "~~~a is not implemented yet, using ~~S instead" chr)
-              #'format-syntax))
-         arg colonp atp params))
+            (#\< #'format-justify)
+            (#\A #'format-aesthetic)
+            (#\B #'format-binary)
+            (#\C #'format-char)
+            (#\D #'format-decimal)
+            (#\E #'format-float-e)
+            (#\F #'format-float-f)
+            (#\G #'format-float-g)
+            (#\O #'format-octal)
+            (#\R #'format-radix)
+            (#\S #'format-syntax)
+            (#\W #'format-write)
+            (#\X #'format-hex)
+            (#\[ #'format-conditional)
+            (#\{ #'format-repeat)
+            (t (warn "~~~a is not implemented yet, using ~~S instead" chr)
+               #'format-syntax))
+           arg colonp atp params))
 
-(defun !format (destination control-string &rest format-arguments)
-  ;; docstring c/o SBCL
-  "Provides various facilities for formatting output.
+  (defun !format (destination control-string &rest format-arguments)
+    ;; docstring c/o SBCL
+    "Provides various facilities for formatting output.
 
   CONTROL-STRING contains a string to be output, possibly with embedded
   directives, which are flagged with the escape character \"~\". Directives
@@ -580,69 +580,69 @@ dispatching on the CHR ending the format sequence."
 
   FORMAT has many additional capabilities not described here. Consult the
   manual for details."
-  (let ((length (length control-string))
-        (i 0)
-        (output "")
-        (arguments format-arguments))
-    (while (< i length)
-      (let ((c (char control-string i)))
-        (if (char= c #\~)
-            (let (params atp colonp)
-              (tagbody
-               read-control
-                 (assert (and (< (1+ i) length) "~ at end of format"))
-                 (let ((next (char control-string (incf i))))
-                   (cond
-                     ((digit-char-p next)
-                      (multiple-value-bind (param ending)
-                          (parse-integer (subseq control-string i) :junk-allowed t)
-                        (push param params)
-                        (setf i (1+ ending)))
-                      (assert (and (< i length) "~numbers at end of format"))
-                      (unless (char= (char control-string i) #\,) 
-                        (decf i))
-                      (go read-control))
+    (let ((length (length control-string))
+          (i 0)
+          (output "")
+          (arguments format-arguments))
+      (while (< i length)
+        (let ((c (char control-string i)))
+          (if (char= c #\~)
+              (let (params atp colonp)
+                (tagbody
+                 read-control
+                   (assert (and (< (1+ i) length) "~ at end of format"))
+                   (let ((next (char control-string (incf i))))
+                     (cond
+                       ((digit-char-p next)
+                        (multiple-value-bind (param ending)
+                            (parse-integer (subseq control-string i) :junk-allowed t)
+                          (push param params)
+                          (setf i (1+ ending)))
+                        (assert (and (< i length) "~numbers at end of format"))
+                        (unless (char= (char control-string i) #\,)
+                          (decf i))
+                        (go read-control))
 
-                     ((char= #\apostrophe next)
-                      (assert (and (< (1+ i) length) "~' at end of format"))
-                      (incf i)
-                      (push (char control-string i) params)
-                      (assert (and (< (1+ i) length) "~'char at end of format"))
-                      (go read-control))
+                       ((char= #\apostrophe next)
+                        (assert (and (< (1+ i) length) "~' at end of format"))
+                        (incf i)
+                        (push (char control-string i) params)
+                        (assert (and (< (1+ i) length) "~'char at end of format"))
+                        (go read-control))
 
-                     ((char= #\, next)
-                      (push nil params)
-                      (go read-control))
+                       ((char= #\, next)
+                        (push nil params)
+                        (go read-control))
 
-                     ((char-equal #\V next)
-                      (push (pop arguments) params))
+                       ((char-equal #\V next)
+                        (push (pop arguments) params))
 
-                     ((char= #\Newline next))
+                       ((char= #\Newline next))
 
-                     ((char= #\: next)
-                      (setf colonp t)
-                      (go read-control))
-                     ((char= #\@ next)
-                      (setf atp t)
-                      (go read-control))
+                       ((char= #\: next)
+                        (setf colonp t)
+                        (go read-control))
+                       ((char= #\@ next)
+                        (setf atp t)
+                        (go read-control))
 
-                     ((char-equal #\T next)
-                      (concatf rest (make-string (min 1 (or (last params) 1)) :initial-element #\space)))
+                       ((char-equal #\T next)
+                        (concatf rest (make-string (min 1 (or (last params) 1)) :initial-element #\space)))
 
-                     ((char-equal #\P next)
-                      (when colonp
-                        (setf arguments (nthcdr (- (length format-arguments)
-                                                   (length arguments)
-                                                   1)
-                                                format-arguments)))
-                      (let ((one-p (= 1 (pop format-arguments))))
-                        (unless one-p
-                          (if atp "ies" "s"))))
+                       ((char-equal #\P next)
+                        (when colonp
+                          (setf arguments (nthcdr (- (length format-arguments)
+                                                     (length arguments)
+                                                     1)
+                                                  format-arguments)))
+                        (let ((one-p (= 1 (pop format-arguments))))
+                          (unless one-p
+                            (if atp "ies" "s"))))
 
-                     ((char= #\~ next)
-                      (concatf output "~"))
+                       ((char= #\~ next)
+                        (concatf output "~"))
 
-                     ((char= #\| next) (concatf output (string #\|)))
+                       ((char= #\| next) (concatf output (string #\|)))
                      ((char= #\% next) (concatf output (apply #'format-terpri (reverse params))))
                      ((char= #\& next) (concatf output (apply #'format-fresh-line (reverse params))))
 
@@ -655,8 +655,8 @@ dispatching on the CHR ending the format sequence."
                                                    delta) format-arguments))))
 
                      (t (concatf output (format-special next (pop arguments) (reverse params)
-                                                     :atp atp :colonp colonp)))))))
-            (concatf output (string c)))
+                                                        :atp atp :colonp colonp)))))))
+          (concatf output (string c)))
         (incf i)))
 
     (case destination
@@ -667,4 +667,7 @@ dispatching on the CHR ending the format sequence."
        output)
       (t
        (write-string output destination)))))
+
+#+jscl (fset 'format (fdefinition '!format))
+
 

@@ -212,50 +212,6 @@
     (dotimes (i size newlist)
       (push initial-element newlist))))
 
-(defun map1 (func list)
-  (with-collect
-    (while list
-      (collect (funcall func (car list)))
-      (setq list (cdr list)))))
-
-(defun mapcar (func list &rest lists)
-  (let ((lists (cons list lists)))
-    (with-collect
-      (block loop
-        (loop
-           (let ((elems (map1 #'car lists)))
-             (do ((tail lists (cdr tail)))
-                 ((null tail))
-               (when (null (car tail)) (return-from loop))
-               (rplaca tail (cdar tail)))
-             (collect (apply func elems))))))))
-
-(defun mapn (func list)
-  (with-collect
-    (while list
-      (collect (funcall func list))
-      (setq list (cdr list)))))
-
-(defun maplist (func list &rest lists)
-  (let ((lists (cons list lists)))
-    (with-collect
-      (block loop
-        (loop
-           (let ((elems (mapn #'car lists)))
-             (do ((tail lists (cdr tail)))
-                 ((null tail))
-               (when (null (car tail)) (return-from loop))
-               (rplaca tail (cdar tail)))
-             (collect (apply func elems))))))))
-
-(defun mapc (func &rest lists)
-  (do* ((tails lists (map1 #'cdr tails))
-        (elems (map1 #'car tails)
-               (map1 #'car tails)))
-       ((dolist (x tails) (when (null x) (return t)))
-        (car lists))
-    (apply func elems)))
-
 (defun last (x)
   (while (consp (cdr x))
     (setq x (cdr x)))
@@ -454,8 +410,8 @@
 ;;; a helper function for implementation  of MAPC, MAPCAR, MAPCAN, MAPL,
 ;;; MAPLIST, and MAPCON
 ;;;
-;;; Map the  designated function  over the  arglists in  the appropriate
-;;; way. It is  done when any of  the arglists runs out.  Until then, it
+;;; Map the designated function over the arglists in the appropriate
+;;; way. It is done when any of the arglists runs out. Until then, it
 ;;; CDRs down the arglists calling the function and accumulating results
 ;;; as desired.
 (defun map1 (fun-designator arglists accumulate take-car)

@@ -55,7 +55,7 @@
 
 ;;; Two seperate  functions are  needed for  escaping strings: One  for producing  JavaScript string
 ;;;  literals (which are singly or doubly quoted) And one for producing Lisp strings (which are only
-;;;   doubly quoted)
+;;;  doubly quoted)
 ;;;
 ;;; The same function would suffice for both, but for javascript string
 ;;; literals it is neater to use either depending on the context, e.g:
@@ -512,8 +512,8 @@
                 (js-stmt false))))
            (group
             (let ((in-group-p
-                    (or (null parent)
-                        (and (consp parent) (eq (car parent) 'group)))))
+                   (or (null parent)
+                       (and (consp parent) (eq (car parent) 'group)))))
               (unless  in-group-p (js-format "{"))
               (mapc #'js-stmt (cdr form))
               (unless in-group-p (js-format "}"))))
@@ -580,7 +580,7 @@
                  (js-expr object)
                  (js-end-stmt)))
            (object
-            ;; wrap ourselves within a pair of parens, in case JS EVAL
+            ;; wrap ourselves within  a pair of parens, in  case JS EVAL
             ;; interprets us as a block of code
             (js-object-initializer (cdr form) t)
             (js-end-stmt))
