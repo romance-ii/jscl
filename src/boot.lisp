@@ -1,7 +1,6 @@
 ;;; boot.lisp --- First forms to be cross compiled
 
-;; Copyright (C) 2012, 2013 David Vazquez
-;;; Copyright (C) 2012 Raimon Grau
+;; Copyright (C) 2012, 2013 David Vazquez Copyright (C) 2012 Raimon Grau
 
 ;; JSCL is free software: you can redistribute it and/or modify it under
 ;; the terms of the GNU General  Public License as published by the Free
@@ -379,6 +378,7 @@ macro cache is so aggressive that it cannot be redefined."
 (defmacro multiple-value-list (value-from)
   `(multiple-value-call #'list ,value-from))
 
+
 (defmacro multiple-value-setq ((&rest vars) &rest form)
   (let ((gvars (mapcar (lambda (x) (gensym)) vars))
         (setqs '()))
@@ -392,6 +392,7 @@ macro cache is so aggressive that it cannot be redefined."
 
     `(multiple-value-call (lambda ,gvars ,@setqs)
        ,@form)))
+
 
 ;; Incorrect typecase, but used in NCONC.
 (defmacro typecase (x &rest clausules)
@@ -459,6 +460,7 @@ macro cache is so aggressive that it cannot be redefined."
   `(multiple-value-call (lambda (&rest values)
                           (nth ,n values))
      ,form))
+
 
 (defun constantp (x)
   ;; TODO: Consider quoted forms, &environment and many other

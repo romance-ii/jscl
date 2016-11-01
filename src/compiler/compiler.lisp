@@ -17,7 +17,7 @@
 
 (/debug "loading compiler.lisp!")
 
-;;; Translate the Lisp  code to Javascript. It will  compile the special
+;;; Translate the Lisp code to Javascript. It will compile the special
 ;;; forms. Some primitive  functions are compiled as  special forms too.
 ;;; The respective  real functions  are defined in  the target  (see the
 ;;; beginning of this file) as well as some primitive functions.
@@ -47,9 +47,9 @@
   `(if ,expr ,(convert t) ,(convert nil)))
 
 
-;;; A  Form can  return a  multiple values  object calling  VALUES, like
-;;; values(arg1, arg2,  ...). It will  work in  any context, as  well as
-;;; returning  an individual  object. However,  if the  special variable
+;;; A Form can return a multiple values object calling VALUES, like
+;;; values(arg1, arg2, ...). It will work in any context, as well as
+;;; returning an individual object. However, if the special variable
 ;;; `*multiple-value-p*' is NIL, is granted  that only the primary value
 ;;; will be used, so we can optimize to avoid the VALUES function call.
 (defvar *multiple-value-p* nil)
@@ -295,8 +295,8 @@
 
 (defun lambda-check-argument-count
     (n-required-arguments n-optional-arguments rest-p)
-  ;; Note:  Remember that  we assume  that  the number  of arguments  of
-  ;; a call is at least 1 (the values argument).
+  ;; Note: Remember that we assume that the number of arguments of a
+  ;; call is at least 1 (the values argument).
   (let ((min n-required-arguments)
         (max (if rest-p 'n/a (+ n-required-arguments n-optional-arguments))))
     (block nil

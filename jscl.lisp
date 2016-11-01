@@ -53,7 +53,7 @@
 ;;; a keyword in the second element of the list. For example, this list:
 ;;; (("foo" :target)  ("bar" ("baz"  :host) ("quux" :both)))  Means that
 ;;; src/foo.lisp  and  src/bar/quux.lisp  need  to be  compiled  in  the
-;;; target, and  that src/bar/baz.lisp and src/bar/quux.lisp  need to be
+;;; target, and that src/bar/baz.lisp and src/bar/quux.lisp need to be
 ;;; compiled in the host
 (defvar *source*
   '(("boot"          :target)
@@ -169,13 +169,13 @@
   (flet ((late-compile (form)
            (let ((*standard-output* stream))
              (write-string (compile-toplevel form)))))
-    ;; We assume  that environments have a  friendly list representation
+    ;; We assume that environments have a friendly list representation
     ;; for the compiler and it can be dumped.
     (dolist (b (lexenv-function *environment*))
       (when (eq (binding-type b) 'macro)
         (setf (binding-value b) `(,*magic-unquote-marker* ,(binding-value b)))))
     (late-compile `(setq *environment* ',*environment*))
-    ;; Set some  counter variable properly,  so user compiled  code will
+    ;; Set some counter variable properly, so user compiled code will
     ;; not collide with the compiler itself.
     (late-compile
      `(progn

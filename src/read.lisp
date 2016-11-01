@@ -13,18 +13,18 @@
 ;; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
 ;; for more details.
 ;;
-;; You should  have received a  copy of  the GNU General  Public License
-;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
+;; You should have received a copy of the GNU General Public License
+;; along with JSCL.  If not, see <http://www.gnu.org/licenses/>.
 
 (/debug "loading read.lisp!")
 
 ;;;; Reader
 
-;;; If it  is not NIL, we  do not want  to read the expression  but just
+;;; If it is not NIL, we do not want to read the expression but just
 ;;; ignore it. For example, it is used in conditional reads #+.
 (defvar *read-skip-p* nil)
 
-;;; The Lisp  reader, parse  strings and return  Lisp objects.  The main
+;;; The Lisp reader, parse strings and return Lisp objects. The main
 ;;; entry points are `ls-read' and `ls-read-from-string'.
 
 ;;; #= / ## implementation
@@ -135,26 +135,26 @@
     (skip-whitespaces stream)
     (setq ch (%peek-char stream))
     (while (and ch (char= ch #\;))
-      (read-until stream (lambda (x) (char= x #\newline)))
-      (skip-whitespaces stream)
-      (setq ch (%peek-char stream)))))
+                          (read-until stream (lambda (x) (char= x #\newline)))
+                          (skip-whitespaces stream)
+                          (setq ch (%peek-char stream)))))
 
-(defun discard-char (stream expected)
-  (let ((ch (%read-char stream)))
-    (when (null ch)
-      (error "End of file when character ~S was expected." expected))
-    (unless (char= ch expected)
-      (error "Character ~S was found but ~S was expected." ch expected))))
+    (defun discard-char (stream expected)
+      (let ((ch (%read-char stream)))
+        (when (null ch)
+          (error "End of file when character ~S was expected." expected))
+        (unless (char= ch expected)
+          (error "Character ~S was found but ~S was expected." ch expected))))
 
-(defun %read-list (stream &optional (eof-error-p t) eof-value)
-  (skip-whitespaces-and-comments stream)
-  (let ((ch (%peek-char stream)))
-    (cond
-      ((null ch)
-       (error "Unexpected EOF"))
-      ((char= ch #\))
-       (discard-char stream #\))
-       nil)
+    (defun %read-list (stream &optional (eof-error-p t) eof-value)
+      (skip-whitespaces-and-comments stream)
+      (let ((ch (%peek-char stream)))
+        (cond
+          ((null ch)
+           (error "Unexpected EOF"))
+          ((char= ch #\))
+          (discard-char stream #\))
+        nil)
       (t
        (let* ((cell (cons nil nil))
               (*make-fixup-function* (lambda ()
@@ -167,27 +167,27 @@
          (cond
            ((eq next eof)
             (discard-char stream #\))
-            nil)
-           (t
-            (if (char= (%peek-char stream) #\.)
-                (progn
-                  (discard-char stream #\.)
-                  (if (terminalp (%peek-char stream))
-                      (let ((*make-fixup-function* (lambda ()
-                                                     (lambda (obj)
-                                                       (rplacd cell obj)))))
-                        ;; Dotted pair notation
-                        (rplacd cell (ls-read stream eof-error-p eof-value t))
-                        (skip-whitespaces-and-comments stream)
-                        (let ((ch (%peek-char stream)))
-                          (if (or (null ch) (char= #\) ch))
-                              (discard-char stream #\))
-                              (error "Multiple objects following . in a list"))))
-                      (let ((token (concat "." (read-escaped-until stream #'terminalp))))
-                        (rplacd cell (cons (interpret-token token)
-                                           (%read-list stream eof-error-p eof-value))))))
-                (rplacd cell (%read-list stream eof-error-p eof-value)))
-            cell)))))))
+           nil)
+         (t
+          (if (char= (%peek-char stream) #\.)
+              (progn
+                (discard-char stream #\.)
+                (if (terminalp (%peek-char stream))
+                    (let ((*make-fixup-function* (lambda ()
+                                                   (lambda (obj)
+                                                     (rplacd cell obj)))))
+                      ;; Dotted pair notation
+                      (rplacd cell (ls-read stream eof-error-p eof-value t))
+                      (skip-whitespaces-and-comments stream)
+                      (let ((ch (%peek-char stream)))
+                        (if (or (null ch) (char= #\) ch))
+                        (discard-char stream #\))
+                      (error "Multiple objects following . in a list"))))
+              (let ((token (concat "." (read-escaped-until stream #'terminalp))))
+                (rplacd cell (cons (interpret-token token)
+                                   (%read-list stream eof-error-p eof-value))))))
+         (rplacd cell (%read-list stream eof-error-p eof-value)))
+       cell)))))))
 
 (defun read-string (stream)
   (let ((string "")
@@ -237,78 +237,78 @@
       (#\.
        (eval (ls-read stream)))
       (#\(
-       (do ((elements nil)
-            (result nil)
-            (index 0 (1+ index)))
-           ((progn (skip-whitespaces-and-comments stream)
-                   (or (null (%peek-char stream))
-                       (char= (%peek-char stream) #\))))
+          (do ((elements nil)
+               (result nil)
+               (index 0 (1+ index)))
+              ((progn (skip-whitespaces-and-comments stream)
+                      (or (null (%peek-char stream))
+                          (char= (%peek-char stream) #\))))
             (discard-char stream #\))
-            (setf result (make-array index))
-            (dotimes (i index)
-              (aset result (decf index) (pop elements)))
-            result)
-         (let* ((ix index)      ; Can't just use index: the same var would be captured in all fixups
-                (*make-fixup-function* (lambda ()
-                                         (lambda (obj)
-                                           (aset result ix obj))))
-                (eof (gensym))
-                (value (ls-read stream nil eof t)))
-           (push value elements))))
-      (#\:
-       (make-symbol
-        (unescape-token
-         (string-upcase-noescaped
-          (read-escaped-until stream #'terminalp)))))
-      (#\\
-       (cond ((and (char-equal #\U (%peek-char stream))
-                   (char= #\+ (%peek-char stream 1)))
-              (%read-char stream)       ; U (or u)
-              (%read-char stream)       ; +
-              (let ((*read-base* 16))
-                (code-char (read-integer-from-stream stream))))
-             (t (let ((cname
-                        (concat (string (%read-char stream))
-                                (read-until stream #'terminalp))))
-                  (let ((ch (name-char cname)))
-                    (or ch (char cname 0)))))))
-      ((#\+ #\-)
-       (let* ((expression
-                (let ((*package* (find-package :keyword)))
-                  (ls-read stream eof-error-p eof-value t))))
+          (setf result (make-array index))
+          (dotimes (i index)
+            (aset result (decf index) (pop elements)))
+          result)
+       (let* ((ix index) ; Can't just use index: the same var would be captured in all fixups
+              (*make-fixup-function* (lambda ()
+                                       (lambda (obj)
+                                         (aset result ix obj))))
+              (eof (gensym))
+              (value (ls-read stream nil eof t)))
+         (push value elements))))
+    (#\:
+     (make-symbol
+      (unescape-token
+       (string-upcase-noescaped
+        (read-escaped-until stream #'terminalp)))))
+    (#\\
+     (cond ((and (char-equal #\U (%peek-char stream))
+                 (char= #\+ (%peek-char stream 1)))
+            (%read-char stream)       ; U (or u)
+            (%read-char stream)       ; +
+            (let ((*read-base* 16))
+              (code-char (read-integer-from-stream stream))))
+           (t (let ((cname
+                      (concat (string (%read-char stream))
+                              (read-until stream #'terminalp))))
+                (let ((ch (name-char cname)))
+                  (or ch (char cname 0)))))))
+    ((#\+ #\-)
+     (let* ((expression
+              (let ((*package* (find-package :keyword)))
+                (ls-read stream eof-error-p eof-value t))))
 
-         (if (eql (char= ch #\+) (eval-feature-expression expression))
-             (ls-read stream eof-error-p eof-value t)
-             (prog2 (let ((*read-skip-p* t))
-                      (ls-read stream))
-                 (ls-read stream eof-error-p eof-value t)))))
-      ((#\B #\b)
-       (let ((*read-base* 2))
-         (read-integer-from-stream stream)))
-      ((#\J #\j)
-       (unless (char= (%peek-char stream) #\:)
-         (error "FFI descriptor must start with a colon."))
-       (let ((descriptor (subseq (read-until stream #'terminalp) 1))
-             (subdescriptors nil))
-         (do* ((start 0 (1+ end))
-               (end (position #\: descriptor :start start)
-                    (position #\: descriptor :start start)))
-              ((null end)
-               (push (subseq descriptor start) subdescriptors)
-               `(oget *root* ,@(reverse subdescriptors)))
-           (push (subseq descriptor start end) subdescriptors))))
-      ((#\O #\o)
-       (let ((*read-base* 8))
-         (read-integer-from-stream stream)))
-      ((#\X #\x)
-       (let ((*read-base* 16))
-         (read-integer-from-stream stream)))
-      (#\|
+       (if (eql (char= ch #\+) (eval-feature-expression expression))
+           (ls-read stream eof-error-p eof-value t)
+           (prog2 (let ((*read-skip-p* t))
+                    (ls-read stream))
+               (ls-read stream eof-error-p eof-value t)))))
+    ((#\B #\b)
+     (let ((*read-base* 2))
+       (read-integer-from-stream stream)))
+    ((#\J #\j)
+     (unless (char= (%peek-char stream) #\:)
+       (error "FFI descriptor must start with a colon."))
+     (let ((descriptor (subseq (read-until stream #'terminalp) 1))
+           (subdescriptors nil))
+       (do* ((start 0 (1+ end))
+             (end (position #\: descriptor :start start)
+                  (position #\: descriptor :start start)))
+            ((null end)
+             (push (subseq descriptor start) subdescriptors)
+             `(oget *root* ,@(reverse subdescriptors)))
+         (push (subseq descriptor start end) subdescriptors))))
+    ((#\O #\o)
+     (let ((*read-base* 8))
+       (read-integer-from-stream stream)))
+    ((#\X #\x)
+     (let ((*read-base* 16))
+       (read-integer-from-stream stream)))
+    (#\|
        (labels ((read-til-bar-sharpsign ()
                   (do ((ch (%read-char stream) (%read-char stream)))
                       ((and (char= ch #\|) (char= (%peek-char stream) #\#))
-                       (%read-char stream))
-                    (when (and (char= ch #\#) (char= (%peek-char stream) #\|))
+  (%read-char stream))
+(when (and (char= ch #\#) (char= (%peek-char stream) #\|))
                       (%read-char stream)
                       (read-til-bar-sharpsign)))))
          (read-til-bar-sharpsign)
@@ -330,7 +330,7 @@
                      (let ((obj (ls-read stream eof-error-p eof-value t)))
                        ;; FIXME: somehow the more natural
  ;;;    (setf (cdr (find-labelled-object id)) obj)
-                       ;;    doesn't work
+                       ;; doesn't work
                        (rplacd (find-labelled-object id) obj)
                        obj))))
               ((#\0 #\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9)
