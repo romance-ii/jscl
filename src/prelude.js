@@ -1,29 +1,31 @@
-/* This file, unlike the rest of the project is distributed under a permissive
- * license, as it will be included in the generated code. */
+/* This  file, unlike  the  rest  of the  project  is distributed  under
+ * a  permissive  license, as  it  will  be  included in  the  generated
+ * code. */
 
 /*
  * Permission is hereby granted, free of charge, to any person obtaining
- * a copy of this software and associated documentation files (the
- * "Software"), to deal in the Software without restriction, including
- * without limitation the rights to use, copy, modify, merge, publish,
- * distribute, sublicense, and/or sell copies of the Software, and to
+ * a  copy of  this  software and  associated  documentation files  (the
+ * "Software"), to  deal in the Software  without restriction, including
+ * without limitation the  rights to use, copy,  modify, merge, publish,
+ * distribute, sublicense,  and/or sell copies  of the Software,  and to
  * permit persons to whom the Software is furnished to do so, subject to
  * the following conditions:
  *
- * The above copyright notice and this permission notice shall be
+ * The  above  copyright notice  and  this  permission notice  shall  be
  * included in all copies or substantial portions of the Software.
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
- * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- * NON INFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
- * LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
- * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
- * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ * THE  SOFTWARE IS  PROVIDED "AS  IS",  WITHOUT WARRANTY  OF ANY  KIND,
+ * EXPRESS OR  IMPLIED, INCLUDING BUT  NOT LIMITED TO THE  WARRANTIES OF
+ * MERCHANTABILITY,   FITNESS  FOR   A   PARTICULAR   PURPOSE  AND   NON
+ * INFRINGEMENT. IN NO  EVENT SHALL THE AUTHORS OR  COPYRIGHT HOLDERS BE
+ * LIABLE  FOR ANY  CLAIM, DAMAGES  OR  OTHER LIABILITY,  WHETHER IN  AN
+ * ACTION OF  CONTRACT, TORT OR  OTHERWISE, ARISING  FROM, OUT OF  OR IN
+ * CONNECTION  WITH  THE  SOFTWARE  OR  THE USE  OR  OTHER  DEALINGS  IN
+ * THE SOFTWARE.
  *
  */
 
-// This file is prepended to the result of compile jscl.lisp, and
+// This  file is  prepended  to  the result  of  compile jscl.lisp,  and
 // contain runtime code that jscl assumes to exist.
 
 var t;
@@ -39,9 +41,9 @@ else
 
 var internals = jscl.internals = {};
 
-internals.globalEval = function(code){
+internals.globalEval = function(code) {
     var geval = eval;       // Just an indirect eval
-    var fn = geval('(function(values, internals){ "use strict"; ' + code + '; })');
+    var fn = geval('(function(values, internals) { "use strict"; ' + code + '; })');
     return fn(internals.mv, internals);
 };
 
@@ -49,7 +51,7 @@ internals.pv = function(x) {
     return x==undefined? nil: x;
 };
 
-internals.mv = function(){
+internals.mv = function() {
     var r = [].slice.call(arguments);
     r['multiple-value'] = true;
     return r;
@@ -71,7 +73,7 @@ internals.forcemv = function(x) {
 // #j:Date) will be converted into a Lisp function. We track the
 // original function in the jscl_original property as we can't wrap
 // the primitive constructor in a Lisp function or it will not work.
-internals.newInstance = function(values, ct){
+internals.newInstance = function(values, ct) {
     var args = Array.prototype.slice.call(arguments);
     var newCt = ct.bind.apply(ct.jscl_original || ct, args.slice(1));
     return new newCt();
@@ -84,15 +86,15 @@ internals.newInstance = function(values, ct){
 // values from the eval function.
 var values = internals.mv;
 
-internals.checkArgsAtLeast = function(args, n){
+internals.checkArgsAtLeast = function(args, n) {
     if (args < n) throw new Error('too few arguments; needed at least ' + n + ' but got only ' + args);
 };
 
-internals.checkArgsAtMost = function(args, n){
+internals.checkArgsAtMost = function(args, n) {
     if (args > n) throw new Error ('too many arguments; needed at most ' + n + ' but got ' + args);
 };
 
-internals.checkArgs = function(args, n){
+internals.checkArgs = function(args, n) {
     internals.checkArgsAtLeast(args, n);
     internals.checkArgsAtMost(args, n);
 };
@@ -105,7 +107,7 @@ internals.Cons = function (car, cdr) {
     this.cdr = cdr;
 };
 
-internals.car = function(x){
+internals.car = function(x) {
     if (x === nil)
         return nil;
     else if (x instanceof internals.Cons)
@@ -116,7 +118,7 @@ internals.car = function(x){
     }
 };
 
-internals.cdr = function(x){
+internals.cdr = function(x) {
     if (x === nil)
         return nil;
     else if (x instanceof internals.Cons)
@@ -126,13 +128,13 @@ internals.cdr = function(x){
 };
 
 // Improper list constructor (like LIST*)
-internals.QIList = function(){
+internals.QIList = function() {
     if (arguments.length == 1)
         return arguments[0];
     else {
         var i = arguments.length-1;
         var r = arguments[i--];
-        for (; i>=0; i--){
+        for (; i>=0; i--) {
             r = new internals.Cons(arguments[i], r);
         }
         return r;
@@ -159,7 +161,7 @@ function codepoints (string) {
 };
 
 // Create and return a lisp string for the Javascript string STRING.
-internals.make_lisp_string = function (string){
+internals.make_lisp_string = function (string) {
     var array = codepoints(string);
     array.stringp = 1;
     return array;
@@ -214,7 +216,7 @@ internals.safe_char_downcase = function(x) {
     }
 };
 
-internals.xstring = function(x){
+internals.xstring = function(x) {
     return x.join('');
 };
 
@@ -226,9 +228,9 @@ internals.lisp_to_js = function (x) {
         return true;
     else if (x === nil)
         return false;
-    else if (typeof x == 'function'){
+    else if (typeof x == 'function') {
         // Trampoline calling the Lisp function
-        return (function(){
+        return (function() {
             var args = Array.prototype.slice.call(arguments);
             for (var i in args)
                 args[i] = internals.js_to_lisp(args[i]);
@@ -245,9 +247,9 @@ internals.js_to_lisp = function (x) {
         return t;
     else if (x === false)
         return nil;
-    else if (typeof x == 'function'){
+    else if (typeof x == 'function') {
         // Trampoline calling the JS function
-        var trampoline = function(values){
+        var trampoline = function(values) {
             var args = Array.prototype.slice.call(arguments, 1);
             for (var i in args)
                 args[i] = internals.lisp_to_js(args[i]);
@@ -262,23 +264,23 @@ internals.js_to_lisp = function (x) {
 
 // Non-local exits
 
-internals.BlockNLX = function (id, values, name){
+internals.BlockNLX = function (id, values, name) {
     this.id = id;
     this.values = values;
     this.name = name;
 };
 
-internals.CatchNLX = function (id, values){
+internals.CatchNLX = function (id, values) {
     this.id = id;
     this.values = values;
 };
 
-internals.TagNLX = function (id, label){
+internals.TagNLX = function (id, label) {
     this.id = id;
     this.label = label;
 };
 
-internals.isNLX = function(x){
+internals.isNLX = function(x) {
     var i = internals;
     return x instanceof i.BlockNLX
         ||  x instanceof i.CatchNLX
@@ -324,29 +326,43 @@ packages.KEYWORD = {
 jscl.CL = packages.CL.exports;
 
 function unboundFunction () {
-    throw new Error("Function '" + this.name + "' undefined");
+    throw new Error("Function '" + this['package'] + '::' + this.name + "' undefined");
 }
 
-internals.Symbol = function(name, package_name){
+internals.Symbol = function(name, package_name) {
     this.name = name;
-    this["package"] = package_name;
+    if (typeof package_name == 'String') {
+        this["package"] = package_name;
+    } else if (typeof package_name == 'object') {
+        if (! package_name.packageName) {
+            throw new Error ("Interning symbol " + name + "; package name " +
+                             package_name + " is not a package object");
+        }
+        this["package"] = package_name.packageName;
+    } else {
+        throw new Error ("Interning symbol " + name + "; package name " +
+                         package_name + " is not a string nor package");
+    }
+    if (packages[this['package']] === undefined) {
+        throw new Error ("No package named " + this["package"] + " in which to intern " + name);
+    }
     this.value = undefined;
     this.fvalue = unboundFunction;
 };
 
-internals.symbolValue = function (symbol){
+internals.symbolValue = function (symbol) {
     if (symbol === undefined) {
         throw new Error("Trying to take the value of «undefined» as a symbol");
     }
     var value = symbol.value;
-    if (value === undefined){
+    if (value === undefined) {
         throw new Error("Variable " + ((symbol !== undefined) ? symbol.name || "(unnamed symbol)" : "(undefined symbol)") + " is unbound.");
     } else {
         return value;
     }
 };
 
-internals.symbolFunction = function (symbol){
+internals.symbolFunction = function (symbol) {
     var fn = symbol.fvalue;
     if (fn === unboundFunction)
         symbol.fvalue();
@@ -354,22 +370,22 @@ internals.symbolFunction = function (symbol){
 };
 
 
-internals.bindSpecialBindings = function (symbols, values, callback){
+internals.bindSpecialBindings = function (symbols, values, callback) {
     try {
-        symbols.forEach(function(s, i){
+        symbols.forEach(function(s, i) {
             s.stack = s.stack || [];
             s.stack.push(s.value);
             s.value = values[i];
         });
         return callback();
     } finally {
-        symbols.forEach(function(s, i){
+        symbols.forEach(function(s, i) {
             s.value = s.stack.pop();
         });
     }
 };
 
-internals.intern = function (name, package_name){
+internals.intern = function (name, package_name) {
     package_name = package_name || "JSCL";
     var lisp_package = packages[package_name];
     if (!lisp_package)
@@ -388,7 +404,7 @@ internals.intern = function (name, package_name){
 
 /* execute all script tags with type of x-common-lisp */
 var eval_in_lisp;        // set in FFI.lisp
-if (typeof window !== "undefined"){
+if (typeof window !== "undefined") {
     window.onload = (function () {
         var scripts = document.scripts;
         for (var i = 0; i < scripts.length; ++i) {

@@ -570,8 +570,8 @@
                  (js-expr object)
                  (js-end-stmt)))
            (object
-            ;; wrap ourselves within a  pair of parens, in case JS EVAL interprets  us as a block of
-            ;; code
+            ;; wrap ourselves within  a pair of parens, in  case JS EVAL
+            ;; interprets us as a block of code
             (js-object-initializer (cdr form) t)
             (js-end-stmt))
            (t

@@ -545,12 +545,6 @@
       ;; Uninterned symbol
       ((null package)
        `(new (call-internal |Symbol| ,(symbol-name symbol))))
-      ;; Special case for bootstrap. For now,  we just load all the code
-      ;; with  JSCL as  the current  package. We  will compile  the JSCL
-      ;; package as CL in the target.
-      #-jscl
-      ((eq package (find-package "JSCL"))
-       `(call-internal |intern| ,(symbol-name symbol)))
       ;; Interned symbol
       (t
        `(call-internal |intern| ,(symbol-name symbol) ,(package-name package))))))
@@ -1510,22 +1504,22 @@
         (mapcar #'convert args)))
 
 (defun compile-funcall (function args)
-  (restart-case
-      (let* ((arglist (compile-funcall/args-list args)))
-        (cond
-          ((translate-function function)
-           (compile-funcall/translate-function function arglist))
-          ((and (symbolp function) (!macro-function function))
-           (error "Compiler error: Macro function was not expanded: ~s" function))
-          ((symbolp function)
-           (compile-funcall/function function arglist))
-          ((not (consp function))
-           (error "Bad function designator `~s'" function))
-          ((eql (car function) 'lambda)
-           (compile-funcall/lambda function arglist))
-          ((eql (car function) 'jscl/ffi:oget)
-           (compile-funcall/oget function args))
-          (t (compile-funcall/error function))))))
+  ;;;; There was a RESTART-CASE here with no restarts. Does any make sense?
+  (let* ((arglist (compile-funcall/args-list args)))
+    (cond
+      ((translate-function function)
+       (compile-funcall/translate-function function arglist))
+      ((and (symbolp function) (!macro-function function))
+       (error "Compiler error: Macro function was not expanded: ~s" function))
+      ((symbolp function)
+       (compile-funcall/function function arglist))
+      ((not (consp function))
+       (error "Bad function designator `~s'" function))
+      ((eql (car function) 'lambda)
+       (compile-funcall/lambda function arglist))
+      ((eql (car function) 'jscl/ffi:oget)
+       (compile-funcall/oget function args))
+      (t (compile-funcall/error function)))))
 
 (defun convert-block (sexps &optional return-last-p decls-allowed-p)
   (multiple-value-bind (sexps decls)
@@ -1585,10 +1579,9 @@
            (eql (find-package "COMMON-LISP")
                 (symbol-package (car sexp)))
            (macro-function (car sexp)))
-      (progn
-        (warn "Failed to macroexpand ~s ~% in ~s"
-              (car sexp) sexp)
-        (list 'error (format nil "Failed compilation of ~s" sexp)))
+      (error "Failed to macroexpand ~s ~% in ~s"
+             (car sexp) sexp)
+      
       sexp))
 
 (defun object-evaluates-to-itself-p (object)
