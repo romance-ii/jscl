@@ -1,5 +1,8 @@
 all:	jscl.js
 
+clean:
+	-rm -f jscl.js tests.js repl-node.js repl-web.js
+
 jscl.js:	$(shell find . -name \*.lisp)
 	./make.sh
 
