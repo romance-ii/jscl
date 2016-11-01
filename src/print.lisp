@@ -44,8 +44,8 @@
       (incf index))
     (concat "\"" output "\"")))
 
-;;; Return T if the string S contains characters which  need to be escaped to print the symbol name,
-;;; NIL otherwise.
+;;; Return  T if  the  string S  contains characters  which  need to  be
+;;; escaped to print the symbol name, NIL otherwise.
 (defun escape-symbol-name-p (s)
   (let ((dots-only t))
     (dotimes (i (length s))

@@ -193,16 +193,16 @@
 ;;; Return T if KEYWORD is supplied in the list of arguments LIST.
 (defun keyword-supplied-p (keyword list)
   (do-keywords key value list
-               (declare (ignore value))
-               (when (eq key keyword) (return t))
-               (setq list (cddr list))))
+    (declare (ignore value))
+    (when (eq key keyword) (return t))
+    (setq list (cddr list))))
 
 ;;; Return the value of KEYWORD in the  list of arguments LIST or NIL if
 ;;; it is not supplied.
 (defun keyword-lookup (keyword list)
   (do-keywords key value list
-               (when (eq key keyword) (return value))
-               (setq list (cddr list))))
+    (when (eq key keyword) (return value))
+    (setq list (cddr list))))
 
 (defun validate-reqvars (list n)
   (unless (listp list)
@@ -219,14 +219,14 @@
 ;;; Validate a list of keyword arguments.
 (defun validate-keyvars (list keyword-list &optional allow-other-keys)
   (let  (;; If  it is  non-NIL,  we have  to check  for unknown  keyword
-        ;; arguments in the list to signal an error in that case.
-        (allow-other-keys
-         (or allow-other-keys (keyword-lookup :allow-other-keys list))))
+         ;; arguments in the list to signal an error in that case.
+         (allow-other-keys
+          (or allow-other-keys (keyword-lookup :allow-other-keys list))))
     (unless allow-other-keys
       (do-keywords key value list
-                   (declare (ignore value))
-                   (unless (find key keyword-list)
-                     (error "Unknown keyword argument `~S'." key))))
+        (declare (ignore value))
+        (unless (find key keyword-list)
+          (error "Unknown keyword argument `~S'." key))))
     (do* ((tail list (cddr tail))
           (key (car tail) (car tail)))
          ((null tail) list)
@@ -265,7 +265,7 @@
                (compute-bindings (ll form)
                  (let ((reqvar-count (length (lambda-list-reqvars ll)))
                        (optvar-count (length (lambda-list-optvars ll)))
-                       (whole (or (lambda-list-wholevar ll) 
+                       (whole (or (lambda-list-wholevar ll)
                                   (gensym "LAMBDA-LIST-WHOLE-"))))
                    ;; Create a  binding for  the whole  expression FORM.
                    ;; It will match to LL,  so we validate the number of
@@ -299,7 +299,7 @@
                      ;; is any.
                      (let* ((chain (nth-chain whole (+ reqvar-count optvar-count) t))
                             (restvar (lambda-list-restvar ll))
-                            (pattern (or restvar 
+                            (pattern (or restvar
                                          (gensym "REST-PATERN-")))
                             (keywords (mapcar #'keyvar-keyword-name (lambda-list-keyvars ll)))
                             (rest
@@ -312,7 +312,7 @@
                              ;; we expect.
                              (cond
                                (keywords (compute-pbindings pattern
-                                                            `(validate-keyvars ,chain ',keywords 
+                                                            `(validate-keyvars ,chain ',keywords
                                                                                ,(lambda-list-allow-other-keys ll))))
                                (restvar  (compute-pbindings pattern chain))
                                (t        (compute-pbindings pattern `(validate-max-args ,chain))))))

@@ -148,7 +148,7 @@
 (defun digit-char-p (char &optional (radix 10))
   "Includes ASCII 0-9 a-z A-Z, plus any Unicode decimal digit characters or fullwidth variants A-Z."
   (check-type char character)
-  (check-type radix integer) 
+  (check-type radix integer)
   (let* ((radix (or (and radix (<= 2 radix 36) radix) 10))
          (number (unicode-digit-value char))
          (code (char-code char))

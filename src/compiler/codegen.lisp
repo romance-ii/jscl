@@ -2,23 +2,26 @@
 
 ;; Copyright (C) 2013, 2014 David Vazquez
 
-;; JSCL is  free software:  you can  redistribute it  and/or modify it  under the  terms of  the GNU
-;; General Public  License as published  by the  Free Software Foundation,  either version 3  of the
-;; License, or (at your option) any later version.
+;; JSCL is free software: you can redistribute it and/or modify it under
+;; the terms of the GNU General  Public License as published by the Free
+;; Software Foundation,  either version  3 of the  License, or  (at your
+;; option) any later version.
 ;;
-;; JSCL is distributed  in the hope that it  will be useful, but WITHOUT ANY  WARRANTY; without even
-;; the implied warranty of MERCHANTABILITY or FITNESS  FOR A PARTICULAR PURPOSE. See the GNU General
-;; Public License for more details.
+;; JSCL is distributed  in the hope that it will  be useful, but WITHOUT
+;; ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+;; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+;; for more details.
 ;;
-;; You should have  received a copy of the GNU  General Public License along with JSCL.  If not, see
-;; <http://www.gnu.org/licenses/>.
+;; You should  have received a  copy of  the GNU General  Public License
+;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
 
 
-;;; This code  generator takes  as input  a S-expression  representation of  the Javascript  AST and
-;;; generates Javascript code without redundant syntax constructions like extra parenthesis.
+;;; This code generator takes as  input a S-expression representation of
+;;; the Javascript  AST and generates Javascript  code without redundant
+;;; syntax constructions like extra parenthesis.
 ;;;
-;;; It is intended to be used with the new compiler. However, it is quite independent so it has been
-;;; integrated early in JSCL.
+;;; It is  intended to  be used  with the new  compiler. However,  it is
+;;; quite independent so it has been integrated early in JSCL.
 
 (in-package :jscl)
 
@@ -71,8 +74,8 @@
                                              (vector stuff)))))
                     (backslash (char)
                       (add (vector #\\ char))))
-               (while (< index size)
-                 (let ((ch (char string index)))
+                 (while (< index size)
+                   (let ((ch (char string index)))
                      (case ch
                        (#\apostrophe
                         (if escape-single-quote-p
@@ -86,17 +89,17 @@
                        (#\backspace (backslash #\b))
                        (#\null (backslash #\0))
                        (otherwise
-                   (cond
+                        (cond
                           ((<= 1 (char-code ch) 26)
                            (add "\\c")
                            (add (code-char (+ (char-code #\A)
                                               -1
                                               (char-code ch)))))
-                     ((<= 27 (char-code ch) 31)
+                          ((<= 27 (char-code ch) 31)
                            (add "\\x")
                            (add (integer-to-string (char-code ch) 16)))
-                     ((<= 127 (char-code ch) 159)
-                      (let ((s (integer-to-string (char-code ch) 16)))
+                          ((<= 127 (char-code ch) 159)
+                           (let ((s (integer-to-string (char-code ch) 16)))
                              (add "\\u")
                              (add (make-string (- 4 (length s))
                                                :initial-element #\0))
@@ -107,11 +110,11 @@
       ;; First, scan the string for single/double quotes
       (cond
         ((not (find #\apostrophe string))
-         (concat #(#\apostrophe) 
+         (concat #(#\apostrophe)
                  (%js-escape-string string nil)
                  #(#\apostrophe)))
         ((not (find #\" string))
-         (concat #(#\")  
+         (concat #(#\")
                  (%js-escape-string string nil)
                  #(#\")))
         (t
@@ -403,7 +406,7 @@
   (let ((form (js-expand-expr form)))
     (cond
       ((pathnamep form)
-       (js-primary-expr (concatenate 'string 
+       (js-primary-expr (concatenate 'string
                                      "file://"
                                      (host-namestring form)
                                      (namestring form))))
@@ -530,15 +533,15 @@
                       (js-stmt case))))
                  (js-format "}")))
            (for
-            (destructuring-bind ((start condition step) &body body) (cdr form)
-              (js-format "for (")
-              (js-expr start)
-              (js-format ";")
-              (js-expr condition)
-              (js-format ";")
-              (js-expr step)
-              (js-format ")")
-              (js-stmt `(progn ,@body))))
+               (destructuring-bind ((start condition step) &body body) (cdr form)
+                 (js-format "for (")
+                 (js-expr start)
+                 (js-format ";")
+                 (js-expr condition)
+                 (js-format ";")
+                 (js-expr step)
+                 (js-format ")")
+                 (js-stmt `(progn ,@body))))
            (for-in
             (destructuring-bind ((x object) &body body) (cdr form)
               (js-format "for (")

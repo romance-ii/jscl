@@ -42,24 +42,24 @@
 (defun test-fn (successp form)
   (async
    (cond
-      (successp
-       (sync-incf *passed-tests*))
+     (successp
+      (sync-incf *passed-tests*))
      (t
-       (with-lock-held (*sync*)
-         (push (list form :failed) *failed-tests-details*))
-       (sync-incf *failed-tests*)))
-    (sync-incf *total-tests*)))
+      (with-lock-held (*sync*)
+        (push (list form :failed) *failed-tests-details*))
+      (sync-incf *failed-tests*)))
+   (sync-incf *total-tests*)))
 
 (defun expected-failure-fn (successp form)
   (async
    (cond
-      (successp
-       (sync-incf *unexpected-passes*))
+     (successp
+      (sync-incf *unexpected-passes*))
      (t
-       (with-lock-held (*sync*)
-         (push (list form :failed-expected) *failed-tests-details*))
-       (sync-incf *expected-failures*)))
-    (sync-incf *total-tests*)))
+      (with-lock-held (*sync*)
+        (push (list form :failed-expected) *failed-tests-details*))
+      (sync-incf *expected-failures*)))
+   (sync-incf *total-tests*)))
 
 (defmacro test (condition)
   `(test-fn ,condition ',condition))
@@ -77,11 +77,11 @@
 ;;; Run the tests in the host Lisp  implementation. It is a quick way to
 ;;; improve the level of trust of the tests.
 (defun run ()
-  (load (make-pathname 
+  (load (make-pathname
          :name "tests" :type "lisp"
-         :directory (pathname-directory #.(or *compile-file-pathname* 
+         :directory (pathname-directory #.(or *compile-file-pathname*
                                               *load-pathname*))))
-  (let ((*default-pathname-defaults* jscl::*base-directory*) 
+  (let ((*default-pathname-defaults* jscl::*base-directory*)
         (*use-html-output-p* nil)
         (*package* (find-package :JSCL/TEST)))
     (declare (special *use-html-output-p*))

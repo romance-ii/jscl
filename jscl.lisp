@@ -131,11 +131,11 @@
 ;;; Compile and load jscl into the host
 (with-compilation-unit ()
   (do-source input :host
-             (multiple-value-bind (fasl warn fail) (compile-file input)
-               (declare (ignore warn))
-               (when fail
-                 (error "Compilation of ~A failed." input))
-               (load fasl))))
+    (multiple-value-bind (fasl warn fail) (compile-file input)
+      (declare (ignore warn))
+      (when fail
+        (error "Compilation of ~A failed." input))
+      (load fasl))))
 
 (defun read-whole-file (filename)
   (with-open-file (in filename)
@@ -259,21 +259,21 @@
 (defun write-javascript-for-files (files &optional (stream *standard-output*))
   (let ((*environment* (make-lexenv)))
     (with-compilation-environment
-        (with-scoping-function (stream)
-          (dolist (input files)
-            (terpri stream)
-            (!compile-file input stream))))))
+      (with-scoping-function (stream)
+        (dolist (input files)
+          (terpri stream)
+          (!compile-file input stream))))))
 
 (defun compile-application (files output &key shebang)
   (with-compilation-environment
-      (with-open-file (out output :direction :output :if-exists :supersede)
-        (when shebang
-          (write-string "#!/usr/bin/env node" out)
-          (terpri out))
-        (with-scoping-function (out)
-          (dolist (input files)
-            (terpri out)
-            (!compile-file input out))))))
+    (with-open-file (out output :direction :output :if-exists :supersede)
+      (when shebang
+        (write-string "#!/usr/bin/env node" out)
+        (terpri out))
+      (with-scoping-function (out)
+        (dolist (input files)
+          (terpri out)
+          (!compile-file input out))))))
 
 (defun compile-test-suite ()
   (compile-application
@@ -295,15 +295,15 @@
 
 (defun compile-jscl.js (verbosep)
   (with-compilation-environment
-      (with-open-file (out (merge-pathnames "jscl.js" *base-directory*)
-                           :direction :output
-                           :if-exists :supersede)
-        (format out "(function(){~%'use strict';~%")
-        (write-string (read-whole-file (source-pathname "prelude.js")) out)
-        (do-source input :target
-                   (!compile-file input out :print verbosep))
-        (dump-global-environment out)
-        (format out "})();~%"))))
+    (with-open-file (out (merge-pathnames "jscl.js" *base-directory*)
+                         :direction :output
+                         :if-exists :supersede)
+      (format out "(function(){~%'use strict';~%")
+      (write-string (read-whole-file (source-pathname "prelude.js")) out)
+      (do-source input :target
+        (!compile-file input out :print verbosep))
+      (dump-global-environment out)
+      (format out "})();~%"))))
 
 (defun bootstrap (&optional verbosep)
   (let ((*features* (cons :jscl-xc *features*))
