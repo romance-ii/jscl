@@ -391,7 +391,7 @@ STRING is a string of digits with an optional leading + or - sign."
 
 (defun format-pad-to-right (string min-column &optional (pad-char #\space))
   "Pad a  string, right-flush, to  at least MIN-COLUMN  characters wide;
-pad  with PAD-CHAR  (or  #\Space).
+pad  with PAD-CHAR  (or  #\Space). 
 
 If the length of STRING is known, passing it in can save a few cycles."
   (let ((min-column (or min-column 1))
@@ -416,7 +416,7 @@ bound accordingly."
   (let* ((digits (integer-to-string number *print-base* atp))
          (grouped (if colonp
                       (group-digits (or group-comma #\,) (or group-length 3) digits)
-                      digits)))
+                      digits))) 
     (format-pad-to-right grouped min-column pad-char)))
 
 (defun format-hex (arg colonp atp &optional (min-column 1) (pad-char #\space)
@@ -538,13 +538,13 @@ dispatching on the CHR ending the format sequence."
            (#\( #'format-letter-case)
            (#\< #'format-justify)
            (#\A #'format-aesthetic)
-            (#\B #'format-binary)
+           (#\B #'format-binary)
            (#\C #'format-char)
            (#\D #'format-decimal)
            (#\E #'format-float-e)
            (#\F #'format-float-f)
            (#\G #'format-float-g)
-            (#\O #'format-octal)
+           (#\O #'format-octal)
            (#\R #'format-radix)
            (#\S #'format-syntax)
            (#\W #'format-write)
@@ -555,59 +555,59 @@ dispatching on the CHR ending the format sequence."
               #'format-syntax))
          arg colonp atp params))
 
-  (defun !format (destination control-string &rest format-arguments)
-    ;; docstring c/o SBCL
-    "Provides various facilities for formatting output.
+(defun !format (destination control-string &rest format-arguments)
+  ;; docstring c/o SBCL
+  "Provides various facilities for formatting output.
 
- CONTROL-STRING contains a string to be output, possibly with embedded
- directives, which are flagged with the escape character \"~\". Directives
- generally expand into additional text to be output, usually consuming one
- or more of the FORMAT-ARGUMENTS in the process. A few useful directives
- are:
- ~A or ~nA   Prints one argument as if by PRINC
- ~S or ~nS   Prints one argument as if by PRIN1
- ~D or ~nD   Prints one argument as a decimal integer
- ~%          Does a TERPRI
- ~&          Does a FRESH-LINE
- where n is the width of the field in which the object is printed.
+  CONTROL-STRING contains a string to be output, possibly with embedded
+  directives, which are flagged with the escape character \"~\". Directives
+  generally expand into additional text to be output, usually consuming one
+  or more of the FORMAT-ARGUMENTS in the process. A few useful directives
+  are:
+        ~A or ~nA   Prints one argument as if by PRINC
+        ~S or ~nS   Prints one argument as if by PRIN1
+        ~D or ~nD   Prints one argument as a decimal integer
+        ~%          Does a TERPRI
+        ~&          Does a FRESH-LINE
+  where n is the width of the field in which the object is printed.
 
- DESTINATION controls where the result will go. If DESTINATION is T, then
- the output is sent to the standard output stream. If it is NIL, then the
- output is returned in a string as the value of the call. Otherwise,
- DESTINATION must be a stream to which the output will be sent.
+  DESTINATION controls where the result will go. If DESTINATION is T, then
+  the output is sent to the standard output stream. If it is NIL, then the
+  output is returned in a string as the value of the call. Otherwise,
+  DESTINATION must be a stream to which the output will be sent.
 
- Example:   (FORMAT NIL \"The answer is ~D.\" 10) => \"The answer is 10.\"
+  Example:   (FORMAT NIL \"The answer is ~D.\" 10) => \"The answer is 10.\"
 
- FORMAT has many additional capabilities not described here. Consult the
- manual for details."
-    (let ((length (length control-string))
+  FORMAT has many additional capabilities not described here. Consult the
+  manual for details."
+  (let ((length (length control-string))
         (i 0)
-          (output "")
-          (arguments format-arguments))
-      (while (< i length)
-        (let ((c (char control-string i)))
+        (output "")
+        (arguments format-arguments))
+    (while (< i length)
+      (let ((c (char control-string i)))
         (if (char= c #\~)
             (let (params atp colonp)
               (tagbody
                read-control
-                   (assert (and (< (1+ i) length) "~ at end of format"))
-                   (let ((next (char control-string (incf i))))
-              (cond
+                 (assert (and (< (1+ i) length) "~ at end of format"))
+                 (let ((next (char control-string (incf i))))
+                   (cond
                      ((digit-char-p next)
                       (multiple-value-bind (param ending)
-                            (parse-integer (subseq control-string i) :junk-allowed t)
+                          (parse-integer (subseq control-string i) :junk-allowed t)
                         (push param params)
-                          (setf i (1+ ending)))
-                        (assert (and (< i length) "~numbers at end of format"))
-                        (unless (char= (char control-string i) #\,)
-                          (decf i))
+                        (setf i (1+ ending)))
+                      (assert (and (< i length) "~numbers at end of format"))
+                      (unless (char= (char control-string i) #\,) 
+                        (decf i))
                       (go read-control))
 
                      ((char= #\apostrophe next)
-                        (assert (and (< (1+ i) length) "~' at end of format"))
+                      (assert (and (< (1+ i) length) "~' at end of format"))
                       (incf i)
-                        (push (char control-string i) params)
-                        (assert (and (< (1+ i) length) "~'char at end of format"))
+                      (push (char control-string i) params)
+                      (assert (and (< (1+ i) length) "~'char at end of format"))
                       (go read-control))
 
                      ((char= #\, next)
@@ -631,18 +631,18 @@ dispatching on the CHR ending the format sequence."
 
                      ((char-equal #\P next)
                       (when colonp
-                          (setf arguments (nthcdr (- (length format-arguments)
+                        (setf arguments (nthcdr (- (length format-arguments)
                                                    (length arguments)
                                                    1)
-                                                  format-arguments)))
-                        (let ((one-p (= 1 (pop format-arguments))))
+                                                format-arguments)))
+                      (let ((one-p (= 1 (pop format-arguments))))
                         (unless one-p
                           (if atp "ies" "s"))))
 
                      ((char= #\~ next)
-                        (concatf output "~"))
+                      (concatf output "~"))
 
-                       ((char= #\| next) (concatf output (string #\|)))
+                     ((char= #\| next) (concatf output (string #\|)))
                      ((char= #\% next) (concatf output (apply #'format-terpri (reverse params))))
                      ((char= #\& next) (concatf output (apply #'format-fresh-line (reverse params))))
 
@@ -656,7 +656,7 @@ dispatching on the CHR ending the format sequence."
 
                      (t (concatf output (format-special next (pop arguments) (reverse params)
                                                      :atp atp :colonp colonp)))))))
-          (concatf output (string c)))
+            (concatf output (string c)))
         (incf i)))
 
     (case destination
@@ -668,4 +668,3 @@ dispatching on the CHR ending the format sequence."
       (t
        (write-string output destination)))))
 
-#+jscl (fset 'format (fdefinition '!format))
