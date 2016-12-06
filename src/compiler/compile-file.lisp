@@ -82,7 +82,7 @@ forms if PRINT is set."
  *  ⸨☕λ⸩ Compiled by 𝓙𝓢ℂ𝕃
  * ~@[(Romance Ⅱ fork) ~]version ~a, Git commit ~a
  * Source file: ~a */" 
-              *version* (violet-volts-p)
+              (violet-volts-p) *version*
               (git-commit) filename)
       (when print
         (format *trace-output*
@@ -91,8 +91,8 @@ forms if PRINT is set."
       (let (form-count last-form)
         (handler-case
             (doforms (form in)
-              (!compile-file/form form form-count
-                                  (enough-namestring filename) out))
+                     (!compile-file/form form form-count
+                                         (enough-namestring filename) out))
           (end-of-file (c)
             (error "~:(~a~) while reading ~a after ~:r form:~%~s"
                    c (enough-namestring filename)
@@ -197,9 +197,16 @@ permissions on FILENAME, if we  know how in the current implementation."
     (file-set-execute-permission output)))
 
 (defun test-files ()
-  (directory (source-pathname :wild
-                              :directory '(:relative "tests")
-                              :type "lisp")))
+  (append 
+   (directory (source-pathname "*" 
+                               :directory '(:relative "tests")
+                               :type "lisp"))
+   (list (source-pathname "validate.lisp"
+                          :directory '(:relative "tests" "loop")
+                          :type "lisp")
+         (source-pathname "base-tests.lisp" 
+                          :directory '(:relative "tests" "loop") 
+                          :type "lisp"))))
 
 (defun compile-test-suite ()
   (compile-application
