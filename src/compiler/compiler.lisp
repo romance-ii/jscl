@@ -17,7 +17,7 @@
 
 (/debug "loading compiler.lisp!")
 
-;;; Translate the Lisp code to Javascript. It will compile the special
+;;; Translate the Lisp  code to Javascript. It will  compile the special
 ;;; forms. Some primitive  functions are compiled as  special forms too.
 ;;; The respective  real functions  are defined in  the target  (see the
 ;;; beginning of this file) as well as some primitive functions.
@@ -47,9 +47,9 @@
   `(if ,expr ,(convert t) ,(convert nil)))
 
 
-;;; A Form can return a multiple values object calling VALUES, like
-;;; values(arg1, arg2, ...). It will work in any context, as well as
-;;; returning an individual object. However, if the special variable
+;;; A  Form can  return a  multiple values  object calling  VALUES, like
+;;; values(arg1, arg2,  ...). It will  work in  any context, as  well as
+;;; returning  an individual  object. However,  if the  special variable
 ;;; `*multiple-value-p*' is NIL, is granted  that only the primary value
 ;;; will be used, so we can optimize to avoid the VALUES function call.
 (defvar *multiple-value-p* nil)
@@ -203,9 +203,9 @@
   (make-hash-table))
 
 (defmacro define-compilation (name args &body body)
-  ;; Creates a new primitive `name' with parameters args and
-  ;; @body. The body can access to the local environment through the
-  ;; variable *ENVIRONMENT*.
+  ;; Creates  a new  primitive `name'  with parameters  args and  @body.
+  ;; The body can  access to the local environment  through the variable
+  ;; *ENVIRONMENT*.
   `(setf (gethash ',name *compilations*)
          (lambda ,args (block ,name ,@body))))
 
@@ -467,7 +467,8 @@
                                                         (|values| ,@(mapcar (lambda (x)
                                                                               (translate-variable x))
                                                                             (append required-arguments optional-arguments)))
-                                                        ;; Check number of arguments
+                                                        ;; Check  number
+                                                        ;; of arguments
                                                         ,(lambda-check-argument-count n-required-arguments
                                                                                       n-optional-arguments
                                                                                       (or rest-argument keyword-arguments))
@@ -513,13 +514,13 @@
 
 ;;; Compilation of literals an object dumping
 
-;;; BOOTSTRAP MAGIC: We record the macro definitions as lists during
-;;; the bootstrap. Once everything is compiled, we want to dump the
-;;; whole global environment to the output file to reproduce it in the
-;;; run-time. However, the environment must contain expander functions
-;;; rather than lists. We do not know how to dump function objects
-;;; itself, so we mark the list definitions with this object and the
-;;; compiler will be called when this object has to be dumped.
+;;; BOOTSTRAP MAGIC: We record the macro definitions as lists during the
+;;; bootstrap. Once  everything is compiled,  we want to dump  the whole
+;;; global  environment  to the  output  file  to  reproduce it  in  the
+;;; run-time. However,  the environment must contain  expander functions
+;;; rather  than lists.  We do  not know  how to  dump function  objects
+;;; itself, so  we mark the  list definitions  with this object  and the
+;;; compiler  will  be  called  when  this  object  has  to  be  dumped.
 ;;; Backquote/unquote does a similar magic, but this use is exclusive.
 ;;;
 ;;; Indeed, perhaps to compile the object other macros need to be
@@ -554,9 +555,9 @@
       ;; Uninterned symbol
       ((null package)
        `(new (call-internal |Symbol| ,(symbol-name symbol))))
-      ;; Special case for bootstrap. For now, we just load all the
-      ;; code with JSCL as the current package. We will compile the
-      ;; JSCL package as CL in the target.
+      ;; Special case for bootstrap. For now,  we just load all the code
+      ;; with  JSCL as  the current  package. We  will compile  the JSCL
+      ;; package as CL in the target.
       #-jscl
       ((eq package (find-package "JSCL"))
        `(call-internal |intern| ,(symbol-name symbol)))
@@ -784,7 +785,7 @@
 
 
 ;; LET* compilation
-;; 
+;;
 ;; (let* ((*var1* value1))
 ;;        (*var2* value2))
 ;;  ...)
@@ -795,7 +796,7 @@
 ;;       // compute value1
 ;;       // bind to var1
 ;;       // add var1 to sbindings
-;;     
+;;
 ;;       // compute value2
 ;;       // bind to var2
 ;;       // add var2 to sbindings
@@ -807,7 +808,7 @@
 ;;       // restore bindings of sbindings
 ;;       // ...
 ;;     }
-;; 
+;;
 (define-compilation let* (bindings &rest body)
   (let ((bindings (mapcar #'ensure-list bindings))
         (*environment* (copy-lexenv *environment*))
@@ -843,7 +844,7 @@
                       ;; binding.
                       (= (get ,s "value") ,out))
                    prelude-target)))
-          
+
           (t
            (let* ((jsvar (gvarname variable))
                   (binding (make-binding :name variable :type 'variable :value jsvar)))
@@ -861,10 +862,10 @@
           postlude-target)
 
     (let ((body
-           `(progn
-              ,@(reverse prelude-target)
-              ,(convert-block body t t))))
-      
+            `(progn
+               ,@(reverse prelude-target)
+               ,(convert-block body t t))))
+
       (if (find-if #'special-variable-p bindings :key #'first)
           `(selfcall
             (var (,sbindings #()))
