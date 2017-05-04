@@ -1,6 +1,7 @@
 ;;; boot.lisp --- First forms to be cross compiled
 
-;; Copyright (C) 2012, 2013 David Vazquez Copyright (C) 2012 Raimon Grau
+;; Copyright (C) 2012, 2013 David Vazquez
+;;; Copyright (C) 2012 Raimon Grau
 
 ;; JSCL is free software: you can redistribute it and/or modify it under
 ;; the terms of the GNU General  Public License as published by the Free
@@ -12,12 +13,12 @@
 ;; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
 ;; for more details.
 ;;
-;; You should  have received a  copy of  the GNU General  Public License
-;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
+;; You should have received a copy of the GNU General Public License
+;; along with JSCL.  If not, see <http://www.gnu.org/licenses/>.
 
 ;;; This  code  is  executed  when   JSCL  compiles  this  file  itself.
 ;;; The compiler provides compilation of  some special forms, as well as
-;;; funcalls and  macroexpansion, but  no functions.  So, we  define the
+;;; funcalls and macroexpansion, but no functions. So, we define the
 ;;; Lisp world from scratch. This code  has to define enough language to
 ;;; the compiler to be able to run.
 
@@ -25,27 +26,27 @@
 
 (eval-when (:compile-toplevel)
   (let ((defmacro-macroexpander
-          '#'(lambda (form)
-               (destructuring-bind (name args &body body)
-                   form
-                 (let* ((whole (gensym))
-                        (expander `(function
-                                    (lambda (,whole)
-                                     (block ,name
-                                       (destructuring-bind ,args ,whole
-                                         ,@body))))))
+         '#'(lambda (form)
+              (destructuring-bind (name args &body body)
+                  form
+                (let* ((whole (gensym))
+                       (expander `(function
+                                   (lambda (,whole)
+                                    (block ,name
+                                      (destructuring-bind ,args ,whole
+                                        ,@body))))))
 
-                   ;; If we are boostrapping JSCL,  we need to quote the
+                  ;; If we are boostrapping JSCL, we need to quote the
                    ;; macroexpander, because the macroexpander will need
                    ;; to be dumped in the final environment somehow.
-                   (when (find :jscl-xc *features*)
-                     (setq expander `(quote ,expander)))
+                  (when (find :jscl-xc *features*)
+                    (setq expander `(quote ,expander)))
+                  
+                  `(eval-when (:compile-toplevel :execute)
+                     (%compile-defmacro ',name ,expander))
 
-                   `(eval-when (:compile-toplevel :execute)
-                      (%compile-defmacro ',name ,expander))
-
-                   )))))
-
+                  )))))
+    
     (%compile-defmacro 'defmacro defmacro-macroexpander)))
 
 (defmacro declaim (&rest decls)
@@ -249,7 +250,7 @@
   `(block nil
      (let ,(mapcar (lambda (x) (if (symbolp x)
                                    (list x nil)
-                                   (list (first x) (second x)))) varlist)
+                                 (list (first x) (second x)))) varlist)
        (while t
          (when ,(car endlist)
            (return (progn ,@(cdr endlist))))
@@ -266,7 +267,7 @@
   `(block nil
      (let* ,(mapcar (lambda (x1) (if (symbolp x1)
                                      (list x1 nil)
-                                     (list (first x1) (second x1)))) varlist)
+                                   (list (first x1) (second x1)))) varlist)
        (while t
          (when ,(car endlist)
            (return (progn ,@(cdr endlist))))
@@ -403,24 +404,24 @@ macro cache is so aggressive that it cannot be redefined."
                      (if (find (car c) '(t otherwise))
                          `(t ,@(rest c))
                          `((,(ecase (car c)
-                               (fixnum 'integerp)
+                                    (fixnum 'integerp)
                                (number 'numberp)
-                               (integer 'integerp)
-                               (cons 'consp)
-                               (list 'listp)
-                               (vector 'vectorp)
-                               (character 'characterp)
-                               (sequence 'sequencep)
-                               (symbol 'symbolp)
-                               (keyword 'keywordp)
-                               (function 'functionp)
-                               (float 'floatp)
-                               (array 'arrayp)
-                               (string 'stringp)
-                               (atom 'atom)
-                               (null 'null)
-                               (package 'packagep))
-                            ,value)
+                                    (integer 'integerp)
+                                    (cons 'consp)
+                                    (list 'listp)
+                                    (vector 'vectorp)
+                                    (character 'characterp)
+                                    (sequence 'sequencep)
+                                    (symbol 'symbolp)
+                                    (keyword 'keywordp)
+                                    (function 'functionp)
+                                    (float 'floatp)
+                                    (array 'arrayp)
+                                    (string 'stringp)
+                                    (atom 'atom)
+                                    (null 'null)
+                                    (package 'packagep))
+                             ,value)
                            ,@(or (rest c)
                                  (list nil)))))
                    clausules)))))

@@ -5,7 +5,7 @@
 (defparameter *expected-failures* 0)
 (defparameter *unexpected-passes* 0)
 
-(defvar *use-html-output-p* t)
+(defvar *use-html-output-p* nil)
 (defvar *timestamp* nil)
 
 (defmacro async (&body body)

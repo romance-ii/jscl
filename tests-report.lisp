@@ -45,5 +45,8 @@
  (terpri)
 
  #+jscl
+(progn
  (when #j:phantom
-   (#j:phantom:exit *failed-tests*)))
+    (#j:phantom:exit *failed-tests*))
+  (when #j:process
+    (#j:process:exit *failed-tests*)))
