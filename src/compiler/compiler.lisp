@@ -15,6 +15,7 @@
 
 ;;;; Compiler
 
+(in-package :jscl)
 (/debug "loading compiler.lisp!")
 
 ;;; Translate the Lisp  code to Javascript. It will  compile the special
@@ -62,13 +63,13 @@
 ;;; Environment
 
 (def!struct binding
-    name
+  name
   type
   value
   declarations)
 
 (def!struct lexenv
-    variable
+  variable
   function
   block
   gotag)
@@ -169,7 +170,7 @@
 (defvar *fn-info* '())
 
 (def!struct fn-info
-    symbol
+  symbol
   defined
   called)
 
@@ -257,9 +258,9 @@
 
 (defun ll-svars (lambda-list)
   (let ((args
-         (append
-          (ll-keyword-arguments-canonical lambda-list)
-          (ll-optional-arguments-canonical lambda-list))))
+          (append
+           (ll-keyword-arguments-canonical lambda-list)
+           (ll-optional-arguments-canonical lambda-list))))
     (remove nil (mapcar #'third args))))
 
 (defun js-identifier-char-p (char)
@@ -323,14 +324,14 @@
                             svars)))
          (switch (nargs)
            ,@(with-collect
-                 (dotimes (idx n-optional-arguments)
-                   (let ((arg (nth idx optional-arguments)))
-                     (collect `(case ,(+ idx n-required-arguments)))
-                     (collect `(= ,(translate-variable (car arg))
-                                  ,(convert (cadr arg))))
-                     (collect (when (third arg)
-                                `(= ,(translate-variable (third arg))
-                                    ,(convert nil))))))
+               (dotimes (idx n-optional-arguments)
+                 (let ((arg (nth idx optional-arguments)))
+                   (collect `(case ,(+ idx n-required-arguments)))
+                   (collect `(= ,(translate-variable (car arg))
+                                ,(convert (cadr arg))))
+                   (collect (when (third arg)
+                              `(= ,(translate-variable (third arg))
+                                  ,(convert nil))))))
                (collect 'default)
                (collect '(break))))))))
 
@@ -350,23 +351,23 @@
 
 (defun compile-lambda-parse-keywords (ll)
   (let ((n-required-arguments
-         (length (ll-required-arguments ll)))
+          (length (ll-required-arguments ll)))
         (n-optional-arguments
-         (length (ll-optional-arguments ll)))
+          (length (ll-optional-arguments ll)))
         (keyword-arguments
-         (ll-keyword-arguments-canonical ll)))
+          (ll-keyword-arguments-canonical ll)))
     `(progn
        ;; Declare variables
        ,@(with-collect
-             (dolist (keyword-argument keyword-arguments)
-               (destructuring-bind ((keyword-name var) &optional initform svar)
-                   keyword-argument
-                 (declare (ignore keyword-name initform))
-                 (collect `(var ,(translate-variable var)))
-                 (when svar
-                   (collect
-                       `(var (,(translate-variable svar)
-                               ,(convert nil))))))))
+           (dolist (keyword-argument keyword-arguments)
+             (destructuring-bind ((keyword-name var) &optional initform svar)
+                 keyword-argument
+               (declare (ignore keyword-name initform))
+               (collect `(var ,(translate-variable var)))
+               (when svar
+                 (collect
+                     `(var (,(translate-variable svar)
+                            ,(convert nil))))))))
 
        ;; Parse keywords
        ,(flet ((parse-keyword (keyarg)
@@ -411,9 +412,9 @@
           (ll-keyword-arguments  ll)
           (ll-rest-argument      ll)))
 
-;;; Process BODY for declarations and/or docstrings. Return as
-;;; multiple values the BODY without docstrings or declarations, the
-;;; list of declaration forms and the docstring.
+;;; Process BODY for declarations  and/or docstrings. Return as multiple
+;;; values  the BODY  without docstrings  or declarations,  the list  of
+;;; declaration forms and the docstring.
 (defun parse-body (body &key declarations docstring)
   (let ((value-declarations)
         (value-docstring))
@@ -653,9 +654,9 @@
                                                ,@(cddr def)))))
                          definitions))
          (*environment*
-          (extend-lexenv (mapcar #'make-function-binding fnames)
-                         *environment*
-                         'function)))
+           (extend-lexenv (mapcar #'make-function-binding fnames)
+                          *environment*
+                          'function)))
     `(call (function ,(mapcar #'translate-function fnames)
                      ,(convert-block body t))
            ,@cfuncs)))
@@ -663,14 +664,14 @@
 (define-compilation labels (definitions &rest body)
   (let* ((fnames (mapcar #'car definitions))
          (*environment*
-          (extend-lexenv (mapcar #'make-function-binding fnames)
-                         *environment*
-                         'function)))
+           (extend-lexenv (mapcar #'make-function-binding fnames)
+                          *environment*
+                          'function)))
     `(selfcall
       ,@(mapcar (lambda (func)
                   `(var (,(translate-function (car func))
-                          ,(compile-lambda (cadr func)
-                                           `((block ,(car func) ,@(cddr func)))))))
+                         ,(compile-lambda (cadr func)
+                                          `((block ,(car func) ,@(cddr func)))))))
                 definitions)
       ,(convert-block body t))))
 
@@ -783,47 +784,95 @@
              ,@compiled-values))))
 
 
-;;; Return the code to initialize BINDING, and push it extending the
-;;; current lexical environment if the variable is not special.
-(defun let*-initialize-value (binding)
-  (let ((var (first binding))
-        (value (second binding)))
-    (if (special-variable-p var)
-        (convert `(setq ,var ,value))
-        (let* ((v (gvarname var))
-               (b (make-binding :name var :type 'variable :value v)))
-          (prog1 `(var (,v ,(convert value)))
-            (push-to-lexenv b *environment* 'variable))))))
-
-;;; Wrap BODY to restore the symbol values of SYMBOLS after body. It
-;;; DOES NOT generate code to initialize the value of the symbols,
-;;; unlike let-binding-wrapper.
-(defun let*-binding-wrapper (symbols body)
-  (when (null symbols)
-    (return-from let*-binding-wrapper body))
-  (let ((store (mapcar (lambda (s) (cons s (gvarname s)))
-                       (remove-if-not #'special-variable-p symbols))))
-    `(progn
-       (try
-        ,@(mapcar (lambda (b)
-                    (let ((s (convert `(quote ,(car b)))))
-                      `(var (,(cdr b) (get ,s "value")))))
-                  store)
-        ,body)
-       (finally
-        ,@(mapcar (lambda (b)
-                    (let ((s (convert `(quote ,(car b)))))
-                      `(= (get ,s "value") ,(cdr b))))
-                  store)))))
-
+;; LET* compilation
+;;
+;; (let* ((*var1* value1))
+;;        (*var2* value2))
+;;  ...)
+;;
+;;     var sbindings = [];
+;;
+;;     try {
+;;       // compute value1
+;;       // bind to var1
+;;       // add var1 to sbindings
+;;
+;;       // compute value2
+;;       // bind to var2
+;;       // add var2 to sbindings
+;;
+;;       // ...
+;;
+;;     } finally {
+;;       // ...
+;;       // restore bindings of sbindings
+;;       // ...
+;;     }
+;;
 (define-compilation let* (bindings &rest body)
   (let ((bindings (mapcar #'ensure-list bindings))
-        (*environment* (copy-lexenv *environment*)))
-    (let ((specials (remove-if-not #'special-variable-p (mapcar #'first bindings)))
-          (body `(progn
-                   ,@(mapcar #'let*-initialize-value bindings)
-                   ,(convert-block body t t))))
-      `(selfcall ,(let*-binding-wrapper specials body)))))
+        (*environment* (copy-lexenv *environment*))
+        (sbindings (gvarname '|bindings|))
+        (prelude-target nil)
+        (postlude-target nil))
+
+    (dolist (binding bindings)
+      (destructuring-bind (variable &optional value) binding
+        (cond
+          ((special-variable-p variable)
+           ;; VALUE is evaluated before the variable is bound.
+           (let ((s (convert `',variable))
+                 (v (convert value))
+                 (out (gvarname 'value)))
+             (push `(progn
+                      ;; Store the compiled value into the temporary
+                      ;; JS variable OUT. Note that this code could
+                      ;; throw, so the following code could not run at
+                      ;; all.
+                      (var (,out ,v))
+                      ;; Create a new binding by pushing the symbol
+                      ;; value to the stack, and scheduling the value
+                      ;; to be restored (in the postlude). Note that
+                      ;; this is done at runtime and not compile-time
+                      ;; because we could have 5 variables to bind,
+                      ;; but we could see an error for example in the
+                      ;; 3rd one only. So we do not always restore all
+                      ;; bindings necessarily.
+                      (method-call (get ,s "stack") "push" (get ,s "value"))
+                      (method-call ,sbindings "push" ,s)
+                      ;; Assign the value to the recently created
+                      ;; binding.
+                      (= (get ,s "value") ,out))
+                   prelude-target)))
+
+          (t
+           (let* ((jsvar (gvarname variable))
+                  (binding (make-binding :name variable :type 'variable :value jsvar)))
+             (push `(var (,jsvar ,(convert value)))
+                   prelude-target)
+             (push-to-lexenv binding *environment* 'variable))))))
+
+
+    ;; The postlude will undo all the completed bindings from the
+    ;; prelude.
+    (push `(method-call ,sbindings "forEach"
+                        (function (s)
+                                  (= (get s "value")
+                                     (method-call (get s "stack") "pop"))))
+          postlude-target)
+
+    (let ((body
+            `(progn
+               ,@(reverse prelude-target)
+               ,(convert-block body t t))))
+
+      (if (find-if #'special-variable-p bindings :key #'first)
+          `(selfcall
+            (var (,sbindings #()))
+            (try ,body)
+            (finally ,@(reverse postlude-target)))
+          ;; If there is no special variables, we don't need try/catch
+          `(selfcall ,body)))))
 
 
 (define-compilation block (name &rest body)
@@ -894,10 +943,10 @@
 (defun declare-tagbody-tags (tbidx body)
   (let* ((go-tag-counter 0)
          (bindings
-          (mapcar (lambda (label)
-                    (let ((tagidx (incf go-tag-counter)))
-                      (make-binding :name label :type 'gotag :value (list tbidx tagidx))))
-                  (remove-if-not #'go-tag-p body))))
+           (mapcar (lambda (label)
+                     (let ((tagidx (incf go-tag-counter)))
+                       (make-binding :name label :type 'gotag :value (list tbidx tagidx))))
+                   (remove-if-not #'go-tag-p body))))
     (extend-lexenv bindings *environment* 'gotag)))
 
 (define-compilation tagbody (&rest body)
@@ -925,7 +974,7 @@
                  (try
                   (switch ,branch
                     ,@(with-collect
-                          (collect `(case ,initag))
+                        (collect `(case ,initag))
                         (dolist (form (cdr body))
                           (if (go-tag-p form)
                               (let ((b (lookup-in-lexenv form *environment* 'gotag)))
@@ -967,12 +1016,12 @@
        (var vs)
        (progn
          ,@(with-collect
-               (dolist (form forms)
-                 (collect `(= vs ,(convert form t)))
-                 (collect `(if (and (=== (typeof vs) "object")
-                                    (in "multiple-value" vs))
-                               (= args (method-call args "concat" vs))
-                               (method-call args "push" vs))))))
+             (dolist (form forms)
+               (collect `(= vs ,(convert form t)))
+               (collect `(if (and (=== (typeof vs) "object")
+                                  (in "multiple-value" vs))
+                             (= args (method-call args "concat" vs))
+                             (method-call args "push" vs))))))
        (return (method-call func "apply" null args))))))
 
 (define-compilation multiple-value-prog1 (first-form &rest forms)
@@ -993,6 +1042,12 @@
 
 (defvar *builtins*
   (make-hash-table))
+
+(defun !special-operator-p (name)
+  (nth-value 1 (gethash name *builtins*)))
+#+jscl
+(fset 'special-operator-p #'!special-operator-p)
+
 
 (defmacro define-raw-builtin (name args &body body)
   ;; Creates a new primitive function `name' with parameters args and
@@ -1047,7 +1102,7 @@
   (if (null numbers)
       0
       (variable-arity numbers
-                      `(+ ,@numbers))))
+        `(+ ,@numbers))))
 
 (define-raw-builtin - (x &rest others)
   (let ((args (cons x others)))
@@ -1065,10 +1120,10 @@
 (define-raw-builtin / (x &rest others)
   (let ((args (cons x others)))
     (variable-arity args
-                    (if (null others)
-                        `(call-internal |handled_division| 1 ,(car args))
-                        (reduce (lambda (x y) `(call-internal |handled_division| ,x ,y))
-                                args)))))
+      (if (null others)
+          `(call-internal |handled_division| 1 ,(car args))
+          (reduce (lambda (x y) `(call-internal |handled_division| ,x ,y))
+                  args)))))
 
 (define-builtin mod (x y)
   `(selfcall
@@ -1091,7 +1146,7 @@
   `(define-raw-builtin ,op (x &rest args)
      (let ((args (cons x args)))
        (variable-arity args
-                       (convert-to-bool (comparison-conjuntion args ',sym))))))
+         (convert-to-bool (comparison-conjuntion args ',sym))))))
 
 (define-builtin-comparison > >)
 (define-builtin-comparison < <)
@@ -1161,7 +1216,7 @@
   (convert-to-bool `(!== (get ,x "value") undefined)))
 
 (define-builtin fboundp (x)
-  (convert-to-bool `(!== (get ,x "fvalue") undefined)))
+  (convert-to-bool `(!== (get ,x "fvalue") (internal |unboundFunction|))))
 
 (define-builtin symbol-value (x)
   `(call-internal |symbolValue| ,x))
@@ -1384,8 +1439,10 @@
                   (property o key)))
     (return ,(convert nil))))
 
-(define-compilation %js-vref (var)
-  `(call-internal |js_to_lisp| ,(make-symbol var)))
+(define-compilation %js-vref (var &optional raw)
+  (if raw
+      (make-symbol var)
+      `(call-internal |js_to_lisp| ,(make-symbol var))))
 
 (define-compilation %js-vset (var val)
   `(= ,(make-symbol var) (call-internal |lisp_to_js| ,(convert val))))
@@ -1423,23 +1480,23 @@
 ;;
 (define-compilation %js-try (form &optional catch-form finally-form)
   (let ((catch-compilation
-         (and catch-form
-              (destructuring-bind (catch (var) &body body) catch-form
-                (unless (eq catch 'catch)
-                  (error "Bad CATCH clausule `~S'." catch-form))
-                (let* ((*environment* (extend-local-env (list var)))
-                       (tvar (translate-variable var)))
-                  `(catch (,tvar)
-                     (= ,tvar (call-internal |js_to_lisp| ,tvar))
-                     ,(convert-block body t))))))
+          (and catch-form
+               (destructuring-bind (catch (var) &body body) catch-form
+                 (unless (eq catch 'catch)
+                   (error "Bad CATCH clausule `~S'." catch-form))
+                 (let* ((*environment* (extend-local-env (list var)))
+                        (tvar (translate-variable var)))
+                   `(catch (,tvar)
+                      (= ,tvar (call-internal |js_to_lisp| ,tvar))
+                      ,(convert-block body t))))))
 
         (finally-compilation
-         (and finally-form
-              (destructuring-bind (finally &body body) finally-form
-                (unless (eq finally 'finally)
-                  (error "Bad FINALLY clausule `~S'." finally-form))
-                `(finally
-                  ,(convert-block body))))))
+          (and finally-form
+               (destructuring-bind (finally &body body) finally-form
+                 (unless (eq finally 'finally)
+                   (error "Bad FINALLY clausule `~S'." finally-form))
+                 `(finally
+                   ,(convert-block body))))))
 
     `(selfcall
       (try (return ,(convert form)))
@@ -1651,5 +1708,6 @@
   `(let ((*literal-table* nil)
          (*variable-counter* 0)
          (*gensym-counter* 0)
-         (*literal-counter* 0))
+         (*literal-counter* 0)
+         (*environment* (make-lexenv)))
      ,@body))

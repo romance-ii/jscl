@@ -20,8 +20,8 @@
 
 (defun eval (x)
   (let ((jscode
-         (with-compilation-environment
-             (compile-toplevel x t t))))
+          (with-compilation-environment
+            (compile-toplevel x t t))))
     (js-eval jscode)))
 
 (defvar * nil)

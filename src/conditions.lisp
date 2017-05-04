@@ -67,7 +67,7 @@
          (let (,datum)
            (tagbody
               (%handler-bind ,(mapcar #'translate-case cases)
-                             (return-from ,nlx ,form))
+                (return-from ,nlx ,form))
               ,@(reverse tagbody-content)))))))
 
 
@@ -83,7 +83,7 @@
                  (block ,normal-return
                    (return-from ,error-return
                      (%handler-case-1 (return-from ,normal-return ,form)
-                                      ,@(butlast cases))))))))
+                       ,@(butlast cases))))))))
         `(%handler-case-1 ,form ,@cases))))
 
 
@@ -92,7 +92,7 @@
 ;;; final implementation would require CLOS.
 
 (def!struct !condition
-    type
+  type
   args)
 
 (defun condition-type-p (x type)

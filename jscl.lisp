@@ -1,6 +1,7 @@
 ;;; jscl.lisp ---
 
-;; Copyright (C) 2012, 2013 David Vazquez Copyright (C) 2012 Raimon Grau
+;; Copyright (C) 2012, 2013 David Vazquez
+;;; Copyright (C) 2012 Raimon Grau
 
 ;; JSCL is free software: you can redistribute it and/or modify it under
 ;; the terms of the GNU General  Public License as published by the Free
@@ -35,21 +36,24 @@
   ;; and we are not using ASDF yet.
   (with-open-file (in (merge-pathnames "package.json" *base-directory*))
     (loop
-       for line = (read-line in nil)
-       while line
-       when (search "\"version\":" line)
-       do (let ((colon (position #\: line))
-                (comma (position #\, line)))
-            (return (string-trim '(#\newline #\" #\tab #\space)
-                                 (subseq line (1+ colon) comma)))))))
+      for line = (read-line in nil)
+      while line
+      when (search "\"version\":" line)
+        do (let ((colon (position #\: line))
+                 (comma (position #\, line)))
+             (return (string-trim '(#\newline #\quotation_mark #\tab #\space)
+                                  (subseq line (1+ colon) comma)))))))
 
 
-;;; List of all the source files that need to  be compiled, and whether they are to be compiled just
-;;; by the  host, by  the target  JSCL, or  by both.  All files  have a  `.lisp' extension,  and are
-;;; relative to src/ Subdirectories are indicated by the presence of a list rather than a keyword in
-;;; the second element  of the list. For  example, this list: (("foo" :target)  ("bar" ("baz" :host)
-;;; ("quux"  :both))) Means  that src/foo.lisp  and  src/bar/quux.lisp need  to be  compiled in  the
-;;; target, and that src/bar/baz.lisp and src/bar/quux.lisp need to be compiled in the host
+;;; List of all  the source files that need to  be compiled, and whether
+;;; they are to be compiled just by  the host, by the target JSCL, or by
+;;; both. All files  have a `.lisp' extension, and are  relative to src/
+;;; Subdirectories are indicated  by the presence of a  list rather than
+;;; a keyword in the second element of the list. For example, this list:
+;;; (("foo" :target)  ("bar" ("baz"  :host) ("quux" :both)))  Means that
+;;; src/foo.lisp  and  src/bar/quux.lisp  need  to be  compiled  in  the
+;;; target, and  that src/bar/baz.lisp and src/bar/quux.lisp  need to be
+;;; compiled in the host
 (defvar *source*
   '(("boot"          :target)
     ("early-char"    :target)
@@ -115,11 +119,11 @@
 ;;; Compile and load jscl into the host
 (with-compilation-unit ()
   (do-source input :host
-             (multiple-value-bind (fasl warn fail) (compile-file input)
-               (declare (ignore warn))
-               (when fail
-                 (error "Compilation of ~A failed." input))
-               (load fasl))))
+    (multiple-value-bind (fasl warn fail) (compile-file input)
+      (declare (ignore warn))
+      (when fail
+        (error "Compilation of ~A failed." input))
+      (load fasl))))
 
 (defun read-whole-file (filename)
   (with-open-file (in filename)
@@ -151,26 +155,26 @@
     (let ((in (make-string-stream (read-whole-file filename))))
       (format t "Compiling ~a...~%" (enough-namestring filename))
       (loop
-         with eof-mark = (gensym)
-         for form = (ls-read in nil eof-mark)
-         until (eq form eof-mark)
-         do (let ((compilation (compile-toplevel form)))
-              (if (possibly-valid-js-p compilation)
-                  (when (plusp (length compilation))
-                    (write-string compilation out))
-                  (complain-about-illegal-chars form in compilation)))))))
+        with eof-mark = (gensym)
+        for form = (ls-read in nil eof-mark)
+        until (eq form eof-mark)
+        do (let ((compilation (compile-toplevel form)))
+             (if (possibly-valid-js-p compilation)
+                 (when (plusp (length compilation))
+                   (write-string compilation out))
+                 (complain-about-illegal-chars form in compilation)))))))
 
 (defun dump-global-environment (stream)
   (flet ((late-compile (form)
            (let ((*standard-output* stream))
              (write-string (compile-toplevel form)))))
-    ;; We assume that environments have a friendly list representation
+    ;; We assume  that environments have a  friendly list representation
     ;; for the compiler and it can be dumped.
     (dolist (b (lexenv-function *environment*))
       (when (eq (binding-type b) 'macro)
         (setf (binding-value b) `(,*magic-unquote-marker* ,(binding-value b)))))
     (late-compile `(setq *environment* ',*environment*))
-    ;; Set some counter variable properly, so user compiled code will
+    ;; Set some  counter variable properly,  so user compiled  code will
     ;; not collide with the compiler itself.
     (late-compile
      `(progn
@@ -190,20 +194,20 @@
 
 (defun compile-application (files output &key shebang)
   (with-compilation-environment
-      (with-open-file (out output :direction :output :if-exists :supersede)
-        (when shebang
-          (write-string "#!/usr/bin/env node" out)
-          (terpri out))
-        (with-scoping-function (out)
-          (dolist (input files)
-            (terpri out)
-            (!compile-file input out))))))
+    (with-open-file (out output :direction :output :if-exists :supersede)
+      (when shebang
+        (write-string "#!/usr/bin/env node" out)
+        (terpri out))
+      (with-scoping-function (out)
+        (dolist (input files)
+          (terpri out)
+          (!compile-file input out))))))
 
 (defun compile-test-suite ()
   (compile-application
    `(,(source-pathname "tests.lisp" :directory nil)
-      ,@(directory (source-pathname "*" :directory '(:relative "tests") :type "lisp"))
-      ,(source-pathname "tests-report.lisp" :directory nil))
+     ,@(directory (source-pathname "*" :directory '(:relative "tests") :type "lisp"))
+     ,(source-pathname "tests-report.lisp" :directory nil))
    (merge-pathnames "tests.js" *base-directory*)))
 
 (defun compile-web-repl ()
@@ -219,15 +223,15 @@
 
 (defun compile-jscl.js (verbosep)
   (with-compilation-environment
-      (with-open-file (out (merge-pathnames "jscl.js" *base-directory*)
-                           :direction :output
-                           :if-exists :supersede)
-        (format out "(function(){~%'use strict';~%")
-        (write-string (read-whole-file (source-pathname "prelude.js")) out)
-        (do-source input :target
-                   (!compile-file input out :print verbosep))
-        (dump-global-environment out)
-        (format out "})();~%"))))
+    (with-open-file (out (merge-pathnames "jscl.js" *base-directory*)
+                         :direction :output
+                         :if-exists :supersede)
+      (format out "(function(){~%'use strict';~%")
+      (write-string (read-whole-file (source-pathname "prelude.js")) out)
+      (do-source input :target
+        (!compile-file input out :print verbosep))
+      (dump-global-environment out)
+      (format out "})();~%"))))
 
 (defun bootstrap (&optional verbosep)
   (let ((*features* (list* :jscl :jscl-xc *features*))
@@ -240,6 +244,27 @@
     (compile-web-repl)
     (compile-node-repl)))
 
+(defvar *environment*)
+
+;; Tests
+(compile-application
+ `(,(source-pathname "tests.lisp" :directory nil)
+    ,@(directory (source-pathname "*" :directory '(:relative "tests") :type "lisp"))
+    ,(source-pathname "tests-report.lisp" :directory nil))
+ (merge-pathnames "tests.js" *base-directory*))
+
+;; Web REPL
+(compile-application (list (source-pathname "repl.lisp" :directory '(:relative "repl-web")))
+                     (merge-pathnames "repl-web.js" *base-directory*))
+
+;; Node REPL
+(compile-application (list (source-pathname "repl.lisp" :directory '(:relative "repl-node")))
+                     (merge-pathnames "repl-node.js" *base-directory*)
+                     :shebang t)
+
+
+;;; Run the tests in the host Lisp  implementation. It is a quick way to
+;;; improve the level of trust of the tests.
 (defun run-tests-in-host ()
   "Run the tests in  the host Lisp implementation. It is  a quick way to
 improve the level of trust of the tests."

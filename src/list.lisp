@@ -158,7 +158,7 @@
 (defun subst (new old tree &key key (test #'eql testp) (test-not #'eql test-not-p))
   (labels ((s (x)
              (cond ((satisfies-test-p old x :key key :test test :testp testp
-                                      :test-not test-not :test-not-p test-not-p)
+                                            :test-not test-not :test-not-p test-not-p)
                     new)
                    ((atom x) x)
                    (t (let ((a (s (car x)))
@@ -245,7 +245,7 @@
 (defun member (x list &key key (test #'eql testp) (test-not #'eql test-not-p))
   (while list
     (when (satisfies-test-p x (car list) :key key :test test :testp testp
-                            :test-not test-not :test-not-p test-not-p)
+                                         :test-not test-not :test-not-p test-not-p)
       (return list))
     (setq list (cdr list))))
 
@@ -253,7 +253,7 @@
 (defun assoc (x alist &key key (test #'eql testp) (test-not #'eql test-not-p))
   (while alist
     (if (satisfies-test-p x (caar alist) :key key :test test :testp testp
-                          :test-not test-not :test-not-p test-not-p)
+                                         :test-not test-not :test-not-p test-not-p)
         (return)
         (setq alist (cdr alist))))
   (car alist))
@@ -262,7 +262,7 @@
                             (test-not #'eql test-not-p))
   (while alist
     (if (satisfies-test-p x (cdar alist) :key key :test test :testp testp
-                          :test-not test-not :test-not-p test-not-p)
+                                         :test-not test-not :test-not-p test-not-p)
         (return)
         (setq alist (cdr alist))))
   (car alist))
@@ -280,9 +280,9 @@
 (defun copy-alist (alist)
   "Return a new association list which is EQUAL to ALIST."
   (with-collect
-      (while alist
-        (collect (cons (caar alist) (cdar alist)))
-        (setq alist (cdr alist)))))
+    (while alist
+      (collect (cons (caar alist) (cdar alist)))
+      (setq alist (cdr alist)))))
 
 (define-setf-expander car (x)
   (let ((cons (gensym))
@@ -319,7 +319,7 @@
                (let ((ele (car elements)))
                  (typecase ele
                    (cons (rplacd (last splice) ele)
-                         (setf splice ele))
+                    (setf splice ele))
                    (null (rplacd (last splice) nil))
                    (atom (if (cdr elements)
                              (fail ele)

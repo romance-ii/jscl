@@ -81,8 +81,8 @@ accumulated, in the order."
 (defun vector-to-list (vector)
   (let ((size (length vector)))
     (with-collect
-        (dotimes (i size)
-          (collect (aref vector i))))))
+      (dotimes (i size)
+        (collect (aref vector i))))))
 
 (defun list-to-vector (list)
   (let ((v (make-array (length list)))
@@ -136,7 +136,7 @@ accumulated, in the order."
 (defun interleave (list element &optional after-last-p)
   (unless (null list)
     (with-collect
-        (collect (car list))
+      (collect (car list))
       (dolist (x (cdr list))
         (collect element)
         (collect x))

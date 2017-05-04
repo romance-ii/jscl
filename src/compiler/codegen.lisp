@@ -53,13 +53,15 @@
 
 (defvar *js-pretty-print* t)
 
-;;; Two seperate  functions are  needed for  escaping strings: One  for producing  JavaScript string
-;;;  literals (which are singly or doubly quoted) And one for producing Lisp strings (which are only
-;;;  doubly quoted)
+;;; Two  seperate functions  are needed  for escaping  strings: One  for
+;;;  producing JavaScript  string literals  (which are singly  or doubly
+;;;  quoted) And one  for producing Lisp strings (which  are only doubly
+;;;  quoted)
 ;;;
-;;; The same function would suffice for both, but for javascript string literals it is neater to use
-;;; either depending on the  context, e.g: foo's => "foo's" "foo" => '"foo"'  which avoids having to
-;;; escape quotes where possible
+;;; The same function would suffice  for both, but for javascript string
+;;; literals it is  neater to use either depending on  the context, e.g:
+;;; foo's  => "foo's"  "foo" =>  '"foo"' which  avoids having  to escape
+;;; quotes where possible
 (defun js-escape-string (string)
   (let ((index 0)
         (size (length string))
@@ -116,7 +118,7 @@
         (let ((ch (char string index)))
           (when (char= ch #\apostrophe)
             (setq seen-single-quote t))
-          (when (char= ch #\")
+          (when (char= ch #\quotation_mark)
             (setq seen-double-quote t)))
         (incf index))
       ;; Then pick the appropriate way to escape the quotes
@@ -131,8 +133,9 @@
 (defun js-format (fmt &rest args)
   (apply #'format *js-output* fmt args))
 
-;;; Check if STRING-DESIGNATOR is  valid as a Javascript identifier. It returns  a couple of values.
-;;; The identifier itself as a string and a boolean value with the result of this check.
+;;; Check  if STRING-DESIGNATOR  is  valid as  a Javascript  identifier.
+;;; It returns a couple of values. The identifier itself as a string and
+;;; a boolean value with the result of this check.
 (defun valid-js-identifier (string-designator)
   (let ((string (typecase string-designator
                   (symbol (symbol-name string-designator))
@@ -510,8 +513,8 @@
                 (js-stmt false))))
            (group
             (let ((in-group-p
-                   (or (null parent)
-                       (and (consp parent) (eq (car parent) 'group)))))
+                    (or (null parent)
+                        (and (consp parent) (eq (car parent) 'group)))))
               (unless  in-group-p (js-format "{"))
               (mapc #'js-stmt (cdr form))
               (unless in-group-p (js-format "}"))))

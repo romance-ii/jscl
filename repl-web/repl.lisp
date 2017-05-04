@@ -55,8 +55,9 @@
 
     (if (and (zerop depth))
         nil
-        ;; We should use something  based on DEPTH in order to make edition  nice, but the behaviour
-        ;; is a bit weird with jqconsole.
+        ;; We  should use  something based  on  DEPTH in  order to  make
+        ;; edition   nice,   but   the   behaviour  is   a   bit   weird
+        ;; with jqconsole.
         0)))
 
 

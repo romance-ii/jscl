@@ -194,7 +194,7 @@
      ,result-form))
 
 (defmacro do-external-symbols ((var &optional (package '*package*)
-                                    result-form)
+                                              result-form)
                                &body body)
   `(block nil
      (%map-external-symbols
