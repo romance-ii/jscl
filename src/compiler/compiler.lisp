@@ -858,9 +858,6 @@ association list ALIST in the same order."
 (defvar *compiling-file* nil
   "Was the compiler invoked from `compile-file'?")
 
-(defun bangerang (form)
-  (error "Deprecated function removed"))
-
 (define-compilation eval-when (situations &rest body)
   "NOTE: It  is probably wrong  in many cases but  we will not  use this
  heavily. Please, do not rely on wrong cases of this implementation."
@@ -2163,10 +2160,10 @@ just fine."
 (defun convert-toplevel-normal (sexp multiple-value-p return-p)
   (when *compile-print-toplevels*
     (let ((form-string (prin1-to-string sexp)))
-      (format t "~&;; Compiling ~a…" (truncate-string
-                                      (substitute #\space #\newline
-                                                  form-string)
-                                      120))))
+      (format t "~&;; JSCL is Compiling ~a…" (truncate-string
+                                              (substitute #\space #\newline
+                                                          form-string)
+                                              120))))
 
   (let ((code (convert sexp multiple-value-p)))
     (if return-p

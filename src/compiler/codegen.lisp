@@ -80,8 +80,8 @@
                                              (vector stuff)))))
                     (backslash (char)
                       (add (vector #\\ char))))
-               (while (< index size)
-                 (let ((ch (char string index)))
+                 (while (< index size)
+                   (let ((ch (char string index)))
                      (case ch
                        (#\apostrophe
                         (if escape-single-quote-p
@@ -95,17 +95,17 @@
                        (#\backspace 	(backslash #\b))
                        (#\null 	(backslash #\0))
                        (otherwise
-                   (cond
+                        (cond
                           ((<= 1 (char-code ch) 26)
                            (add "\\c")
                            (add (code-char (+ (char-code #\A)
                                               -1
                                               (char-code ch)))))
-                     ((<= 27 (char-code ch) 31)
+                          ((<= 27 (char-code ch) 31)
                            (add "\\x")
                            (add (integer-to-string (char-code ch) 16)))
-                     ((<= 127 (char-code ch) 159)
-                      (let ((s (integer-to-string (char-code ch) 16)))
+                          ((<= 127 (char-code ch) 159)
+                           (let ((s (integer-to-string (char-code ch) 16)))
                              (add "\\u")
                              (add (make-string (- 4 (length s))
                                                :initial-element #\0))
@@ -119,10 +119,10 @@
          (concat #(#\apostrophe)
                  (%js-escape-string string nil)
                  #(#\apostrophe)))
-        ((not (find #\" string))
-         (concat #(#\")
+        ((not (find #\quotation_mark string))
+         (concat #(#\quotation_mark)
                  (%js-escape-string string nil)
-                 #(#\")))
+                 #(#\quotation_mark)))
         (t
          (concat #(#\apostrophe)
                  (%js-escape-string string t)
@@ -506,14 +506,14 @@ unnecessary parentheses."
        (js-vector-initializer form))
       ((consp form)
        (js-operator-expression (car form) (cdr form)
-                               precedence associativity operand-order)
-       (t (error  "unreachable?")))))
+                               precedence associativity operand-order))
+      (t (error  "unreachable?")))))
 
-
+
 ;;; Statements generators
 ;;;
-;;; `js-stmt' generates code for Javascript statements. A form is
-;;; provided to label statements. Remember that in particular,
+;;; `js-stmt'  generates  code  for  Javascript statements.  A  form  is
+;;; provided  to   label  statements.   Remember  that   in  particular,
 ;;; expressions can be used as statements (semicolon suffixed).
 (defun js-expand-stmt (form)
   (cond
@@ -591,8 +591,8 @@ unnecessary parentheses."
                 (js-stmt false))))
            (group
             (let ((in-group-p
-                   (or (null parent)
-                       (and (consp parent) (eq (car parent) 'group)))))
+                    (or (null parent)
+                        (and (consp parent) (eq (car parent) 'group)))))
               (unless  in-group-p (js-format "{"))
               (mapc #'js-stmt (cdr form))
               (unless in-group-p (js-format "}"))))

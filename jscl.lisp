@@ -90,6 +90,9 @@ When  you  build JSCL,  you'll  invoke  JSCL:Boostrap-Core in  the  host
 compiler (probably SBCL) to build the  system. Once you're “in” the JSCL
 implementation, you may never need to access this package directly."))
 
+(defvar jscl::*environment*)
+(defvar jscl::*global-environment*)
+
 (defpackage jscl/ffi
   (:use :cl :jscl)
   (:export #:oget #:oget* #:make-new #:new #:*root*
@@ -165,15 +168,15 @@ using Slime."
                                  *default-pathname-defaults*))))
 
   (defun extract-version-from-package.json ()
-  (with-open-file (in (merge-pathnames "package.json" *base-directory*))
-    (loop
-       for line = (read-line in nil)
-       while line
-       when (search "\"version\":" line)
-       do (let ((colon (position #\: line))
-                (comma (position #\, line)))
-            (return (string-trim '(#\newline #\" #\tab #\space)
-                                   (subseq line (1+ colon) comma))))))))
+    (with-open-file (in (merge-pathnames "package.json" *base-directory*))
+      (loop
+        for line = (read-line in nil)
+        while line
+        when (search "\"version\":" line)
+          do (let ((colon (position #\: line))
+                   (comma (position #\, line)))
+               (return (string-trim '(#\newline #\quotation_mark #\tab #\space)
+                                    (subseq line (1+ colon) comma))))))))
 
 (defvar *version*
   (extract-version-from-package.json)
@@ -187,26 +190,26 @@ using Slime."
                                   :element-type 'character
                                   :adjustable t
                                   :fill-pointer 0)
-     for char = (read-char stream nil nil)
-     while char
-     do (vector-push-extend char buffer #x400)
-     finally (progn
-               (adjust-array buffer (fill-pointer buffer))
-               (return buffer))))
+        for char = (read-char stream nil nil)
+        while char
+        do (vector-push-extend char buffer #x400)
+        finally (progn
+                  (adjust-array buffer (fill-pointer buffer))
+                  (return buffer))))
 
 (defun run-program-compile-time (bin args)
   #+sbcl
   (sb-posix:chdir *base-directory*)
   (or #+asdf
       (uiop:run-program (cons bin args) :output :string
-                        :ignore-error-status t)
+                                        :ignore-error-status t)
       #+sbcl
       (ignore-errors
-        (read-fully
-         (sb-ext:process-output
-          (sb-ext:run-program bin args
-                              :wait t
-                              :output :stream))))
+       (read-fully
+        (sb-ext:process-output
+         (sb-ext:run-program bin args
+                             :wait t
+                             :output :stream))))
       nil))
 
 (defun read-whole-file (filename)
@@ -230,46 +233,46 @@ using Slime."
   "This makes  an effort to  let names  written in non-Latin  scripts be
 alphabetized more-or-less phonetically, in many cases."
   (let ((greek
-         "αa βb γg δd εe ζz ηeeθthιi κk λl μm νn ξksοo πp ρr ΢s σs τt υu φphχchψpsωoo")
+          "αa βb γg δd εe ζz ηeeθthιi κk λl μm νn ξksοo πp ρr ΢s σs τt υu φphχchψpsωoo")
         (cyrillic
-         "аa бb вv гg дd еe жj зz иiiйi кk лl мm нn оo пp рr сs тt уu фf хkhцtsчchшshщscъy ыy ьy эe юyuяya"))
+          "аa бb вv гg дd еe жj зz иiiйi кk лl мm нn оo пp рr сs тt уu фf хkhцtsчchшshщscъy ыy ьy эe юyuяya"))
     (reduce (lambda (s1 s2)
               (concatenate 'string s1 s2))
             (loop
-               for i from 0 below (length string)
-               for char = (char-downcase (char string i))
+              for i from 0 below (length string)
+              for char = (char-downcase (char string i))
 
-               for hellenic = (position char greek)
-               for russian = (position char cyrillic)
-               for char-name = (string-downcase (char-name char))
-               for digit-value = (digit-char-p char)
-               for roman = (search "roman_numeral_" char-name)
-               for syllable = (search "syllable_" char-name)
-               for hiragana = (search "hiragana_letter" char-name)
+              for hellenic = (position char greek)
+              for russian = (position char cyrillic)
+              for char-name = (string-downcase (char-name char))
+              for digit-value = (digit-char-p char)
+              for roman = (search "roman_numeral_" char-name)
+              for syllable = (search "syllable_" char-name)
+              for hiragana = (search "hiragana_letter" char-name)
 
-               collect
-                 (cond
-                   ((and hellenic (zerop (mod hellenic 3)))
-                    (remove #\Space
-                            (subseq greek (+ 1 hellenic)
-                                    (+ 3 hellenic))))
-                   ((and russian (zerop (mod russian 3)))
-                    (remove #\Space
-                            (subseq cyrillic (+ 1 russian)
-                                    (+ 3 russian))))
-                   (hiragana
-                    (subseq char-name (1+ (position #\_ char-name
-                                                    :from-end t))))
-                   (roman
-                    (subseq char-name (1+ (position #\_ char-name
-                                                    :from-end t))))
-                   (syllable
-                    (subseq char-name (+ 9 syllable)
-                            (position #\_ char-name
-                                      :start (+ 9 syllable))))
-                   (digit-value
-                    (format nil "~r" digit-value))
-                   (t (string char))))
+              collect
+              (cond
+                ((and hellenic (zerop (mod hellenic 3)))
+                 (remove #\Space
+                         (subseq greek (+ 1 hellenic)
+                                 (+ 3 hellenic))))
+                ((and russian (zerop (mod russian 3)))
+                 (remove #\Space
+                         (subseq cyrillic (+ 1 russian)
+                                 (+ 3 russian))))
+                (hiragana
+                 (subseq char-name (1+ (position #\_ char-name
+                                                 :from-end t))))
+                (roman
+                 (subseq char-name (1+ (position #\_ char-name
+                                                 :from-end t))))
+                (syllable
+                 (subseq char-name (+ 9 syllable)
+                         (position #\_ char-name
+                                   :start (+ 9 syllable))))
+                (digit-value
+                 (format nil "~r" digit-value))
+                (t (string char))))
             :initial-value "")))
 
 (defun git-credits ()
@@ -278,7 +281,7 @@ alphabetized more-or-less phonetically, in many cases."
                             "/usr/bin/git"
                             '("log" "--format=%aN")))
     (sort (remove-duplicates (loop for name = (read-line everyone nil nil)
-                                while name collect name)
+                                   while name collect name)
                              :test #'string-equal)
           #'string-lessp
           :key (lambda (name)
@@ -517,8 +520,8 @@ which occurred within ~r file~:p: ~
 
 (defun load-jscl ()
   (with-compilation-unit ()
-    (when *load-pathname*    ; Prevent this  file from becoming that one
-                                        ; stale FASL …
+    (when *load-pathname*    
+      ;; Prevent this file from becoming that one stale FASL …
       (compile-file *load-pathname*)))
   (with-compilation-unit ()
     (let ((fasls (compile-pass :host)))
@@ -529,6 +532,8 @@ which occurred within ~r file~:p: ~
             (declare #+sbcl (sb-ext:muffle-conditions
                              sb-kernel::function-redefinition-warning))
           (load fasl))))
+    (setf jscl::*global-environment* (jscl::make-lexenv)
+          jscl::*environment* jscl::*global-environment*)
     (funcall (intern "INIT-BUILT-IN-TYPES%" :jscl))
     (compile-pass :target)))
 
@@ -536,10 +541,10 @@ which occurred within ~r file~:p: ~
 (defmacro doforms ((var stream) &body body)
   (let ((eof (gensym "EOF-")))
     `(loop
-        with ,eof = (gensym "EOF-")
-        for ,var = (read ,stream nil ,eof)
-        until (eq ,var ,eof)
-        do (progn ,@body))))
+       with ,eof = (gensym "EOF-")
+       for ,var = (read ,stream nil ,eof)
+       until (eq ,var ,eof)
+       do (progn ,@body))))
 
 
 ;;;; Load JSCL into the host implementation.

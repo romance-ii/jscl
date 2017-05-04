@@ -24,30 +24,29 @@
 
 (defvar jscl/cl::*standard-output*
   #+jscl
-  (setq *standard-output*
-        (vector 'stream
-                (lambda (ch)
-                  ((jscl/ffi::oget (%js-vref "global") "console" "error") (string ch)))
-                (lambda (string)
-                  ((jscl/ffi::oget (%js-vref "global") "console" "error") string)))
-        #-jscl cl::*standard-output*)
+  (vector 'stream
+          (lambda (ch)
+            ((jscl/ffi::oget (%js-vref "global") "console" "error") (string ch)))
+          (lambda (string)
+            ((jscl/ffi::oget (%js-vref "global") "console" "error") string)))
+  #-jscl cl::*standard-output*)
 
 ;;; Printer
 
-  (defun lisp-escape-string (string)
-    (let ((output "")
-          (index 0)
-          (size (length string)))
-      (while (< index size)
-        (let ((ch (char string index)))
-          (when (or (char= ch #\") (char= ch #\\))
+(defun lisp-escape-string (string)
+  (let ((output "")
+        (index 0)
+        (size (length string)))
+    (while (< index size)
+      (let ((ch (char string index)))
+        (when (or (char= ch #\quotation_mark) (char= ch #\\))
           (setq output (concat output "\\")))
-        (when (or (char= ch #\newline))   	; wait, what? \n in Lisp? No… *BRFP TODO
-          (setq output (concat output "\\"))
-          (setq ch #\n))
         (setq output (concat output (string ch))))
       (incf index))
-    (concat "\"" output "\"")))
+    (concatenate 'string
+                 #( #\quotation_mark )
+                 output
+                 #( #\quotation_mark ))))
 
 (defun escape-symbol-name-p (s)
   "Return  T if  the  string S  contains characters  which  need to  be
@@ -60,8 +59,8 @@
                 (char= ch #\:)
                 (char= ch #\\)
                 (not (char= ch (char-upcase ch)))
-                (char= ch #\|))
-          (return-from escape-symbol-name-p t))))
+                (char= ch #\vertical_line))
+        (return-from escape-symbol-name-p t))))
   (potential-number-p s))
 
 (defun potential-number-p (string)
@@ -126,7 +125,7 @@
       (let ((result "|"))
         (dotimes (i (length s))
           (let ((ch (char s i)))
-            (when (or (char= ch #\|)
+            (when (or (char= ch #\vertical_line)
                       (char= ch #\\))
               (setf result (concat result "\\")))
             (setf result (concat result (string ch)))))
@@ -300,15 +299,15 @@ format control string ~S." fmt))))
            ((= i (length form)))
          (write-char #\space stream)
          (write-aux (aref form i) stream known-objects object-ids)))
-     (write-char #\) stream))
-  ;; Packages
-  (package
-   (simple-format stream "#<PACKAGE ~a>" (package-name form)))
-  ;; Others
-  (otherwise
-   (simple-format stream "#<JS-OBJECT ~a>"
-                  (funcall (JSCL/FFI:OGET* JSCL/FFI:*ROOT* "String")
-                           form)))))
+     (write-char #\right_parenthesis stream))
+    ;; Packages
+    (package
+     (simple-format stream "#<PACKAGE ~a>" (package-name form)))
+    ;; Others
+    (otherwise
+     (simple-format stream "#<JS-OBJECT ~a>"
+                    (funcall (JSCL/FFI:OGET* JSCL/FFI:*ROOT* "String")
+                             form)))))
 
 (defun output-stream-designator (x)
   ;; TODO: signal error if X is not a stream designator
@@ -686,234 +685,234 @@ emits (1- COUNT)."
                (stringp (first captured-substrings))
                (stringp (third captured-substrings))
                (consp (second captured-substrings))
-               (eql #\; (car (second captured-substrings))))
-                    (captured-substrings)
-                    "~~:[ expects two fields divided by ~~;")
-               (values
-                (if (first arguments)
-                    (first captured-substrings)      ; FIXME: format recursively
-                    (third captured-substrings))
-                (rest arguments)))
+               (eql #\semicolon (car (second captured-substrings))))
+          (captured-substrings)
+          "~~:[ expects two fields divided by ~~;")
+  (values
+   (if (first arguments)
+       (first captured-substrings)      ; FIXME: format recursively
+       (third captured-substrings))
+   (rest arguments)))
 
-          (defun divide-by (predicate sequence)
-            (let ((true ())
-                  (false ()))
-              (dotimes (i (length sequence))
-                (if (funcall predicate i)
-                    (push (elt sequence i) true)
-                    (push (elt sequence i) false)))
-              (values (coerce (reverse true) (if (listp sequence)
-                                                 'list
-                                                 'vector))
-                      (coerce (reverse false) (if (listp sequence)
-                                                  'list
-                                                  'vector)))))
+(defun divide-by (predicate sequence)
+  (let ((true ())
+        (false ()))
+    (dotimes (i (length sequence))
+      (if (funcall predicate i)
+          (push (elt sequence i) true)
+          (push (elt sequence i) false)))
+    (values (coerce (reverse true) (if (listp sequence)
+                                       'list
+                                       'vector))
+            (coerce (reverse false) (if (listp sequence)
+                                        'list
+                                        'vector)))))
 
-          (defun format-conditional-nth (captured-substrings arguments)
-            (multiple-value-bind (alternatives semicolons) (divide-by #'oddp captured-substrings)
-              (assert (every #'tilde-semicolon-p semicolons) ()
-                      "~~[ (Nth string) alternatives must be separated by ~~;")
-              (let ((n (first arguments)))
-                (assert (and (numberp n)
-                             (not (minusp n))) ()
-                             "~~[ (Nth string) requires a non-negative, numeric argument; got ~a" n)
-                (values
-                 (cond ((< n (length alternatives))
-                        (nth n alternatives))
-                       ((find #\: (last semicolons))
-                        (car (last alternatives)))
-                       (t
-                        (error "~~[ (Nth string) argument ~d is greater than the number of alternatives available (~d)"
-                               n (length alternatives))))
-                 (rest arguments)))))
+(defun format-conditional-nth (captured-substrings arguments)
+  (multiple-value-bind (alternatives semicolons) (divide-by #'oddp captured-substrings)
+    (assert (every #'tilde-semicolon-p semicolons) ()
+            "~~[ (Nth string) alternatives must be separated by ~~;")
+    (let ((n (first arguments)))
+      (assert (and (numberp n)
+                   (not (minusp n))) ()
+                   "~~[ (Nth string) requires a non-negative, numeric argument; got ~a" n)
+      (values
+       (cond ((< n (length alternatives))
+              (nth n alternatives))
+             ((find #\: (last semicolons))
+              (car (last alternatives)))
+             (t
+              (error "~~[ (Nth string) argument ~d is greater than the number of alternatives available (~d)"
+                     n (length alternatives))))
+       (rest arguments)))))
 
-          (defun format-conditional (captured-substrings arguments
-                                     &key start-at-p start-colon-p
-                                          end-at-p end-colon-p)
-            "FORMAT ~[ ~] handler. (unimplemented)"
-            (cond
-              ((or end-colon-p end-at-p)
-               (error "~~~@[:~]~@[@~]] is not a valid closing option ~
+(defun format-conditional (captured-substrings arguments
+                           &key start-at-p start-colon-p
+                                end-at-p end-colon-p)
+  "FORMAT ~[ ~] handler. (unimplemented)"
+  (cond
+    ((or end-colon-p end-at-p)
+     (error "~~~@[:~]~@[@~]] is not a valid closing option ~
  \(neither : nor @ are allowed here)"
-                      end-colon-p end-at-p))
-              ((and start-colon-p start-at-p)
-               (error "~~:@[ is not a valid option. Use either : or @, but not both."))
-              (start-at-p
-               (format-conditional-t-or-nothing captured-substrings arguments))
-              (start-colon-p
-               (format-conditional-nil-t captured-substrings arguments))
-              (t
-               (format-conditional-nth captured-substrings arguments))))
+            end-colon-p end-at-p))
+    ((and start-colon-p start-at-p)
+     (error "~~:@[ is not a valid option. Use either : or @, but not both."))
+    (start-at-p
+     (format-conditional-t-or-nothing captured-substrings arguments))
+    (start-colon-p
+     (format-conditional-nil-t captured-substrings arguments))
+    (t
+     (format-conditional-nth captured-substrings arguments))))
 
-          (defun tilde-semicolon-p (form)
-            (and (consp form)
-                 (eql #\; (car form))))
+(defun tilde-semicolon-p (form)
+  (and (consp form)
+       (eql #\semicolon (car form))))
 
-                      (defun format-repeat (captured-substrings arguments
-                                            &key start-at-p start-colon-p
-                                                 end-at-p end-colon-p)
-                        "FORMAT ~{ ~} handler. (unimplemented)"
-                        (let (output)
-                          (when (find-if #'tilde-semicolon-p captured-substrings)
-                            (error "~~{ ~~} doesn't accept ~~; groups"))
-                          (assert (null (or start-at-p start-colon-p
-                                            end-at-p end-colon-p))
-                                  () "~~{ ~~} doesn't accept : or @ modifiers")
-                          (assert (or (= 1 (length captured-substrings))
-                                      (and (= 3 (length captured-substrings))
-                                           (consp (second captured-substrings))
-                                           (eql #\^ (car (second captured-substrings)))))
-                                  () "~~{ ~~} accepts one ~~^ only")
-                          (let ((list-args (pop arguments)))
-                            (check-type list-args list)
-                            (while list-args
-                              (multiple-value-bind (segment new-args)
-                                  (jscl/cl::format 'values (first captured-substrings) list-args)
-                                (push segment output)
-                                (setq list-args new-args))
-                              (when (and list-args (third captured-substrings))
-                                (multiple-value-bind (segment new-args)
-                                    (jscl/cl::format 'values (third captured-substrings) list-args)
-                                  (push segment output)
-                                  (setq list-args new-args)))))
-                          (values (concatenate 'string (reverse output)) arguments)))
+(defun format-repeat (captured-substrings arguments
+                      &key start-at-p start-colon-p
+                           end-at-p end-colon-p)
+  "FORMAT ~{ ~} handler. (unimplemented)"
+  (let (output)
+    (when (find-if #'tilde-semicolon-p captured-substrings)
+      (error "~~{ ~~} doesn't accept ~~; groups"))
+    (assert (null (or start-at-p start-colon-p
+                      end-at-p end-colon-p))
+            () "~~{ ~~} doesn't accept : or @ modifiers")
+    (assert (or (= 1 (length captured-substrings))
+                (and (= 3 (length captured-substrings))
+                     (consp (second captured-substrings))
+                     (eql #\^ (car (second captured-substrings)))))
+            () "~~{ ~~} accepts one ~~^ only")
+    (let ((list-args (pop arguments)))
+      (check-type list-args list)
+      (while list-args
+        (multiple-value-bind (segment new-args)
+            (jscl/cl::format 'values (first captured-substrings) list-args)
+          (push segment output)
+          (setq list-args new-args))
+        (when (and list-args (third captured-substrings))
+          (multiple-value-bind (segment new-args)
+              (jscl/cl::format 'values (third captured-substrings) list-args)
+            (push segment output)
+            (setq list-args new-args)))))
+    (values (concatenate 'string (reverse output)) arguments)))
 
-                      (defvar *format-nesting* nil)
-                      (defvar *nested-substrings* nil)
-                      (defun push-nested-substring (string-or-token)
-                        (push string-or-token (car *nested-substrings*)))
+(defvar *format-nesting* nil)
+(defvar *nested-substrings* nil)
+(defun push-nested-substring (string-or-token)
+  (push string-or-token (car *nested-substrings*)))
 
-                      (defun format-special (chr arg params &key colonp atp) ; should be generic …
-                        "This simulates a  generic function for most  “FORMAT TILDE” handlers,
+(defun format-special (chr arg params &key colonp atp) ; should be generic …
+  "This simulates a  generic function for most  “FORMAT TILDE” handlers,
 dispatching on the CHR ending the format sequence."
-                        (apply (case (char-upcase chr)
-                                 (#\$ #'format-float-$)
-                                 (#\( #'format-letter-case)
-                                  (#\< #'format-justify)
-                                  (#\A #'format-aesthetic)
-                                  (#\B #'format-binary)
-                                  (#\C #'format-char)
-                                  (#\D #'format-decimal)
-                                  (#\E #'format-float-e)
-                                  (#\F #'format-float-f)
-                                  (#\G #'format-float-g)
-                                  (#\O #'format-octal)
-                                  (#\R #'format-radix)
-                                  (#\S #'format-syntax)
-                                  (#\W #'format-write)
-                                  (#\X #'format-hex)
-                                  (#\[ #'format-conditional)
-                                  (#\{ #'format-repeat)
-                                  (t (warn "~~~a is not implemented yet, using ~~S instead" chr)
-                                     #'format-syntax))
-                                 arg colonp atp params))
+  (apply (case (char-upcase chr)
+           (#\$ #'format-float-$)
+           (#\left_parenthesis #'format-letter-case)
+           (#\< #'format-justify)
+           (#\A #'format-aesthetic)
+           (#\B #'format-binary)
+           (#\C #'format-char)
+           (#\D #'format-decimal)
+           (#\E #'format-float-e)
+           (#\F #'format-float-f)
+           (#\G #'format-float-g)
+           (#\O #'format-octal)
+           (#\R #'format-radix)
+           (#\S #'format-syntax)
+           (#\W #'format-write)
+           (#\X #'format-hex)
+           (#\[ #'format-conditional)
+           (#\{ #'format-repeat)
+           (t (warn "~~~a is not implemented yet, using ~~S instead" chr)
+            #'format-syntax))
+         arg colonp atp params))
 
-                        (defun format-nested (nesting-char
-                                              control-string output arguments
-                                              next atp colonp)
-                          (let ((end-char (elt ")]>}" (position nesting-char "([<{")))
-                                (format-nested-formatter (case next
-                                                           (#\( #'format-letter-case)
-                                                            (#\< #'format-justify)
-                                                            (#\[ #'format-conditional)
-                                                            (#\{ #'format-repeat))))
-                                (push (lambda (unnest-char captured-substrings
-                                               end-at-p end-colon-p)
-                                        (assert (char= unnest-char end-char)
-                                                () "Mismatch: found ~~~c ~
+(defun format-nested (nesting-char
+                      control-string output arguments
+                      next atp colonp)
+  (let ((end-char (elt ")]>}" (position nesting-char "([<{")))
+        (format-nested-formatter (case next
+                                   (#\left_parenthesis #'format-letter-case)
+                                   (#\< #'format-justify)
+                                   (#\[ #'format-conditional)
+                                   (#\{ #'format-repeat))))
+    (push (lambda (unnest-char captured-substrings
+                   end-at-p end-colon-p)
+            (assert (char= unnest-char end-char)
+                    () "Mismatch: found ~~~c ~
 but wanted ~~~c in format string"
-                                                unnest-char end-char)
-                                        (multiple-value-setq
-                                            (control-string output arguments)
-                                          (funcall format-nested-formatter
-                                                   captured-substrings
-                                                   arguments
-                                                   :start-at-p atp :start-colon-p colonp
-                                                   :end-at-p end-at-p :end-colon-p end-colon-p)))
-                                      *format-nesting*)
-                                (push nil *nested-substrings*))
+                    unnest-char end-char)
+            (multiple-value-setq
+                (control-string output arguments)
+              (funcall format-nested-formatter
+                       captured-substrings
+                       arguments
+                       :start-at-p atp :start-colon-p colonp
+                       :end-at-p end-at-p :end-colon-p end-colon-p)))
+          *format-nesting*)
+    (push nil *nested-substrings*))
 
-                            (values control-string output arguments))
+  (values control-string output arguments))
 
-                          (defun format-tilde (control-string arguments)
-                            (let ((output "")
-                                  (orig-arguments (copy-list arguments)))
-                              (flet ((need-more (reason)
-                                       (assert (not (equal "" control-string))
-                                               (control-string)
-                                               reason))
-                                     (pop-char ()
-                                       (prog1
-                                           (char control-string 0)
-                                         (setf control-string (subseq control-string 1)))))
-                                (let (params atp colonp)
-                                  (tagbody
-                                   read-control
-                                     (need-more "~ at end of format")
-                                     (let ((next (pop-char)))
-                                       (cond
-                                         ((digit-char-p next)     ; Digits
-                                          (multiple-value-bind (param ending)
-                                              (parse-integer control-string
-                                                             :junk-allowed t)
-                                            (push param params)
-                                            (setq control-string (subseq control-string
-                                                                         (1+ ending))))
-                                          (need-more "~numbers at end of format")
-                                          (when (char= (char control-string 0) #\,)
-                                            (pop-char))
-                                          (go read-control))
+(defun format-tilde (control-string arguments)
+  (let ((output "")
+        (orig-arguments (copy-list arguments)))
+    (flet ((need-more (reason)
+             (assert (not (equal "" control-string))
+                     (control-string)
+                     reason))
+           (pop-char ()
+             (prog1
+                 (char control-string 0)
+               (setf control-string (subseq control-string 1)))))
+      (let (params atp colonp)
+        (tagbody
+         read-control
+           (need-more "~ at end of format")
+           (let ((next (pop-char)))
+             (cond
+               ((digit-char-p next)     ; Digits
+                (multiple-value-bind (param ending)
+                    (parse-integer control-string
+                                   :junk-allowed t)
+                  (push param params)
+                  (setq control-string (subseq control-string
+                                               (1+ ending))))
+                (need-more "~numbers at end of format")
+                (when (char= (char control-string 0) #\,)
+                  (pop-char))
+                (go read-control))
 
-                                         ((char= #\apostrophe next) ; Quoted char
-                                          (need-more "~' at end of format")
-                                          (push (pop-char) params)
-                                          (need-more "~'char at end of format")
-                                          (go read-control))
+               ((char= #\apostrophe next) ; Quoted char
+                (need-more "~' at end of format")
+                (push (pop-char) params)
+                (need-more "~'char at end of format")
+                (go read-control))
 
-                                         ((char= #\, next)        ; Comma without param
-                                          (push nil params)
-                                          (go read-control))
+               ((char= #\, next)        ; Comma without param
+                (push nil params)
+                (go read-control))
 
-                                         ((char-equal #\V next)   ; Variable param
-                                          (push (pop arguments) params))
+               ((char-equal #\V next)   ; Variable param
+                (push (pop arguments) params))
 
-                                         ((char= #\# next)
-                                          (push (length arguments) params))
+               ((char= #\# next)
+                (push (length arguments) params))
 
-                                         ((char= #\Newline next)  ; ~Newline
-                                          ;; Skip the newline, but also  any leading spaces on the
-                                          ;; next line. TODO: Write a test for this
-                                          (while (whitespacep (char control-string 0))
-                                            (pop-char)))
+               ((char= #\Newline next)  ; ~Newline
+                ;; Skip the newline, but also  any leading spaces on the
+                ;; next line. TODO: Write a test for this
+                (while (whitespacep (char control-string 0))
+                  (pop-char)))
 
-                                         ((char= #\: next)        ; Colon modifier
-                                          (setf colonp t)
-                                          (go read-control))
+               ((char= #\: next)        ; Colon modifier
+                (setf colonp t)
+                (go read-control))
 
-                                         ((char= #\@ next)        ; At-sign modifier
-                                          (setf atp t)
-                                          (go read-control))
+               ((char= #\@ next)        ; At-sign modifier
+                (setf atp t)
+                (go read-control))
 
-                                         ((char-equal #\T next)   ; Tabulation
-                                          (concatf output
-                                            (make-string (min 1
-                                                              (or (last params)
-                                                                  1))
-                                                         :initial-element #\space)))
+               ((char-equal #\T next)   ; Tabulation
+                (concatf output
+                  (make-string (min 1
+                                    (or (last params)
+                                        1))
+                               :initial-element #\space)))
 
-                                         ((char-equal #\P next)   ; English plurals
-                                          (let ((peek (pop arguments)))
-                                            (when colonp
-                                              (push peek arguments))
-                                            (concatf output (cond
-                                                              ((and atp (/= 1 peek)) "ies")
-                                                              ((/= 1 peek) "s")
-                                                              (atp "y")
-                                                              (t "")))))
+               ((char-equal #\P next)   ; English plurals
+                (let ((peek (pop arguments)))
+                  (when colonp
+                    (push peek arguments))
+                  (concatf output (cond
+                                    ((and atp (/= 1 peek)) "ies")
+                                    ((/= 1 peek) "s")
+                                    (atp "y")
+                                    (t "")))))
 
-                                         ((char= #\~ next)        ; ~~ → ~
-                                          (concatf output "~"))
-                                         ((char= #\| next)        ; Page break
+               ((char= #\tilde next)        ; ~~ → ~
+                (concatf output "~"))
+               ((char= #\vertical_line next)        ; Page break
                 (concatf output #(#\Page)))
                ((char= #\% next)        ; Terminate Print (Newline)
                 (concatf output
@@ -923,13 +922,13 @@ but wanted ~~~c in format string"
                   (apply #'format-fresh-line (reverse params))))
 
                ((char= #\* next)        ; Adjust argument pointer
-                      (let ((delta (* (or (and params (first params))
-                                          1)
+                (let ((delta (* (or (and params (first params))
+                                    1)
                                 ;; sign inverted for - below
                                 (if colonp 1 -1))))
                   (setf arguments
                         (nthcdr (- (length orig-arguments)
-                                                   (length arguments)
+                                   (length arguments)
                                    delta)
                                 orig-arguments))))
                ((find next ";^")        ; Operate on grouping
@@ -974,8 +973,6 @@ but wanted ~~~c in format string"
                                   (reverse params)
                                   :atp atp :colonp colonp))))))
         (values control-string output arguments)))))
-
-
 
 (defun jscl/cl::format (destination control-string &rest format-arguments)
   ;; docstring c/o SBCL
