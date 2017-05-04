@@ -1,22 +1,70 @@
-# JSCL [![Build Status](https://travis-ci.org/jscl-project/jscl.svg?branch=master)](https://travis-ci.org/jscl-project/jscl)
+# JSCL 
+
+[![Build Status](https://travis-ci.org/jscl-project/jscl.svg?branch=master)](https://travis-ci.org/jscl-project/jscl)
 
 JSCL is a Common Lisp to Javascript compiler, which is bootstrapped
 from Common Lisp and executed from the browser.
 
+<p align="center">
+  <a href="https://jscl-project.github.io/">
+    <img src="logo/logo-128.png" alt="JSCL" title="JSCL" height="128" />
+  </a>
+</p>
+
+
 ## Getting Started
 
-You can try a demo [here](https://jscl-project.github.io/). But if
-you want to hack JSCL, you will have to download the repository
+You can try a demo online [here](https://jscl-project.github.io/), or
+you can install the JSCL npm package:
+
+    npm install -g jscl
+    
+to run `jscl-repl` in NodeJS.
+
+
+## Build
+
+If you want to hack JSCL, you will have to download the repository
 
     git clone https://github.com/jscl-project/jscl.git
 
-*load* `jscl.lisp` in your Lisp, and call the bootstrap function to
+to run `jscl-repl` in NodeJS.
+
+This  is the  upstream version.  Ours —  Romance Ⅱ  version —  is hacked
+a bit. We are currently aiming to stabilize a lot of things in time for
+
+As I  write this, in 2017, that experimental  branch is being
+finalized still.  the end of  2016 for  Violet Volts' purposes  and then
+things should begin to get more in sync with upstream.
+
+## Build
+
+If you want to hack JSCL, you will have to download the repository
+
+    git clone https://github.com/romance-ii/jscl.git
+
+*load* `jscl.lisp`  in your  Lisp, and call  the bootstrap  functions to
 compile the implementation itself:
 
-    (jscl:bootstrap)
+    (jscl/bootstrap::load-jscl)
+    (jscl/bootstrap::bootstrap)
 
-It will generate a `jscl.js` file in the top of the source tree. Now
-you can open `jscl.html` in your browser and use it.
+It will generate a `jscl.js` file in the top of the source tree. Now you
+can open `jscl.html`  in your browser and use it,  or run jscl-repl with
+Node.js from the shell.
+
+You can build also with
+
+     make
+     
+This will probably only work in SBCL for now.
+
+We also export
+
+    (jscl/bootstrap:bootstrap-core)
+
+if you don't  care to build the  REPLs. This will produce  a jscl.js but
+not the Web or Node REPLs.
 
 ## Status
 
@@ -26,7 +74,7 @@ functions and macros. In particular:
 
 - Multiple values
 
-- Explicit control tranfers
+- Explicit control transfers
   [tagbody](http://www.lispworks.com/documentation/HyperSpec/Body/s_tagbod.htm)
   and [go](http://www.lispworks.com/documentation/HyperSpec/Body/s_go.htm)
 
@@ -36,7 +84,7 @@ functions and macros. In particular:
   [return-from](http://www.lispworks.com/documentation/HyperSpec/Body/s_ret_fr.htm).
 
 - Lexical and special variables. However, declare expressions are
-  missing, but you can *proclaim* special variables.
+  not actually supported, but you can *proclaim* special variables.
 
 - Optional and keyword arguments
 
@@ -44,20 +92,26 @@ functions and macros. In particular:
 
 - Packages
 
+- The `LOOP` macro
+
+- The `FORMAT` function
+
 - Others
 
-The compiler is very verbose, some simple optimizations or
-*minification* could help to deal with it.
+The compiler is very verbose,  some simple optimizations or minification
+could  help to  deal with  it. We  are working  to ensure  that Google's
+Closure  Compiler  can  be  used to  post-process  it  safely,  although
+CL-Uglify and Yahoo Uglify are both being observed.
 
-Most of the above features are incomplete. The major features that are still missing are:
-
-- The `format` function
-
-- A loop implementation 
-  (http://www.cs.cmu.edu/afs/cs/project/ai-repository/ai/lang/lisp/code/iter/loop/mit/0.html)
+Most of the  above features are incomplete. The major  features that are
+still missing are:
 
 - CLOS 
   (http://www.cs.cmu.edu/afs/cs/project/ai-repository/ai/lang/lisp/oop/0.html)
 
+- Proper condition system
+
+- Gray streams and generally useful stream and file I/O functions
 
 *Feel free to hack it yourself*
+

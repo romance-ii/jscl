@@ -46,7 +46,7 @@ internals.globalEval = function(code){
 };
 
 internals.pv = function(x) {
-    return x==undefined? nil: x;
+    return (x == undefined) ? nil : x;
 };
 
 internals.mv = function(){
@@ -315,15 +315,19 @@ packages.KEYWORD = {
 
 jscl.CL = packages.CL.exports;
 
-function unboundFunction () {
+internals.unboundFunction = function () {
     throw new Error("Function '" + this.name + "' undefined");
-}
-
+};
+internals.unboundSetFFunction = function () {
+    throw new Error("Function SetF '" + this.name + "' undefined");
+};
 internals.Symbol = function(name, package_name){
     this.name = name;
-    this.package = package_name;
+    this["package"] = package_name;
     this.value = undefined;
-    this.fvalue = unboundFunction;
+    this.fvalue = internals.unboundFunction;
+    this.setfValue = internals.unboundSetFFunction;
+    this.stack = [];
 };
 
 internals.symbolValue = function (symbol){
@@ -340,11 +344,34 @@ internals.symbolValue = function (symbol){
 
 internals.symbolFunction = function (symbol){
     var fn = symbol.fvalue;
-    if (fn === unboundFunction)
+    if (fn === internals.unboundFunction)
         symbol.fvalue();
     return fn;
 };
 
+internals.setSymbolFunction = function (symbol, fn) {
+    symbol.fvalue = fn;
+    return fn;
+};
+
+internals.fMakUnbound = function (symbol) {
+    symbol.fvalue = internals.unboundFunction;
+}
+
+internals.fDefinitionSetF = function (symbol) {
+    var fn = symbol.setfValue;
+    if (fn === internals.unboundSetFFunction) fn();
+    return fn;
+};
+
+internals.setFDefinitionSetF = function (symbol, fn) {
+    symbol.setfValue = fn;
+    return fn;
+};
+
+internals.fMakUnboundSetF = function (symbol) {
+    symbol.fvalue = internals.unboundSetFFunction;
+}
 
 internals.bindSpecialBindings = function (symbols, values, callback){
     try {

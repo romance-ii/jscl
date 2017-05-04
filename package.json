@@ -1,15 +1,15 @@
 {
     "name": "jscl",
-    "version": "0.4.0",
+  "version": "0.5.1",
     "description": "A Common Lisp implementation for Javascript",
     "main": "jscl.js",
     "files": [
         "jscl.js",
-        "repl-node.js",
+    "jscl-repl",
         "repl-web.js"
     ],
     "bin": {
-        "jscl-repl" : "./repl-node.js"
+    "jscl-repl" : "jscl-repl"
     },
     "directories": {
         "test": "tests"
@@ -19,7 +19,7 @@
     },
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/davazp/jscl.git"
+    "url": "git+https://github.com/jscl-project/jscl.git"
     },
     "keywords": [
         "lisp",
@@ -27,7 +27,7 @@
     ],
     "license": "GPL-3.0",
     "bugs": {
-        "url": "https://github.com/davazp/jscl/issues"
+    "url": "https://github.com/jscl-project/jscl/pulls"
     },
-    "homepage": "https://github.com/davazp/jscl#readme"
+  "homepage": "https://github.com/jscl-project/jscl#readme"
 }

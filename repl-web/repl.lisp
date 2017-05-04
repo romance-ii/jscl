@@ -10,7 +10,8 @@
 ;;
 ;; You should  have received a  copy of  the GNU General  Public License
 ;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
-
+(in-package :repl-web)
+(read-#j)
 (/debug "loading repl-web/repl.lisp!")
 
 (defun %write-string (string &optional (escape t))
@@ -55,8 +56,9 @@
 
     (if (and (zerop depth))
         nil
-        ;; We should use something  based on DEPTH in order to make edition  nice, but the behaviour
-        ;; is a bit weird with jqconsole.
+        ;; We  should use  something based  on  DEPTH in  order to  make
+        ;; edition   nice,   but   the   behaviour  is   a   bit   weird
+        ;; with jqconsole.
         0)))
 
 
@@ -85,7 +87,7 @@
 
             (catch (err)
               (#j:console:log err)
-              (let ((message (or (oget err "message") err)))
+              (let ((message (or (jscl/ffi:oget err "message") err)))
                 (#j:jqconsole:Write (format nil "ERROR[!]: ~a~%" message) "jqconsole-error"))))
 
            (save-history)
