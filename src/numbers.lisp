@@ -80,26 +80,26 @@
 
 (macrolet ((def (operator)
              `(defun ,operator (x &rest args)
-                (dolist (y args) 
+                (dolist (y args)
                   (if (,operator x y)
                       (setq x    (car args))
                       (return-from ,operator nil)))
                 t)))
   (def >)
   (def >=)
-  (def =) 
+  (def =)
   (def <)
   (def <=)
   (def /=))
 
-(defconstant pi 3.141592653589793) 
+(defconstant pi 3.141592653589793)
 
 (defun evenp (x) (= (mod x 2) 0))
 (defun oddp  (x) (not (evenp x)))
 
 (macrolet ((def (name comparison)
              `(defun ,name (x &rest xs)
-                (dolist (y xs) 
+                (dolist (y xs)
                   (when (,comparison y x)
                     (setq x y)))
                 x)))
@@ -108,12 +108,40 @@
 
 (defun abs (x) (if (> x 0) x (- x)))
 
+(defun acos (x) (acos x))
+
+(defun acosh (x) (acosh x))
+
+(defun asin (x) (asin x))
+
+(defun asinh (x) (asinh x))
+
+(defun atan (x) (atan x))
+
+(defun atanh (x) (atanh x))
+
+(defun cos (x) (cos x))
+
+(defun cosh (x) (cosh x))
+
 (defun expt (base power) (expt base              power))
 (defun exp  (power)      (expt 2.718281828459045 power))
 
+(defun isqrt (x) (floor (sqrt x)))
+
+(defun log (x) (log x))
+
+(defun sin (x) (sin x))
+
+(defun sinh (x) (sinh x))
+
 (defun sqrt (x) (sqrt x))
 
-(defun gcd-2 (a b)
+(defun tan (x) (tan x))
+
+(defun tanh (x) (tanh x))
+
+ (defun gcd-2 (a b)
   (if (zerop b)
       (abs a)
     (gcd-2 b (mod a b))))
@@ -142,3 +170,12 @@
 	 (lcm-2 (first integers) (second integers)))
 	(t
 	 (apply #'lcm (lcm (first integers) (second integers)) (nthcdr 2 integers)))))
+
+;; cos    signum
+;; acos   cosh   sin
+;; acosh  exp    sinh
+;; asin   expt   sqrt
+;; asinh  isqrt  tan
+;; atan   log    tanh
+;; atanh  phase
+;; cis    pi

@@ -765,7 +765,7 @@
 
 
 ;; LET* compilation
-;; 
+;;
 ;; (let* ((*var1* value1))
 ;;        (*var2* value2))
 ;;  ...)
@@ -776,7 +776,7 @@
 ;;       // compute value1
 ;;       // bind to var1
 ;;       // add var1 to sbindings
-;;     
+;;
 ;;       // compute value2
 ;;       // bind to var2
 ;;       // add var2 to sbindings
@@ -788,7 +788,7 @@
 ;;       // restore bindings of sbindings
 ;;       // ...
 ;;     }
-;; 
+;;
 (define-compilation let* (bindings &rest body)
   (let ((bindings (mapcar #'ensure-list bindings))
         (*environment* (copy-lexenv *environment*))
@@ -824,7 +824,7 @@
                       ;; binding.
                       (= (get ,s "value") ,out))
                    prelude-target)))
-          
+
           (t
            (let* ((jsvar (gvarname variable))
                   (binding (make-binding :name variable :type 'variable :value jsvar)))
@@ -845,7 +845,7 @@
            `(progn
               ,@(reverse prelude-target)
               ,(convert-block body t t))))
-      
+
       (if (find-if #'special-variable-p bindings :key #'first)
           `(selfcall
             (var (,sbindings #()))
@@ -1129,16 +1129,55 @@
   (convert-to-bool `(== (typeof ,x) "number")))
 
 (define-builtin %floor (x)
-  `(method-call |Math| "floor" ,x))
+  `(method-call |Math| "floor" ,x))     ;Should return two values
 
 (define-builtin %ceiling (x)
-  `(method-call |Math| "ceil" ,x))
+  `(method-call |Math| "ceil" ,x))      ;Should return two values
+
+(define-builtin acos (x)
+  `(method-call |Math| "acos" ,x))
+
+(define-builtin acosh (x)
+  `(method-call |Math| "acosh" ,x))
+
+(define-builtin asin (x)
+  `(method-call |Math| "asin" ,x))
+
+(define-builtin asinh (x)
+  `(method-call |Math| "asinh" ,x))
+
+(define-builtin atan (x)
+  `(method-call |Math| "atan" ,x))
+
+(define-builtin atanh (x)
+  `(method-call |Math| "atanh" ,x))
+
+(define-builtin cos (x)
+  `(method-call |Math| "cos" ,x))
+
+(define-builtin cosh (x)
+  `(method-call |Math| "cosh" ,x))
 
 (define-builtin expt (x y)
   `(method-call |Math| "pow" ,x ,y))
 
+(define-builtin log (x)
+  `(method-call |Math| "log" ,x))
+
+(define-builtin sin (x)
+  `(method-call |Math| "sin" ,x))
+
+(define-builtin sinh (x)
+  `(method-call |Math| "sinh" ,x))
+
 (define-builtin sqrt (x)
   `(method-call |Math| "sqrt" ,x))
+
+(define-builtin tan (x)
+  `(method-call |Math| "tan" ,x))
+
+(define-builtin tanh (x)
+  `(method-call |Math| "tanh" ,x))
 
 (define-builtin float-to-string (x)
   `(call-internal |make_lisp_string| (method-call ,x |toString|)))
