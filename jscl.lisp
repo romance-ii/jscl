@@ -425,12 +425,23 @@ compiled in the host.")
 (defmacro do-source ((name type) &body body)
   "Iterate over all the source files that need to be compiled in the host or
  the target, depending on the TYPE argument."
-  (let ((type$ (gensym "SOURCE-TYPE-")))
-    `(let ((,type$ ,type))
+  (let ((type$ (gensym "SOURCE-TYPE-"))
+        (counter$ (gensym "FILE-INDEX-"))
+        (file-list$ (gensym "FILE-LIST-"))
+        (files-count$ (gensym "FILE-COUNT-")))
+    `(let ((,type$ ,type) (,counter$ 0))
        (unless (member ,type$ '(:host :target))
          (error "TYPE must be one of :HOST or :TARGET, not ~S" ,type$))
-       (dolist (,name (get-files *source* ,type$ '(:relative "src")))
-         ,@body))))
+       (let* ((,file-list$ (get-files *source* ,type$ '(:relative "src")))
+              (,files-count$ (length ,file-list$))
+              (,counter$ 0))
+         (dolist (,name ,file-list$)
+           (format *trace-output* ";;; File ~:d of ~:d (~d%) is ~a"
+                   (incf ,counter$)
+                   ,files-count$
+                   (round (* 100 (/ ,counter$ ,files-count$)))
+                   ,name)
+           ,@body)))))
 
 ;;; Compile and load jscl into the host
 
@@ -501,6 +512,7 @@ which occurred within ~r file~:p: ~
 
 (defun compile-pass (mode)
   (check-type mode (member :host :target))
+  (format *trace-output* "~|~%;;;; Beginning ~a compilation pass" mode)
   (let (fasls failures)
     (do-source (input mode)
       (multiple-value-bind (fails fasl)
