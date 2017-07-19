@@ -60,10 +60,14 @@
 
 (in-package :jscl/loop)
 
+;; This is a  bug in the JS bootstrap process  where somehow the package
+;; isn't getting  set correctly  at read-time.  Flagging the  error here
+;; shouldn't be necessary forever, but it's been helpful for now.
 #.(assert (equal (package-name *package*)
                  (string :jscl/loop))
           (*package*)
-          "Bitten by the IN-PACKAGE bug … should be in :JSCL/LOOP but ended up in ~a"
+          "Bitten by the IN-PACKAGE bug … ~
+should be in :JSCL/LOOP but ended up in ~a"
           (package-name *package*))
 
 ;; Technology.
@@ -292,7 +296,7 @@ constructed. |#
      :operations nil
      :infinity-data infinity-data)))
 
-(defun loop-note-minimax-operation (operation minimax)
+(defun loop-note-minimax-operation (operation minimax) 
   (pushnew (the symbol operation) (loop-minimax-operations minimax))
   (when (and (cdr (loop-minimax-operations minimax))
              (not (loop-minimax-flag-variable minimax)))
