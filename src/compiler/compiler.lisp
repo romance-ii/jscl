@@ -253,8 +253,7 @@ specifier for the condition types that have been muffled.
 
 ;;; Special forms
 
-(defvar *special-forms*
-  (make-hash-table :test 'equal)
+(defvar *special-forms* (make-hash-table)
   "Special forms that have direct compilations rather than typical macros")
 
 (defmacro define-compilation (name args &body body)
@@ -263,9 +262,9 @@ specifier for the condition types that have been muffled.
  variable *ENVIRONMENT*."
   (let ((name (intern (symbol-name name) :jscl/js)))
     `(let ((fn (lambda ,args (block ,name ,@body))))
-       (setf (gethash ,(string name) *special-forms*) fn))))
+       (setf (gethash ',name *special-forms*) fn))))
 
-(define-compilation if (condition true &optional false)
+(define-compilation jscl/cl::if (condition true &optional false)
   `(jscl/js::if (jscl/js::!== ,(convert condition) ,(convert nil))
                 ,(convert true *multiple-value-p*)
                 ,(convert false *multiple-value-p*)))
@@ -315,9 +314,9 @@ specifier for the condition types that have been muffled.
 
 (defun ll-svars (lambda-list)
   (let ((args
-          (append
-           (ll-keyword-arguments-canonical lambda-list)
-           (ll-optional-arguments-canonical lambda-list))))
+         (append
+          (ll-keyword-arguments-canonical lambda-list)
+          (ll-optional-arguments-canonical lambda-list))))
     (remove nil (mapcar #'third args))))
 
 (defun js-identifier-char-p (char)
@@ -407,11 +406,11 @@ specifier for the condition types that have been muffled.
 
 (defun compile-lambda-parse-keywords (ll)
   (let ((n-required-arguments
-          (length (ll-required-arguments ll)))
+         (length (ll-required-arguments ll)))
         (n-optional-arguments
-          (length (ll-optional-arguments ll)))
+         (length (ll-optional-arguments ll)))
         (keyword-arguments
-          (ll-keyword-arguments-canonical ll)))
+         (ll-keyword-arguments-canonical ll)))
     `(jscl/js::progn
        ;; Declare variables
        ,@(with-collect
@@ -557,7 +556,7 @@ is NIL."
       (t
        (convert `(set ',var ,val))))))
 
-(define-compilation setq (&rest pairs)
+(define-compilation jscl/cl::setq (&rest pairs)
   (when (null pairs)
     (return-from jscl/js::setq (convert nil)))
   (with-collector (result)
@@ -649,7 +648,7 @@ is NIL."
                                         ; from ALEXANDRIA
 (declaim (inline safe-endp))
 (defun safe-endp (x)
-  (declare (optimize safety))
+  (declare (optimize (safety 3) (speed 0) (debug 3)))
   (endp x))
 
 (defun alist-plist (alist)
@@ -672,15 +671,15 @@ association list ALIST in the same order."
                                            (symbol-name class-name))
                               (symbol-package class-name)))
          (slot-names
-           #+sbcl
+          #+sbcl
            (mapcar #'sb-mop:slot-definition-name
                    (sb-mop:class-slots (find-class class)))
            #+jscl (mapcar #'jscl/mop:slot-definition-name
                           (jscl/mop:class-slots (fnd-class class))))
          (slot-values
-           (mapcar (lambda (slot-name)
-                     (literal (slot-value object slot-name)))
-                   slot-names)))
+          (mapcar (lambda (slot-name)
+                    (literal (slot-value object slot-name)))
+                  slot-names)))
     (convert-1 (cons constructor
                      (alist-plist
                       (mapcar #'cons slot-names slot-values))))))
@@ -767,7 +766,7 @@ association list ALIST in the same order."
        (character (string sexp))  ; is this really the right thing?
        (t (dump-complex-literal sexp recursivep))))))
 
-(define-compilation quote (sexp)
+(define-compilation jscl/cl::quote (sexp)
   (literal sexp))
 
 (define-compilation %while (pred &rest body)
@@ -791,7 +790,7 @@ association list ALIST in the same order."
     (symbol name)
     (list (second name))))
 
-(define-compilation function (x)
+(define-compilation jscl/cl::function (x)
   (cond
     ((listp x)
      (case (car x)
@@ -836,7 +835,7 @@ association list ALIST in the same order."
                  *environment*
                  'function))
 
-(define-compilation flet (definitions &rest body)
+(define-compilation jscl/cl::flet (definitions &rest body)
   (let* ((flet-fun-names (mapcar #'car definitions))
          (flet-compiled-funs (mapcar #'compiled-function-code definitions))
          (*environment* (environment+new-functions flet-fun-names)))
@@ -848,7 +847,7 @@ association list ALIST in the same order."
   `(jscl/js::var ,(translate-function (car func))
                  ,(compiled-function-code func)))
 
-(define-compilation labels (definitions &rest body)
+(define-compilation jscl/cl::labels (definitions &rest body)
   (let* ((label-fun-names (mapcar #'car definitions))
          (*environment* (environment+new-functions label-fun-names)))
     `(jscl/js::selfcall
@@ -858,7 +857,7 @@ association list ALIST in the same order."
 (defvar *compiling-file* nil
   "Was the compiler invoked from `compile-file'?")
 
-(define-compilation eval-when (situations &rest body)
+(define-compilation jscl/cl::eval-when (situations &rest body)
   "NOTE: It  is probably wrong  in many cases but  we will not  use this
  heavily. Please, do not rely on wrong cases of this implementation."
   ;; TODO: Error checking
@@ -866,12 +865,12 @@ association list ALIST in the same order."
                    (find situation '(:compile-toplevel :load-toplevel :execute)))
                  situations)
           (situations)
-          "Eval-When  situations   must  be   (MEMBER  COMPILE-TOPLEVEL~
- LOAD-TOPLEVEL EXECUTE) only; not ~s" situations)
+          "Eval-When situations must be (MEMBER :COMPILE-TOPLEVEL~
+ :LOAD-TOPLEVEL :EXECUTE) only; not ~s" situations)
   (cond
-    ;; Toplevel form compiled by !compile-file.
+    ;; Toplevel form compiled by compile-file.
     ((and *compiling-file* (zerop *convert-level*))
-     ;; If the situation `compile-toplevel' is given. The form is
+     ;; If  the  situation  `compile-toplevel'  is given.  The  form  is
      ;; evaluated  at compilation-time.  This  probably  means it'll  be
      ;; evaluated  in the  host compiler,  which  is maybe  not what  we
      ;; usually want.
@@ -904,7 +903,7 @@ association list ALIST in the same order."
   `(define-compilation ,name ,args
      (convert ,form)))
 
-(define-compilation progn (&rest body)
+(define-compilation jscl/cl::progn (&rest body)
   (if (null (cdr body))
       (convert (car body) *multiple-value-p*)
       `(jscl/js::progn
@@ -917,7 +916,7 @@ association list ALIST in the same order."
        (destructuring-bind ,lambda-list ,g!form
          ,@body))))
 
-(define-compilation macrolet (definitions &rest body)
+(define-compilation jscl/cl::macrolet (definitions &rest body)
   (let ((*environment* (copy-lexenv *environment*)))
     (dolist (def definitions)
       (destructuring-bind (name lambda-list &body body) def
@@ -976,7 +975,7 @@ stored the old value."
       (convert-block body t t)
       (convert-block-with-special-bindings body special-bindings)))
 
-(define-compilation let (bindings &rest body)
+(define-compilation jscl/cl::let (bindings &rest body)
   (multiple-value-bind (lexical-variables values special-bindings)
       (process-bindings bindings)
     (let ((compiled-values (mapcar #'convert values))
@@ -985,7 +984,7 @@ stored the old value."
                                ,(let-bind-dynamic-vars special-bindings body))
                      ,@compiled-values))))
 
-(define-compilation lambda (lambda-list &rest body)
+(define-compilation jscl/cl::lambda (lambda-list &rest body)
   (compile-lambda lambda-list body))
 
 (defun add-let*-var-to-environment (var value)
@@ -1026,7 +1025,7 @@ let-binding-wrapper."
        (jscl/js::finally
         ,@(mapcar #'let*-wrapper-reset-value store)))))
 
-(define-compilation let* (bindings &rest body)
+(define-compilation jscl/cl::let* (bindings &rest body)
   (let ((bindings (mapcar #'ensure-list bindings))
         (*environment* (copy-lexenv *environment*)))
     (let ((specials (remove-if-not #'special-variable-p (mapcar #'first bindings)))
@@ -1055,7 +1054,7 @@ let-binding-wrapper."
                         (block-return-single-value))
                    (jscl/js::throw cf)))))
 
-(define-compilation block (name &rest body)
+(define-compilation jscl/cl::block (name &rest body)
   "  We  use  Javascript  exceptions  to  implement  non  local  control
  transfer.  Exceptions  has  dynamic  scoping, so  we  use  a  uniquely
  generated object to identify the block.  The instance of a empty array
@@ -1072,14 +1071,14 @@ let-binding-wrapper."
           (block/build-nlx-catcher idvar cbody)
           `(jscl/js::selfcall ,cbody)))))
 
-(define-compilation return-from (name &optional value)
+(define-compilation jscl/cl::return-from (name &optional value)
   (let* ((binding (or (lookup-in-lexenv name *environment* 'block)
                       (error "Return from unknown block `~S'." name)))
          (multiple-value-p (member 'multiple-value
                                    (binding-declarations binding))))
     (push 'used (binding-declarations binding))
-    ;; The binding value is the name of a variable, whose value is the
-    ;; unique identifier of the block as exception. We can't use the
+    ;; The binding value  is the name of a variable,  whose value is the
+    ;; unique identifier  of the  block as exception.  We can't  use the
     ;; variable  name itself,  because it  might  not be  unique, so  we
     ;; capture it in a closure.
     `(jscl/js::selfcall
@@ -1089,7 +1088,7 @@ let-binding-wrapper."
                                                             ,(convert value multiple-value-p)
                                                             ,(symbol-name name)))))))
 
-(define-compilation catch (id &rest body)
+(define-compilation jscl/cl::catch (id &rest body)
   (let ((values (if *multiple-value-p* '|values| '(internal |pv|))))
     `(jscl/js::selfcall
       (jscl/js::var id ,(convert id))
@@ -1105,7 +1104,7 @@ let-binding-wrapper."
                                         (jscl/js::get cf "values"))))
                      (jscl/js::throw cf))))))
 
-(define-compilation throw (id value)
+(define-compilation jscl/cl::throw (id value)
   `(jscl/js::selfcall
     (jscl/js::var |values| (internal |mv|))
     (jscl/js::throw (jscl/js::new (jscl/js::call-internal |CatchNLX|
@@ -1118,14 +1117,14 @@ let-binding-wrapper."
 (defun declare-tagbody-tags (tbidx body)
   (let* ((go-tag-counter 0)
          (bindings
-           (mapcar (lambda (label)
-                     (let ((tagidx (incf go-tag-counter)))
-                       (make-binding :name label :type 'gotag :value (list tbidx tagidx))))
-                   (remove-if-not #'go-tag-p body))))
+          (mapcar (lambda (label)
+                    (let ((tagidx (incf go-tag-counter)))
+                      (make-binding :name label :type 'gotag :value (list tbidx tagidx))))
+                  (remove-if-not #'go-tag-p body))))
     (extend-lexenv bindings *environment* 'gotag)))
 
-(define-compilation tagbody (&rest body)
-  ;; Ignore the tagbody if it does not contain any go-tag. We do this
+(define-compilation jscl/cl::tagbody (&rest body)
+  ;; Ignore the  tagbody if it does  not contain any go-tag.  We do this
   ;; because  1)  it is  easy  and  2)  many  built-in forms  expand  to
   ;; a implicit tagbody, so we save some space.
   (unless (some #'go-tag-p body)
@@ -1165,7 +1164,7 @@ let-binding-wrapper."
                                          (jscl/js::throw jump)))))
         (jscl/js::return ,(convert nil))))))
 
-(define-compilation go (label)
+(define-compilation jscl/cl::go (label)
   (let ((b (lookup-in-lexenv label *environment* 'gotag)))
     (when (null b)
       (error "Unknown tag `~S'" label))
@@ -1174,7 +1173,7 @@ let-binding-wrapper."
                                                             ,(first (binding-value b))
                                                             ,(second (binding-value b))))))))
 
-(define-compilation unwind-protect (form &rest clean-up)
+(define-compilation jscl/cl::unwind-protect (form &rest clean-up)
   `(jscl/js::selfcall
     (jscl/js::var ret ,(convert nil))
     (jscl/js::try
@@ -1183,7 +1182,7 @@ let-binding-wrapper."
      ,(convert-block clean-up))
     (jscl/js::return ret)))
 
-(define-compilation multiple-value-call (func-form &rest forms)
+(define-compilation jscl/cl::multiple-value-call (func-form &rest forms)
   `(jscl/js::selfcall
     (jscl/js::var func ,(convert func-form))
     (jscl/js::var args ,(vector (if *multiple-value-p* '|values| '(internal |pv|))))
@@ -1201,13 +1200,13 @@ let-binding-wrapper."
                              (jscl/js::method-call args "push" vs))))))
        (jscl/js::return (jscl/js::method-call func "apply" null args))))))
 
-(define-compilation multiple-value-prog1 (first-form &rest forms)
+(define-compilation jscl/cl::multiple-value-prog1 (first-form &rest forms)
   `(jscl/js::selfcall
     (jscl/js::var args ,(convert first-form *multiple-value-p*))
     (jscl/js::progn ,@(mapcar #'convert forms))
     (jscl/js::return args)))
 
-(define-compilation the (value-type form)
+(define-compilation jscl/cl::the (value-type form)
   (warn "discarding THE ~a" value-type) ; XXX perhaps one day
   (convert form *multiple-value-p*))
 
@@ -1387,7 +1386,7 @@ generate the code which performs the transformation on these variables."
   `(jscl/js::new (jscl/js::call-internal |Symbol|
                                          (jscl/js::call-internal |lisp_to_js| ,name))))
 
-(define-compilation symbol-name (x)
+(define-compilation jscl/cl::symbol-name (x)
   (convert `(jscl/ffi:oget ,x "name")))
 
 (define-builtin set (symbol value)
@@ -1747,30 +1746,30 @@ generate the code which performs the transformation on these variables."
 ;; (%js-try (progn …) (catch (err) …) (finally …))
 (define-compilation %js-try (form &optional catch-form finally-form)
   (let ((catch-compilation
-          (and catch-form
-               (destructuring-bind (catch (var) &body body) catch-form
-                 (unless (eq catch 'catch)
-                   (error "Bad CATCH clausule `~S'." catch-form))
-                 (let* ((*environment* (extend-local-env (list var)))
-                        (tvar (translate-variable var)))
-                   `(jscl/js::catch (,tvar)
-                      (jscl/js::= ,tvar (jscl/js::call-internal |js_to_lisp| ,tvar))
-                      ,(convert-block body t))))))
+         (and catch-form
+              (destructuring-bind (catch (var) &body body) catch-form
+                (unless (eq catch 'catch)
+                  (error "Bad CATCH clausule `~S'." catch-form))
+                (let* ((*environment* (extend-local-env (list var)))
+                       (tvar (translate-variable var)))
+                  `(jscl/js::catch (,tvar)
+                     (jscl/js::= ,tvar (jscl/js::call-internal |js_to_lisp| ,tvar))
+                     ,(convert-block body t))))))
 
         (finally-compilation
-          (and finally-form
-               (destructuring-bind (finally &body body) finally-form
-                 (unless (eq finally 'finally)
-                   (error "Bad FINALLY clausule `~S'." finally-form))
-                 `(finally
-                   ,(convert-block body))))))
+         (and finally-form
+              (destructuring-bind (finally &body body) finally-form
+                (unless (eq finally 'finally)
+                  (error "Bad FINALLY clausule `~S'." finally-form))
+                `(finally
+                  ,(convert-block body))))))
 
     `(selfcall
       (try (return ,(convert form)))
       ,catch-compilation
       ,finally-compilation)))
 
-(define-compilation symbol-macrolet (macrobindings &rest body)
+(define-compilation jscl/cl::symbol-macrolet (macrobindings &rest body)
   (let ((new (copy-lexenv *environment*)))
     (dolist (macrobinding macrobindings)
       (destructuring-bind (symbol expansion) macrobinding
@@ -1936,11 +1935,11 @@ generate the code which performs the transformation on these variables."
 
 (defun jscl/cl::special-operator-p (name)
   (or (and (eql (symbol-package name) (find-package "JSCL/CL"))
-           (gethash (string name) *special-forms*))
+           (gethash name *special-forms*))
       (nth-value 1 (gethash name *builtins*))))
 
 (defun compile-special-form (name args)
-  (let ((comp (gethash (string name) *special-forms*)))
+  (let ((comp (gethash name *special-forms*)))
     (assert comp () "~S must name a special form" comp)
     (apply comp args)))
 
@@ -1963,13 +1962,17 @@ generate the code which performs the transformation on these variables."
   (let ((name (car sexp))
         (args (cdr sexp)))
     (cond
+      ((jscl/cl::special-operator-p name)
+       (compile-special-form name args))
+      ((inline-builtin-p name)
+       (compile-builtin-function name args))
+      ((macro-function name)
+       (error "Macro ~a encountered in funcall position; ~
+It should be macroexpanded before reaching COMPILE-SEXP"
+              name))
       ((and (claimp name 'function 'jscl::pure)
             (every #'constantp args))
        (apply name args))
-      ((inline-builtin-p name)
-       (compile-builtin-function name args))
-      ((jscl/cl::special-operator-p name)
-       (compile-special-form name args))
       (t (compile-funcall name args)))))
 
 (defun convert-1/symbol (sexp)
@@ -1977,8 +1980,9 @@ generate the code which performs the transformation on these variables."
     (cond
       ((and b (not (member 'special (binding-declarations b))))
        (binding-value b))
-      ((or (keywordp sexp)
-           (and b (member 'constant (binding-declarations b))))
+      ((keywordp sexp)
+       sexp)
+      ((and b (member 'constant (binding-declarations b)))
        `(jscl/js::get ,(convert `',sexp) "value"))
       (t
        (convert `(symbol-value ',sexp))))))
@@ -2068,7 +2072,10 @@ names throughout the tree. "
 
 (defun convert-1 (sexp &optional multiple-value-p)
   "Translate  SEXP  (which  can  be  a  single  symbol  or  value)  into
-JavaScript  AST  form  for  the   code  generator.  Expand  all  macros.
+JavaScript  AST  form  for  the   code  generator.
+
+Expands  all  macros.
+
 If MULTIPLE-VALUE-P,  then it's possible  that SEXP may  return multiple
 values, and  the appropriate  JavaScript wrappers must  be in  place; if
 not, the simplified forms that accept  only a primary value returned can
@@ -2083,20 +2090,26 @@ be used."
         (cond
           ((null sexp)
            (literal nil))
+          ((listp sexp)
+           (compile-sexp sexp))
           ((symbolp sexp)
            (convert-1/symbol sexp))
           ((rational-float-p sexp)
            (literal (rational-float-p sexp)))
           ((object-evaluates-to-itself-p sexp)
            (literal sexp))
-          ((listp sexp)
-           (compile-sexp sexp))
           (t
            (error "How should I compile ~s `~S'?"
                   (type-of sexp) sexp)))))))
 
+(defvar *convert-recursion-guard* 100)
+
 (defun convert (sexp &optional multiple-value-p)
-  (convert-1 sexp multiple-value-p))
+  (let ((*convert-recursion-guard* (1- *convert-recursion-guard*)))
+    (when (zerop *convert-recursion-guard*)
+      (cerror "Continue, expecting doom"
+              "CONVERT recursed very deeply; this may be out of control."))
+    (convert-1 sexp multiple-value-p)))
 
 (defvar *compile-print-toplevels* nil)
 
@@ -2202,8 +2215,14 @@ the value."
       (t
        (convert-toplevel-normal sexp multiple-value-p return-p)))))
 
+(defvar *toplevel-recursion-depth* 10)
+
 (defun process-toplevel (sexp &optional multiple-value-p return-p)
-  (let ((*toplevel-compilations* nil))
+  (let ((*toplevel-compilations* nil)
+        (*toplevel-recursion-depth* (1- *toplevel-recursion-depth*)))
+    (when (zerop *toplevel-recursion-depth*)
+      (cerror "Ignore and continue, expecting doom"
+              "PROCESS-TOPLEVEL recursion guard hit."))
     (let ((code (convert-toplevel sexp multiple-value-p return-p)))
       `(jscl/js::progn
          ,@(get-toplevel-compilations)
@@ -2213,7 +2232,7 @@ the value."
   #-jscl
   (progn
     (eval (process-toplevel sexp multiple-value-p return-p))
-    (format *trace-output* "~&; compiling form ~a" 
+    (format *trace-output* "~&; compiling form ~a"
             (if (consp sexp) (car sexp) sexp))
     (finish-output *trace-output*)
     (format *js-output* "/* Toplevel form evaluated in ~a */" (lisp-implementation-type)))
@@ -2241,11 +2260,11 @@ the value."
               (rename-package (find-package "JSCL/XC") "JSCL")
               ,@body)
          (ignore-errors
-          (rename-package (find-package "JSCL")
-                          "JSCL/INTERMEDIATE-CROSS-COMPILATION"))))
+           (rename-package (find-package "JSCL")
+                           "JSCL/INTERMEDIATE-CROSS-COMPILATION"))))
   (ignore-errors
-   (rename-package (find-package "JSCL/HOSTED*")
-                   "JSCL/HOSTED")))
+    (rename-package (find-package "JSCL/HOSTED*")
+                    "JSCL/HOSTED")))
 
 
 
