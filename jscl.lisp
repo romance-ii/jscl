@@ -188,7 +188,6 @@ using Slime."
  a JSON library  to parse this, but that would  introduce a dependency
  and we are not using ASDF yet.")
 
-
 (defun read-fully (stream)
   (loop with buffer = (make-array #x400
                                   :element-type 'character
