@@ -50,8 +50,9 @@
   (when (jscl/cl::find-package name)
     (ecase if-exists
       (:error (cerror "IGNORE" "A package named `~a' already exists." name))
-      (:ignore (warn "A package named `~a' already exists (ignoring MAKE-PACKAGE)" name)
-       (return-from %make-package (values nil (jscl/cl::find-package name))))))
+      (:ignore (warn "A package named `~a' already exists (ignoring MAKE-PACKAGE)"
+                     name)
+               (return-from %make-package (values nil (jscl/cl::find-package name))))))
   (let ((package (jscl/js::new)))
     (setf (jscl/ffi:oget package "packageName") name
           (jscl/ffi:oget package "symbols") (jscl/js::new)
@@ -69,7 +70,8 @@
       (pushnew package result :test #'eq))
     (reverse result)))
 
-(defun jscl/cl::make-package (name &key use nicknames ((if-exists if-exists) :error))
+(defun jscl/cl::make-package (name &key use nicknames
+                                        ((if-exists if-exists) :error))
   (%make-package (string name)
                  (resolve-package-list use)
                  nicknames
@@ -238,7 +240,7 @@ invoked with the already-interned symbol as argument.")
      ,result-form))
 
 (defmacro jscl/cl::do-external-symbols ((var &optional (package '*package*)
-                                                       result-form)
+                                             result-form)
                                         &body body)
   `(block nil
      (%map-external-symbols
