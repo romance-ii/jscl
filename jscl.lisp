@@ -153,7 +153,7 @@ identifying them (and their provenance) easier."))
 #+sbcl (require 'bordeaux-threads)
 
 
-(eval-when (:compile-toplevel :load-toplevel)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (defun not-tmp (pathname)
     "To keep compile-time actions from  assuming that SRC-DIR is /tmp when
 using Slime."
