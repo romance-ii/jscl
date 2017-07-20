@@ -27,7 +27,7 @@
 ;;; Package definitions for within the environment.
 
 #+jscl
-(eval-when (:compile-toplevel :load-toplevel :execute)
+(jscl/cl::eval-when (:compile-toplevel :load-toplevel :execute)
   (jscl/cl::make-package "KEYWORD" 'jscl::if-exists :ignore)
 
   (jscl/cl::make-package "COMMON-LISP" :nicknames (list "CL") 'jscl::if-exists :ignore)

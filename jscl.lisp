@@ -17,8 +17,9 @@
 ;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
 
 (cl:in-package :common-lisp-user)
-(declaim (optimize (speed 1) (debug 3) (space 0)
-                   (safety 3) (compilation-speed 1)))
+(declaim (optimize (speed 0) (debug 3)
+                   (space 0) (safety 3)
+                   (compilation-speed 0)))
 
 (defpackage jscl/bootstrap
   (:use :cl)
