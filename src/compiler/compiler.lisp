@@ -2110,9 +2110,11 @@ be used."
 
 (defun convert (sexp &optional multiple-value-p)
   (let ((*convert-recursion-guard* (1- *convert-recursion-guard*)))
-    (when (zerop *convert-recursion-guard*)
+    (when (minusp *convert-recursion-guard*)
       (cerror "Continue, expecting doom"
-              "CONVERT recursed very deeply; this may be out of control."))
+              "CONVERT recursed very deeply (~:d past the guard limit);~
+ this may be out of control."
+              (- *convert-recursion-guard*)))
     (convert-1 sexp multiple-value-p)))
 
 (defvar *compile-print-toplevels* nil)
