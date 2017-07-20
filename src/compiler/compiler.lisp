@@ -724,8 +724,22 @@ association list ALIST in the same order."
   (let ((jsvar (genlit)))
     (toplevel-compilation `(var (,jsvar ,(dump-symbol sexp))))
     (when (keywordp sexp)
-      (toplevel-compilation `(= (get ,jsvar "value") ,jsvar)))
-    jsvar))
+      (toplevel-compilation `(= (get ,jsvar "value") ,jsvar)))0
+      jsvar))
+
+(defun literal-bignum (bignum)
+  (cerror (format nil
+                  "Use the ~:[smallest~;biggest~] possible number instead"
+                  (plusp bignum))
+          "Cannot pass BigNum ~:d yet" bignum)
+  (if (plusp bignum)
+      (literal +most-positive-fixnum+)
+      (literal +most-negative-fixnum+)))
+
+(defun literal-rational (number)
+  (cerror "Round it off as a Double-Float"
+          "Cannot pass BigNum ~:d exactly" number)
+  (literal (coerce number 'double-float)))
 
 (defun literal (sexp &optional recursivep)
   (cond
@@ -733,19 +747,11 @@ association list ALIST in the same order."
      (error "Quasi-quoted expression leakage: ~s" sexp))
     ((and (integerp sexp)
           (not (jscl/cl::fixnump sexp)))
-     (cerror (format nil
-                     "Use the ~:[smallest~;biggest~] possible number instead"
-                     (plusp sexp))
-             "Cannot pass BigNum ~:d yet" sexp)
-     (if (plusp sexp)
-         (literal +most-positive-fixnum+)
-         (literal +most-negative-fixnum+)))
+     (literal-bignum sexp))
     ((and (rationalp sexp)
           (not (= 1 (denominator sexp)))
           (not (rational-float-p sexp)))
-     (cerror "Round it off as a Double-Float"
-             "Cannot pass BigNum ~:d exactly" sexp)
-     (literal (coerce sexp 'double-float)))
+     (literal-rational sexp))
     ((complexp sexp)
      (error "Cannot pass complex numbers like ~d" sexp))
     (t
@@ -754,15 +760,16 @@ association list ALIST in the same order."
        (pathname (namestring sexp))
        (fixnum sexp)
        (rational
-        (warn "Rounding ~a to float" sexp)
+        ;; already made sure it was OK, above
         (coerce sexp 'double-float))
        (number sexp)
        (structure-object (literal-sv sexp))
+       (string sexp)
        (array (literal-sv sexp))
        (standard-object (literal-sv sexp))
-       (function  ;; FIXME?
+       (function ;; FIXME?
         (list 'function (list 'quote (nth-value 2 (function-lambda-expression sexp)))))
-       (character (string sexp))  ; is this really the right thing?
+       (character (string sexp))       ; is this really the right thing?
        (t (dump-complex-literal sexp recursivep))))))
 
 (define-compilation jscl/cl::quote (sexp)
@@ -1217,8 +1224,7 @@ let-binding-wrapper."
 
 ;;; Primitives
 
-(defvar *builtins*
-  (make-hash-table))
+(defvar *builtins* (make-hash-table :test 'eql))
 
 (defmacro define-raw-builtin (name args &body body)
   " Creates  a new  primitive function `name'  with parameters  args and
@@ -1933,13 +1939,12 @@ generate the code which performs the transformation on these variables."
        (not (claimp name 'function 'notinline))))
 
 (defun jscl/cl::special-operator-p (name)
-  (or (and (eql (symbol-package name) (find-package "JSCL/CL"))
-           (gethash name *special-forms*))
-      (nth-value 1 (gethash name *builtins*))))
+  (and (eql (symbol-package name) (find-package "JSCL/CL"))
+       (gethash name *special-forms*)))
 
 (defun compile-special-form (name args)
   (let ((comp (gethash name *special-forms*)))
-    (assert comp () "~S must name a special form" comp)
+    (assert comp () "~S must name a special form" name)
     (apply comp args)))
 
 (defun compile-builtin-function (name args)
