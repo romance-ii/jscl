@@ -253,7 +253,7 @@ specifier for the condition types that have been muffled.
 
 ;;; Special forms
 
-(defvar *special-forms* (make-hash-table)
+(defvar *special-forms* (make-hash-table :test 'eql)
   "Special forms that have direct compilations rather than typical macros")
 
 (defmacro define-compilation (name args &body body)
