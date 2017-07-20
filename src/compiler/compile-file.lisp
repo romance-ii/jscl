@@ -87,12 +87,13 @@ forms if PRINT is set."
       (when print
         (format *trace-output*
                 "~&;;;; Compiling file ~a... "
-                (enough-namestring filename)))
+                (enough-namestring filename))
+        (finish-output *trace-output*)) 
       (let (form-count last-form)
         (handler-case
             (doforms (form in)
-                     (!compile-file/form form form-count
-                                         (enough-namestring filename) out))
+              (!compile-file/form form form-count
+                                  (enough-namestring filename) out))
           (end-of-file (c)
             (error "~:(~a~) while reading ~a after ~:r form:~%~s"
                    c (enough-namestring filename)
@@ -236,7 +237,7 @@ forms if PRINT is set."
                        (jscl/bootstrap::source-pathname "prelude.js"))
                       out)
         (jscl/bootstrap::do-source (input :target)
-            (!compile-file input out :print verbosep))
+                                   (!compile-file input out :print verbosep))
         (dump-global-environment out)))))
 
 (defmacro with-bootstrap ((verbosep) &body body)

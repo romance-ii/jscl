@@ -2213,6 +2213,9 @@ the value."
   #-jscl
   (progn
     (eval (process-toplevel sexp multiple-value-p return-p))
+    (format *trace-output* "~&; compiling form ~a" 
+            (if (consp sexp) (car sexp) sexp))
+    (finish-output *trace-output*)
     (format *js-output* "/* Toplevel form evaluated in ~a */" (lisp-implementation-type)))
   #+jscl
   (with-output-to-string (*js-output*)
