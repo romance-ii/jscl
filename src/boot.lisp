@@ -589,7 +589,7 @@
 
 (defmacro jscl/cl::declaim (&rest decls)
   `(eval-when (:compile-toplevel :execute)
-     ,@(mapcar (lambda (decl) `(!proclaim ',decl)) decls)))
+     ,@(mapcar (lambda (decl) `(proclaim ',decl)) decls)))
 
 
 ;;; DEFCONSTANT, T, NIL, LAMBDA
