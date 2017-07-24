@@ -51,10 +51,18 @@
       js))
 
 (defconstant no-comma 12)               ; ?? ☠
+;; NO-COMMA  is  passed as  an  argument  for precedence  in  expression
+;; generation, but  I (BRFP) don't  understand precisely how  it's being
+;; used  or what  the  particular magical  value of  “12”  might be,  in
+;; this context.
 
-(defvar *js-output* t)
+(defvar *js-output* t
+  "When generating  code, this  is the stream  to which  JavaScript will
+  be emitted.")
 
-(defvar *js-pretty-print* t)
+(defvar *js-pretty-print* t
+  "When true, generated JavaScript code  will attempt to pretty-print to
+  a degree.")
 
 
 
