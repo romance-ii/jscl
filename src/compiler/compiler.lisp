@@ -478,7 +478,7 @@ specifier for the condition types that have been muffled.
     (when declarations
       (do* ((rest body (cdr rest))
             (form (car rest) (car rest)))
-           ((or (atom form) (not (eq (car form) 'declare)))
+           ((or (atom form) (not (eql (car form) 'declare)))
             (setf body rest))
         (push form value-declarations)))
     ;; Parse docstring
@@ -1787,70 +1787,85 @@ generate the code which performs the transformation on these variables."
   (make-hash-table :test #'eq))
 
 (defun jscl/cl::macro-function (symbol &optional (environment *environment*))
-  (unless (function-name-p symbol)
-    (error "`~S' is not a symbol." symbol))
-  (when (and (listp symbol)
-             (eq 'setf (first symbol)))
-    (return-from jscl/cl::macro-function nil))
   #- (or ecl sbcl jscl)
   (warn "Your Implementation's quasiquote may not be handled properly.")
-  #+ecl
-  (when (eql symbol 'si:quasiquote)
-    (warn "ECL quasiquote is probably not handled properly yet")
-    (return-from !macro-function
-      (lambda (form) (ext::macroexpand-1 form))))
-  #+sbcl
-  (when (eql symbol 'sb-int:quasiquote)
-    (return-from jscl/cl::macro-function
-      (lambda (form environment)
-        (declare (ignore environment))
-        (sb-impl::expand-quasiquote form nil))))
-  (let ((b (lookup-in-lexenv symbol (or environment *global-environment*) 'function)))
-    (if (and b (eq (binding-type b) 'macro))
-        (let ((expander (binding-value b)))
-          (cond
-            #-jscl
-            ((gethash b *macroexpander-cache*)
-             (setq expander (gethash b *macroexpander-cache*)))
-            ((listp expander)
-             (let ((compiled (eval expander)))
-               ;; The list representation are useful while
-               ;; bootstrapping, as we can dump the definition of the
-               ;; macros easily, but they are slow because we have to
-               ;; evaluate them and compile them now and again. So, let
-               ;; us replace the list representation version of the
-               ;; function with the compiled one.
-               #+jscl (setf (binding-value b) compiled)
-               #-jscl (setf (gethash b *macroexpander-cache*) compiled)
-               (setq expander compiled))))
-          expander)
-        nil)))
+  (cond
+    ((not (symbolp symbol))
+     (error "`~S' is not a symbol." symbol))
+    #+ecl
+    ((eql symbol 'si:quasiquote)
+     (warn "ECL quasiquote is probably not handled properly yet")
+     (lambda (form) (ext::macroexpand-1 form)))
+    #+sbcl
+    ((eql symbol 'sb-int:quasiquote)
+     (lambda (form environment)
+       (declare (ignore environment))
+       (sb-impl::expand-quasiquote form nil)))
+    (t 
+     (let ((b (lookup-in-lexenv symbol (or environment *global-environment*)
+                                'function)))
+       (if (and b (eql (binding-type b) 'macro))
+           (let ((expander (binding-value b)))
+             (cond
+               #-jscl
+               ((gethash b *macroexpander-cache*))
+               ((listp expander)
+                (let ((compiled (eval expander)))
+                  ;; The list representation are useful while
+                  ;; bootstrapping, as we can dump the definition of the
+                  ;; macros easily, but they are slow because we have to
+                  ;; evaluate them and compile them now and again. So, let
+                  ;; us replace the list representation version of the
+                  ;; function with the compiled one.
+                  #+jscl (setf (binding-value b) compiled)
+                  #-jscl (setf (gethash b *macroexpander-cache*) compiled)))
+               (expander)))
+           nil)))))
 
 
-(defun !macroexpand-1/symbol (symbol &optional (env *environment*))
+(defun macroexpand-1/symbol (symbol &optional (env *environment*))
   (let ((b (lookup-in-lexenv symbol (or env *global-environment*)
                              'variable)))
     (if (and b (eq (binding-type b) 'macro))
         (values (binding-value b) t)
         (values symbol nil))))
 
-(defun jscl/cl::macroexpand-1 (form &optional (env *environment*))
-  (let ((*environment* (or env *global-environment*)))
+(defun macroexpand-1/cons (form &optional (environment *environment*))
+  (let ((macrofun (jscl/cl::macro-function (car form) environment)))
+    (cond (macrofun
+           (values (funcall macrofun (cdr form) environment) t))
+          ((macro-function (car form) nil)
+           (break "MACROEXPAND-1 has no macro binding for ~a, ~
+but one exists in the global environment of the host compiler."
+                  (car form)))
+          (t (values form nil)))))
+
+(defun jscl/cl::macroexpand-1 (form &optional (environment *environment*))
+  "If FORM is a macro form or symbol in ENVIRONMENT, expand it.
+
+Returns the expanded form  of FORM (if any), or FORM  itself (if FORM is
+not  a  macro)   as  primary  value.  As  a   secondary  value,  returns
+a generalized boolean indicating whether FORM were changed."
+  (let ((*environment* (or environment *global-environment*)))
     (cond
       ((symbolp form)
-       (!macroexpand-1/symbol form env))
-      ((and (consp form) (symbolp (car form)))
-       (let ((macrofun (jscl/cl::macro-function (car form) env)))
-         (if macrofun
-             (values (funcall macrofun (cdr form) env) t)
-             (values form nil))))
-      (t
-       (values form nil)))))
+       (macroexpand-1/symbol form environment))
+      ((not (consp form)) (values form nil))
+      ((and (consp (car form))
+            (eql 'jscl/cl:setf (caar form)))
+       (error "Should expand SETF form ~a" form))
+      ((symbolp (car form))
+       (macroexpand-1/cons form environment))
+      (t (values form nil)))))
 
-(defun jscl/cl::macroexpand (form &optional env)
+(defun jscl/cl::macroexpand (form &optional environment)
+  "Fully expand all macro forms in FORM (in context of any given ENVIRONMENT)
+
+See also: `MACROEXPAND-1'"
   (let ((continue t))
     (while continue
-      (multiple-value-setq (form continue) (jscl/cl::macroexpand-1 form env))))
+      (multiple-value-setq (form continue) 
+        (jscl/cl::macroexpand-1 form environment))))
   form)
 
 (defun compile-funcall/function (function arglist)
@@ -1897,19 +1912,26 @@ generate the code which performs the transformation on these variables."
   (compile-funcall fun args))
 
 (defun compile-funcall (function args)
-  (when (member function '(let quote))
-    (break "QUOTE call isn't SPECIAL-OPERATOR-P?"))
   (let* ((arglist (compile-funcall/args-list args)))
     (cond
       ((eql 'setf function)
        (compile-funcall (list 'setf (first args))
                         (rest args)))
       ((and (symbolp function)
-            (special-operator-p function))
-       (error "Compiler error: Special operator ~s treated as function call"
+            (jscl/cl:special-operator-p function))
+       (error "Special operator ~s treated as function call"
               function))
-      ((and (symbolp function) (jscl/cl::macro-function function))
-       (error "Compiler error: Macro function was not expanded: ~s" function))
+      ((and (symbolp function) 
+            (jscl/cl::macro-function function))
+       (error "Macro function was not expanded: ~s" function))
+      ((and (symbolp function)
+            (special-operator-p function))
+       (error "CL special operator ~s ~
+treated as function call in JSCL"
+              function))
+      ((and (symbolp function) 
+            (macro-function function))
+       (error "CL macro function was not expanded in JSCL: ~s" function))
       ((translate-function function)
        (compile-funcall/translate-function function arglist))
       ((function-name-p function)
@@ -1982,14 +2004,16 @@ generate the code which performs the transformation on these variables."
   (let ((name (car sexp))
         (args (cdr sexp)))
     (cond
-      ((jscl/cl::special-operator-p name)
+      ((jscl/cl:special-operator-p name)
        (compile-special-form name args))
       ((inline-builtin-p name)
        (compile-builtin-function name args))
-      ((macro-function name)
-       (error "Macro ~a encountered in funcall position; ~
+      ((jscl/cl:macro-function name)
+       (cerror "Macroexpand now and continue"
+               "Macro ~a encountered in funcall position; ~
 It should be macroexpanded before reaching COMPILE-SEXP"
-              name))
+               name)
+       (compile-sexp (jscl/cl:macroexpand sexp)))
       ((and (claimp name 'function 'jscl::pure)
             (every #'constantp args))
        (apply name args))
@@ -2253,7 +2277,7 @@ the value."
     (format *trace-output* "~&; compiling form ~a"
             (if (consp sexp) (car sexp) sexp))
     (finish-output *trace-output*)
-    (format *js-output* "/* Toplevel form evaluated in ~a */" (lisp-implementation-type)))
+    (js-format "/* Toplevel form evaluated in ~a */" (lisp-implementation-type)))
   #+jscl
   (with-output-to-string (*js-output*)
     (js (process-toplevel sexp multiple-value-p return-p))))
