@@ -54,28 +54,32 @@ or FUNCTION."
 
 ;; TODO: this needs DESCRIBE-OBJECT as generic method
 ;;; TODO: indentation for nested paragraphs
+(defun describe-symbol (object stream)
+  (when (boundp object)
+    (format stream "~&~A names a special variable:~%  Value: ~A"
+            object (symbol-value object))
+    (let ((documentation (documentation object 'variable)))
+      (when documentation
+        (format stream "~&  Documentation:~%~A" documentation)))
+    (let ((value (symbol-value object)))
+      (format stream "~&Its current value is ~A" value)
+      (jscl/cl::describe value stream)))
+  (when (jscl/cl::special-operator-p object)
+    (format stream "~&~A names a special form" object))
+  (cond ((jscl/cl::macro-function object) 
+         (format stream "~&~A names a macro-function" object)
+         (jscl/cl::describe (macro-function object) stream))
+        ((jscl/cl::fboundp object)
+         (format stream "~&~A names a function" object)
+         (jscl/cl::describe (fdefinition object) stream))))
+
 (defun jscl/cl::describe (object &optional (stream t))
   (let ((column-2 (floor *print-right-margin* 2)))
     (format stream "~&~S~vT ~s"
             object column-2 (type-of object))
     (typecase object
       (symbol
-       (when (boundp object)
-         (format stream "~&~A names a special variable:~%  Value: ~A"
-                 object (symbol-value object))
-         (let ((documentation (documentation object 'variable)))
-           (when documentation
-             (format stream "~&  Documentation:~%~A" documentation)))
-         (let ((value (symbol-value object)))
-           (format stream "~&Its current value is ~A" value)
-           (jscl/cl::describe value stream)))
-       (when (special-form-p object)
-         (format stream "~&~A names a special form" object))
-       (when (macro-function object)
-         (format stream "~&~A names a macro-function" object))
-       (when (fboundp object)
-         (format stream "~&~A names a function" object)
-         (jscl/cl::describe (fdefinition object) stream))
+       (describe-symbol object stream)
        (when (ignore-errors (find-type-definition object))
          (format stream "~&~A names a Type" object))
        (when (ignore-errors (find-class object))

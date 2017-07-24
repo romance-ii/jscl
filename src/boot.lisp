@@ -28,16 +28,19 @@
 
 #+jscl
 (jscl/cl::eval-when (:compile-toplevel :load-toplevel :execute)
-  (jscl/cl::make-package "KEYWORD" 'jscl::if-exists :ignore)
+  (jscl/cl::make-package "KEYWORD"
+                         'jscl::if-exists :ignore)
 
-  (jscl/cl::make-package "COMMON-LISP" :nicknames (list "CL") 'jscl::if-exists :ignore)
+  (jscl/cl::make-package "COMMON-LISP" :nicknames (list "CL")
+                         'jscl::if-exists :ignore)
 
   (jscl/cl::make-package "COMMON-LISP-USER"
                          :use (list :common-lisp)
                          :nicknames (list "CL-USER")
                          'jscl::if-exists :ignore)
 
-  (jscl/cl::make-package "JSCL/IMPL" :use (list :common-lisp)))
+  (jscl/cl::make-package "JSCL/IMPL" :use (list :common-lisp)
+                         'jscl::if-exists :ignore))
 
 (progn .
        #.(mapcar
@@ -551,40 +554,6 @@
     `(jscl/js::setq ,@assignment-pairs)))
 
 
-;;; DEFMACRO
-(eval-when (:compile-toplevel)
-  (unless (macro-function 'defmacro)
-    (let ((defmacro-macroexpander
-           '#'(lambda (form environment)
-                (destructuring-bind (name args &body body)
-                    form
-                  (warn "Compiling a macro-expander for ~s" name)
-                  (let* ((body (parse-body body :declarations t :docstring t))
-                         (ll (parse-destructuring-lambda-list args))
-                         (whole (or (lambda-list-wholevar ll)
-                                    (gensym "WHOLE-")))
-                         (environment (or (lambda-list-environment ll)
-                                          (gensym "ENVIRONMENT-")))
-                         (expander `(function
-                                     (lambda (,whole ,environment)
-                                      (let ((*environment* ,environment))
-                                        (block ,name
-                                          (destructuring-bind ,args ,whole
-                                            ,@body)))))))
-
-                    ;; If we  are boostrapping  JSCL, we need  to quote
-                    ;; the  macroexpander,  because  the  macroexpander
-                    ;; will   need   to   be  dumped   in   the   final
-                    ;; environment somehow.
-                    (when (find :jscl-xc *features*)
-                      (setq expander `(quote ,expander)))
-
-                    `(eval-when (:compile-toplevel :execute)
-                       (%compile-defmacro ',name ,expander)))))))
-
-      (%compile-defmacro 'defmacro defmacro-macroexpander))))
-
-
 ;;; DECLAIM
 
 (defmacro jscl/cl::declaim (&rest decls)
@@ -667,9 +636,11 @@
                 ,(when more `(cond ,@more)))))))))
 
 (defmacro jscl/cl::when (condition &body body)
+  "When CONDITION is true, evaluate BODY as a PROGN"
   `(cond (,condition ,@body)))
 
 (defmacro jscl/cl::unless (condition &body body)
+  "When CONDITION is false, evaluate BODY as a PROGN"
   `(cond ((not ,condition) ,@body)))
 
 

@@ -52,7 +52,7 @@ Compiling form #~:d:~%~S~%from ~s~%Generated:~%~s"
                                   (enough-namestring ,filename)))
                 (return-from ,block nil))))))))
 
-(defun !compile-file/form (form form-count filename out)
+(defun compile-file/form (form form-count filename out)
   (let ((compilation (compile-toplevel form)))
     (if (possibly-valid-js-p compilation)
         (when (plusp (length compilation))
@@ -60,40 +60,48 @@ Compiling form #~:d:~%~S~%from ~s~%Generated:~%~s"
         (complain-about-illegal-chars
          form form-count filename compilation))))
 
-(defmacro doforms ((form  stream)  &body body)        ;  FIXME: Not  to
-                                        ; use LOOP?
+(defmacro doforms  ((form stream)  &body body)
   "Read  forms  from   STREAM,  binding  each  in  turn   to  FORM,  and
 execute BODY. Also binds LAST-FORM and FORM-COUNT."
   (let ((eof (gensym "EOF-")))
     `(loop
-       with ,eof = (gensym "EOF-")
-       for form-count from 0
-       for ,form = (read ,stream nil ,eof)
-       for last-form = nil then ,form
-       while (not (eql ,eof form))
-       do (progn ,@body))))
+        with ,eof = (gensym "EOF-")
+        for form-count from 0
+        for ,form = (read ,stream nil ,eof)
+        for last-form = nil then ,form
+        while (not (eql ,eof form))
+        do (progn ,@body))))
 
-(defun !compile-file (filename out &key print)
+(defun compile-file/print-file-header (filename out)
+  (format out "~&/** @preserve
+ *  ⸨☕λ⸩ Compiled by 𝓙𝓢ℂ𝕃
+ * ~@[(Romance Ⅱ fork) ~]version ~a~@[, Git commit ~a~]
+ * Source file: ~a */"
+          #.(jscl/bootstrap::violet-volts-p)
+          jscl/bootstrap::*version*
+          #.(jscl/bootstrap::git-commit)
+          filename))
+
+(defun compile-file/trace-output-verbose (filename)
+  (format *trace-output*
+          "~&;;;; Compiling file ~a... "
+          (enough-namestring filename))
+  (finish-output *trace-output*))
+
+(defun compile-file-to-js (filename out &key print)
   "Compile  FILENAME, writing  the  Javascript to  OUT. Print  top-level
 forms if PRINT is set."
   (with-compilation-restarts (filename)
     (with-compile-file-bindings (filename :verbosep print)
-      (format out "~&/** @preserve
- *  ⸨☕λ⸩ Compiled by 𝓙𝓢ℂ𝕃
- * ~@[(Romance Ⅱ fork) ~]version ~a, Git commit ~a
- * Source file: ~a */"
-              #.(jscl/bootstrap::violet-volts-p) jscl/bootstrap::*version*
-              #.(jscl/bootstrap::git-commit) filename)
+      (compile-file/print-file-header filename out)
       (when print
-        (format *trace-output*
-                "~&;;;; Compiling file ~a... "
-                (enough-namestring filename))
-        (finish-output *trace-output*)) 
+        (compile-file/trace-output-verbose filename))
       (let (form-count last-form)
         (handler-case
             (doforms (form in)
-              (!compile-file/form form form-count
-                                  (enough-namestring filename) out))
+              (compile-file/form form (incf form-count)
+                                 (enough-namestring filename) out)
+              (setf last-form form))
           (end-of-file (c)
             (error "~:(~a~) while reading ~a after ~:r form:~%~s"
                    c (enough-namestring filename)
@@ -117,15 +125,19 @@ forms if PRINT is set."
         (successp nil))
     (with-compilation-environment
       (with-open-file (out output-file :direction :output
-                                       :if-exists #+jscl :new-version #+unix :supersede)
+                           :if-exists
+                           #+jscl :new-version
+                           #+unix :supersede
+                           #- (or jscl unix) (error "What?"))
         (unwind-protect
              (progn
                (when trace-file
                  (setf *trace-output* (open trace-file
                                             :direction :output
                                             :if-exists :append)))
-               (!compile-file input-file out :print (or *compile-verbose*
-                                                        *compile-print*))
+               (compile-file-to-js input-file out
+                                   :print (or *compile-verbose*
+                                              *compile-print*))
                (setf successp t))
           (when trace-file
             (close *trace-output*)))))
@@ -178,7 +190,7 @@ forms if PRINT is set."
     (with-jscl-scoping-function (stream)
       (dolist (input files)
         (terpri stream)
-        (!compile-file input stream)))))
+        (compile-file-to-js input stream)))))
 
 (defun compile-application (files output &key shebang (verbosep t))
   (when verbosep
@@ -191,7 +203,7 @@ forms if PRINT is set."
       (terpri out))
     (with-jscl-scoping-function (out)
       (dolist (file files)
-        (!compile-file file out :print verbosep))))
+        (compile-file-to-js file out :print verbosep))))
   (when shebang
     (jscl/bootstrap::file-set-execute-permission output)))
 
@@ -210,8 +222,8 @@ forms if PRINT is set."
 (defun compile-test-suite ()
   (compile-application
    `(,(jscl/bootstrap::source-pathname "tests.lisp" :directory nil)
-     ,@(test-files)
-     ,(jscl/bootstrap::source-pathname "tests-report.lisp" :directory nil))
+      ,@(test-files)
+      ,(jscl/bootstrap::source-pathname "tests-report.lisp" :directory nil))
    (merge-pathnames "tests.js" jscl/bootstrap::*base-directory*)))
 
 (defun compile-web-repl ()
@@ -237,7 +249,8 @@ forms if PRINT is set."
                        (jscl/bootstrap::source-pathname "prelude.js"))
                       out)
         (jscl/bootstrap::do-source (input :target)
-                                   (!compile-file input out :print verbosep))
+                                   (compile-file-to-js input out
+                                                       :print verbosep))
         (dump-global-environment out)))))
 
 (defmacro with-bootstrap ((verbosep) &body body)

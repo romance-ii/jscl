@@ -617,12 +617,13 @@ is NIL."
       ;; Special case for bootstrap. For now,  we just load all the code
       ;; with  JSCL as  the current  package. We  will compile  the JSCL
       ;; package as CL in the target. ☠ FIXME
-      #-jscl
+      #+ not-needed-any-more #- jscl
       ((eq package (find-package "JSCL"))
        `(jscl/js::call-internal |intern| ,(symbol-name symbol)))
       ;; Interned symbol
       (t
-       `(jscl/js::call-internal |intern| ,(symbol-name symbol) ,(package-name package))))))
+       `(jscl/js::call-internal |intern| ,(symbol-name symbol)
+                                ,(package-name package))))))
 
 (defun dump-cons (cons)
   (if (eql (car cons)
@@ -723,9 +724,7 @@ association list ALIST in the same order."
 (defun literal-symbol (sexp)
   (let ((jsvar (genlit)))
     (toplevel-compilation `(var (,jsvar ,(dump-symbol sexp))))
-    (when (keywordp sexp)
-      (toplevel-compilation `(= (get ,jsvar "value") ,jsvar)))0
-      jsvar))
+    jsvar))
 
 (defun literal-bignum (bignum)
   (cerror (format nil
@@ -1898,6 +1897,8 @@ generate the code which performs the transformation on these variables."
   (compile-funcall fun args))
 
 (defun compile-funcall (function args)
+  (when (member function '(let quote))
+    (break "QUOTE call isn't SPECIAL-OPERATOR-P?"))
   (let* ((arglist (compile-funcall/args-list args)))
     (cond
       ((eql 'setf function)
@@ -1907,10 +1908,10 @@ generate the code which performs the transformation on these variables."
             (special-operator-p function))
        (error "Compiler error: Special operator ~s treated as function call"
               function))
-      ((translate-function function)
-       (compile-funcall/translate-function function arglist))
       ((and (symbolp function) (jscl/cl::macro-function function))
        (error "Compiler error: Macro function was not expanded: ~s" function))
+      ((translate-function function)
+       (compile-funcall/translate-function function arglist))
       ((function-name-p function)
        (compile-funcall/function function arglist))
       ((not (consp function))
@@ -1939,16 +1940,31 @@ generate the code which performs the transformation on these variables."
        (not (claimp name 'function 'notinline))))
 
 (defun jscl/cl::special-operator-p (name)
-  (and (eql (symbol-package name) (find-package "JSCL/CL"))
-       (gethash name *special-forms*)))
+  (or
+   (and (eql (symbol-package name) (find-package "COMMON-LISP"))
+        (gethash (intern (symbol-name name)
+                         (find-package "JSCL/COMMON-LISP"))
+                 *special-forms*))
+   (and (eql (symbol-package name) (find-package "JSCL/COMMON-LISP"))
+        (gethash name *special-forms*))))
 
 (defun compile-special-form (name args)
   (let ((comp (gethash name *special-forms*)))
-    (assert comp () "~S must name a special form" name)
-    (apply comp args)))
+    (cond
+      (comp
+       (apply comp args))
+      ((eql (symbol-package name) 
+            (find-package "COMMON-LISP"))
+       (compile-special-form (intern (symbol-name name)
+                                     (find-package "JSCL/COMMON-LISP"))
+                             args))
+      (t (assert comp () "~S must name a special form" name)))))
 
 (defun compile-builtin-function (name args)
-  (apply (gethash name *builtins*) args))
+  (let ((built-in (gethash name *builtins*)))
+    (assert built-in (name)
+            "~a does not name a built-in" name)
+    (apply built-in args)))
 
 #+jscl
 (dolist (fn (+ - / * mod sqrt expt log
@@ -2092,19 +2108,15 @@ be used."
       (let ((*multiple-value-p* multiple-value-p)
             (*convert-level* (1+ *convert-level*)))
         (cond
-          ((null sexp)
-           (literal nil))
-          ((listp sexp)
-           (compile-sexp sexp))
-          ((symbolp sexp)
-           (convert-1/symbol sexp))
+          ((null sexp)	(literal nil))
+          ((listp sexp)	(compile-sexp sexp))
+          ((symbolp sexp)	(convert-1/symbol sexp))
           ((rational-float-p sexp)
            (literal (rational-float-p sexp)))
           ((object-evaluates-to-itself-p sexp)
            (literal sexp))
-          (t
-           (error "How should I compile ~s `~S'?"
-                  (type-of sexp) sexp)))))))
+          (t (error "How should I compile ~s `~S'?"
+                    (type-of sexp) sexp)))))))
 
 (defvar *convert-recursion-guard* 100)
 
@@ -2179,7 +2191,7 @@ just fine."
 (defun convert-toplevel-normal (sexp multiple-value-p return-p)
   (when *compile-print-toplevels*
     (let ((form-string (prin1-to-string sexp)))
-      (format t "~&;; JSCL is Compiling ~a…" (truncate-string
+      (format t "~&;; 𝓙𝓢ℂ𝕃 is Compiling ~a…" (truncate-string
                                               (substitute #\space #\newline
                                                           form-string)
                                               120))))
@@ -2271,6 +2283,34 @@ the value."
   (ignore-errors
     (rename-package (find-package "JSCL/HOSTED*")
                     "JSCL/HOSTED")))
+
+(define-compilation defmacro (name args &rest body)
+  (warn "Compiling a macro-expander for ~s" name)
+  (let* ((body (parse-body body :declarations t :docstring t))
+         (ll (parse-destructuring-lambda-list args))
+         (whole (or (lambda-list-wholevar ll)
+                    (gensym "WHOLE-")))
+         (environment (or (lambda-list-environment ll)
+                          (gensym "ENVIRONMENT-")))
+         (expander (make-macro-expander-body 
+                    name args whole environment body)))
+    
+    ;; If we are  boostrapping JSCL, we need  to quote the
+    ;; macroexpander, because the  macroexpander will need
+    ;; to be dumped in the final environment somehow.
+    (when (find :jscl-xc *features*)
+      (setq expander `(quote ,expander)))
+    
+    `(eval-when (:compile-toplevel :execute)
+       (%compile-defmacro ',name ,expander))))
+
+(defun make-macro-expander-body (name args whole environment body)
+  `(function
+    (lambda (,whole ,environment)
+     (let ((*environment* ,environment))
+       (block ,name
+         (destructuring-bind ,args ,whole
+           ,@body))))))
 
 
 

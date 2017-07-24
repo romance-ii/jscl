@@ -324,7 +324,11 @@ internals.unboundSetFFunction = function () {
 internals.Symbol = function(name, package_name){
     this.name = name;
     this["package"] = package_name;
-    this.value = undefined;
+    if (package_name == 'KEYWORD') {
+        this.value = this;
+    } else {
+        this.value = undefined;
+    }
     this.fvalue = internals.unboundFunction;
     this.setfValue = internals.unboundSetFFunction;
     this.stack = [];
@@ -398,9 +402,11 @@ internals.intern = function (name, package_name){
     if (!symbol)
         symbol = lisp_package.symbols[name] = new internals.Symbol(name, lisp_package);
 
-    // Auto-export symbol if it is the KEYWORD package.
-    if (lisp_package === packages.KEYWORD)
+    // Auto-export  symbol if  it is  the KEYWORD  package, and  set the
+    // symbol-value to be recursive.
+    if (lisp_package === packages.KEYWORD) {
         lisp_package.exports[name] = symbol;
+    }
 
     return symbol;
 };
