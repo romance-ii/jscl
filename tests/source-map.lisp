@@ -14,4 +14,20 @@
   (test (= 10 (jscl/source-map::relative-number 10 last)))
   (test (= 20 (jscl/source-map::relative-number 30 last)))
   (test (= -30 (jscl/source-map::relative-number 0 last))))
+(test (string= (jscl/source-map::doubly-quoted "blah")
+               "\"blah\""))
+(test (string= (jscl/source-map::doubly-quoted "\"blah\\")
+               "\\\"blah\\"))
+(test (string= (jscl/source-map::backslash-escaped "|blah\\" #\|)
+               "\\|blah\\\\"))
+
+(test (string= (jscl/source-map::symbol-name-string #:foo)
+               "#:FOO"))
+(test (string= (jscl/source-map::symbol-name-string #:|foo\|bar|)
+               "#:|foo\\|bar|"))
+(test (string= (jscl/source-map::symbol-name-string :monkey)
+               ":MONKEY"))
+(test (string= (jscl/source-map::symbol-name-string 'jscl::monkey)
+               "JSCL::MONKEY"))
+
 
