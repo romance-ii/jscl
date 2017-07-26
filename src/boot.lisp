@@ -539,7 +539,7 @@
             #:yes-or-no-p                     	#:zerop)))
 
 ;; not yet available XXX (in-package #-jscl :jscl #+jscl :jscl/impl)
-(setq *package* #-jscl :jscl #+jscl :jscl/impl)
+(setq *package* (find-package #-jscl :jscl #+jscl :jscl/impl))
 
 (/debug "loading boot.lisp!")
 
