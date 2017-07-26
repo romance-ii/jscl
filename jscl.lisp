@@ -63,6 +63,9 @@ During  bootstrap,  these  forms  are  evaluated  instead  as  calls  to
   (:use :jscl/cl)
   (:nicknames :jscl/xc))
 
+#+sbcl (unless (ignore-errors (find-package :SB-CLTL2))
+         (load #p "SYS:CONTRIB;SB-CLTL2.FASL.NEWEST"))
+
 (defpackage jscl
   (:use :cl)
   #+sbcl (:use :sb-gray :sb-mop :sb-cltl2)
