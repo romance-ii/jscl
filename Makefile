@@ -89,7 +89,7 @@ repl-web.js:	$(ALL_LISP)
 		$(LISPEVAL)'(jscl/bootstrap::bootstrap)' \
 		$(LISPEVAL)'(jscl/bootstrap::compile-web-repl)' 2>&1 |tee repl-web.js.build.log
 
-test:	jscl.js tests.js
+test:	jscl.js tests.js \
 		$(shell find tests ansi-test \
 			-\( -name \*.lisp -or -name \*.lsp -\) \
 			-and -not -name .\*) \
