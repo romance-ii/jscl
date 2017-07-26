@@ -541,7 +541,7 @@
 ;; not yet available XXX (in-package #-jscl :jscl #+jscl :jscl/impl)
 (setq *package* (find-package #-jscl :jscl #+jscl :jscl/impl))
 
-(/debug "loading boot.lisp!")
+
 
 
 ;;; Special forms treated as macros

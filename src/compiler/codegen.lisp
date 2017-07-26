@@ -25,7 +25,7 @@
 
 (in-package #-jscl :jscl #+jscl :jscl/impl)
 
-(/debug "loading compiler/codegen.lisp!")
+
 
 (defvar *js-macros* nil)
 

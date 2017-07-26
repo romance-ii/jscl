@@ -16,7 +16,7 @@
 ;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
 
 (in-package #-jscl :jscl #+jscl :jscl/impl)
-(/debug "loading lambda-list.lisp!")
+
 
 (defvar !lambda-list-keywords
   '(&optional &rest &key &aux &allow-other-keys &body

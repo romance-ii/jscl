@@ -16,7 +16,7 @@
 
 (in-package #-jscl :jscl #+jscl :jscl/impl)
 
-(/debug "loading read.lisp!")
+
 
 ;;;; Reader
 

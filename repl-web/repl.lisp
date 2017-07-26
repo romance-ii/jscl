@@ -12,7 +12,7 @@
 ;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
 (in-package :repl-web)
 (read-#j)
-(/debug "loading repl-web/repl.lisp!")
+
 
 (defun %write-string (string &optional (escape t))
   (if #j:jqconsole

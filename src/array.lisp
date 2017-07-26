@@ -15,7 +15,7 @@
 
 (in-package #-jscl :jscl #+jscl :jscl/impl)
 
-(/debug "loading array.lisp!")
+
 
 (defun jscl/cl::upgraded-array-element-type (typespec &optional environment)
   (declare (ignore environment))

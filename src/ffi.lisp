@@ -16,7 +16,7 @@
 (in-package :jscl/ffi)
 #-jscl-xc #.(error "Do not load this file in the host compiler")
 
-(/debug "loading ffi.lisp!")
+
 
 (defvar *root* :error-unbound
   "The *ROOT* object is “window” (in a browser) or the Node root object.

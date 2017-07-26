@@ -21,7 +21,7 @@
 ;;; TODO:   Use  structures   to   represent  streams,   but  we   would
 ;;; need inheritance.
 
-(/debug "loading stream.lisp!")
+
 
 (defvar jscl/cl::*standard-output*)
 

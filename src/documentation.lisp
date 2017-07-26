@@ -1,7 +1,7 @@
 ;;; documentation.lisp — Accessing DOCUMENTATION
 (in-package #-jscl :jscl #+jscl :jscl/impl)
 
-(/debug "loading documentation.lisp!")
+
 
 ;;; Documentation.
 (defun jscl/cl::documentation (x type)

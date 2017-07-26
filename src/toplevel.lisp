@@ -18,7 +18,7 @@
 
 (in-package #-jscl :jscl #+jscl :jscl/impl)
 
-(/debug "loading toplevel.lisp!")
+
 
 (defun jscl/cl::eval (x)
   #+jscl
