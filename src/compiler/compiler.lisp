@@ -256,11 +256,22 @@ specifier for the condition types that have been muffled.
 (defvar *special-forms* (make-hash-table :test 'eql)
   "Special forms that have direct compilations rather than typical macros")
 
+(defun lambda-list-keyword-p (symbol)
+  (member symbol lambda-list-keywords))
+
 (defmacro define-compilation (name args &body body)
   "Creates a new primitive named NAME with parameters ARGS and
  BODY. The body can access to the local environment through the
  variable *ENVIRONMENT*."
   `(let ((fn (lambda ,args (block ,name ,@body))))
+     ,(when (member (symbol-package name) (list (find-package "COMMON-LISP")
+                                                (find-package "JSCL/COMMON-LISP")))
+        (format *trace-output* 
+                "~& Defined special form ~a" name)
+        `(let ((binding (make-binding :name ',name :type 'macro 
+                                      :value '(lambda (&rest args)
+                                               (compile-special-form ',name args)))))
+           (push-to-lexenv binding *global-environment* 'function)))
      (setf (gethash ',name *special-forms*) fn)))
 
 (define-compilation jscl/cl::if (condition true &optional false)
@@ -1832,11 +1843,14 @@ generate the code which performs the transformation on these variables."
 
 (defun macroexpand-1/cons (form &optional (environment *environment*))
   (let ((macrofun (jscl/cl::macro-function (car form) environment)))
-    (cond (macrofun
+    (cond ((special-operator-p (car form))
+           (values form nil))
+          (macrofun
            (values (funcall macrofun (cdr form) environment) t))
           ((macro-function (car form) nil)
-           (break "MACROEXPAND-1 has no macro binding for ~a, ~
+           (break "MACROEXPAND-1 has no macro binding for ~a::~a, ~
 but one exists in the global environment of the host compiler."
+                  (package-name (symbol-package (car form)))
                   (car form)))
           (t (values form nil)))))
 
@@ -2227,10 +2241,13 @@ just fine."
 
 (defun convert-toplevel (sexp &optional multiple-value-p return-p)
   "Macroexpand SEXP as  much as possible, and process it  as a top-level
-form. If  MULTIPLE-VALUE-P, then  SEXP may  return multiple  values (and
-they  will  be bound);  otherwise,  use  a  simpler form  that  discards
-non-primary values. If RETURN-P, emit  a JavaScript “return” operator on
-the value."
+form.
+ 
+If MULTIPLE-VALUE-P, then SEXP may return multiple values (and they will
+be   bound);    otherwise,   use   a   simpler    form   that   discards
+non-primary values.
+
+If RETURN-P, emit a JavaScript “return” operator on the value."
   (multiple-value-bind (expansion expandedp) (jscl/cl::macroexpand-1 sexp)
     (when expandedp
       (warn "Macro-expansion done on top level (~s …)…" (car sexp))
@@ -2264,7 +2281,9 @@ the value."
         (*toplevel-recursion-depth* (1- *toplevel-recursion-depth*)))
     (when (zerop *toplevel-recursion-depth*)
       (cerror "Ignore and continue, expecting doom"
-              "PROCESS-TOPLEVEL recursion guard hit."))
+              "PROCESS-TOPLEVEL recursion guard hit. ~
+More than ~:d levels of recursion were encountered."
+              #.*toplevel-recursion-depth*))
     (let ((code (convert-toplevel sexp multiple-value-p return-p)))
       `(jscl/js::progn
          ,@(get-toplevel-compilations)
@@ -2308,7 +2327,7 @@ the value."
     (rename-package (find-package "JSCL/HOSTED*")
                     "JSCL/HOSTED")))
 
-(define-compilation defmacro (name args &rest body)
+(define-compilation jscl/cl::defmacro (name args &rest body)
   (warn "Compiling a macro-expander for ~s" name)
   (let* ((body (parse-body body :declarations t :docstring t))
          (ll (parse-destructuring-lambda-list args))

@@ -538,7 +538,8 @@
             #:write-to-string                 	#:y-or-n-p
             #:yes-or-no-p                     	#:zerop)))
 
-(in-package #-jscl :jscl #+jscl :jscl/impl)
+;; not yet available XXX (in-package #-jscl :jscl #+jscl :jscl/impl)
+(setq *package* #-jscl :jscl #+jscl :jscl/impl)
 
 (/debug "loading boot.lisp!")
 

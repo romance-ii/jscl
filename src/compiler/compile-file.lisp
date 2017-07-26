@@ -53,6 +53,7 @@ Compiling form #~:d:~%~S~%from ~s~%Generated:~%~s"
                 (return-from ,block nil))))))))
 
 (defun compile-file/form (form form-count filename out)
+  ;; TODO: set some dynamics to be used in labeling the source-map here
   (let ((compilation (compile-toplevel form)))
     (if (possibly-valid-js-p compilation)
         (when (plusp (length compilation))
