@@ -21,9 +21,9 @@
 (test (string= (jscl/source-map::backslash-escaped "|blah\\" #\|)
                "\\|blah\\\\"))
 
-(test (string= (jscl/source-map::symbol-name-string #:foo)
+(test (string= (jscl/source-map::symbol-name-string '#:foo)
                "#:FOO"))
-(test (string= (jscl/source-map::symbol-name-string #:|foo\|bar|)
+(test (string= (jscl/source-map::symbol-name-string '#:|foo\|bar|)
                "#:|foo\\|bar|"))
 (test (string= (jscl/source-map::symbol-name-string :monkey)
                ":MONKEY"))
