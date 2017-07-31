@@ -1500,7 +1500,7 @@ More than ~:d levels of recursion were encountered."
          (destructuring-bind ,args ,whole
            ,@body))))))
 
-(defmacro with-compilation-unit (options &body body)
+(defmacro jscl/cl::with-compilation-unit (options &body body)
   (warn "WITH-COMPILATION-UNIT currently has no effect.~@[
 Ignoring options ~s~]" options)
   body)
