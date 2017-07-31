@@ -29,5 +29,5 @@ doc/*
 .emacs.desktop
 TAGS
 
-
+# “flag” file for Make
 .ansi-patched
