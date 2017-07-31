@@ -67,6 +67,8 @@ clean:
 	-rm -r doc/*
 	-mkdir -p doc
 
+
+
 jscl.js:	$(ALL_LISP)
 	$(LISP) $(LISPFLAGS) $(LISPLOAD)jscl.lisp \
 		$(LISPEVAL)'(jscl/bootstrap::load-jscl)' \
@@ -99,6 +101,8 @@ test:	jscl.js tests.js \
 		$(LISPEVAL)'(jscl/bootstrap::bootstrap-core)' \
 		$(LISPEVAL)'(jscl/bootstrap::run-tests-in-host)' 2>&1 |tee test.log
 	node tests.js
+
+
 
 doc:	doc/jscl.pdf doc/jscl.html.d/index.html
 
