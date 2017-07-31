@@ -1449,7 +1449,7 @@ If RETURN-P, emit a JavaScript “return” operator on the value."
       (cerror "Ignore and continue, expecting doom"
               "PROCESS-TOPLEVEL recursion guard hit. ~
 More than ~:d levels of recursion were encountered."
-              #.*toplevel-recursion-depth*))
+              (eval *toplevel-recursion-depth*)))
     (let ((code (convert-toplevel sexp multiple-value-p return-p)))
       `(jscl/js::progn
          ,@(get-toplevel-compilations)
