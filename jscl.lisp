@@ -409,6 +409,8 @@ permissions on FILENAME, if we  know how in the current implementation."
     ("backquote"     :both)
     ("compiler"
      ("codegen"      :both)
+     ("builtins"	 :both)
+     ("special-operators"	:both)
      ("compiler"     :both)
      ("compile-file"	:both))
     ("documentation" :both)
