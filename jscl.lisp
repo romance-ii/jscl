@@ -141,8 +141,36 @@ identifying them (and their provenance) easier."))
   (:documentation "JavaScript from  Common Lisp. Internal implementation
  details (when self-hosting)."))
 
+(defun quicklisp-quickload-system (system)
+  (funcall (intern "QUICKLOAD" (find-package :quicklisp)) system))
+
+(defun load-system (system)
+  (if (find-package :quicklisp)
+      (quicklisp-quickload-system system)
+      (let ((quicklisp/setup.lisp
+             (merge-pathnames
+              (make-pathname :name "setup"
+                             :type "lisp"
+                             :directory '(:relative "quicklisp"))
+              (user-homedir-pathname))))
+        (cond
+          ((probe-file quicklisp/setup.lisp)
+           (format t "Loading Quicklisp from ~a to load package ~:(~a~)…"
+                   quicklisp/setup.lisp system)
+           (load quicklisp/setup.lisp)
+           (quicklisp-quickload-system system))
+          (t (cerror
+              "I have loaded it; continue"
+              "System ~:(~a~) is not available, but is needed, and ~
+Quicklisp is not available. Use whatever method you like to load ~
+~:(~:*~a~) -OR- Quicklisp (https://quicklisp.org/), then continue."
+              system))))))
+
+(unless (find-package :bordeaux-threads)
+  (load-system :bordeaux-threads))
+
 (defpackage jscl/test
-  (:use :cl #+sbcl :bordeaux-threads)
+  (:use :cl #-jscl :bordeaux-threads)
   (:export #:run)
   (:documentation "This package contains  the test running architecture,
  and is used as the active package for most of the tests as well."))
@@ -152,8 +180,6 @@ identifying them (and their provenance) easier."))
 
 (defpackage repl-node
   (:use :cl :jscl :jscl/ffi))
-
-#+sbcl (require 'bordeaux-threads)
 
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -482,7 +508,7 @@ which occurred within ~r file~:p: ~
                file-warnings file-failures))
       (file-warnings
        (warn "In the ~:(~a~) pass, despite warnings in ~r file~:p, ~
-   there were no failures; continuing…"
+ there were no failures; continuing…"
              pass (length file-warnings)))
       (t (format *trace-output* "~&No warnings or failures from compilation in the ~(~a~) pass."
                  pass)))))
