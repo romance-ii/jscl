@@ -17,7 +17,7 @@
 
 (in-package #-jscl :jscl #+jscl :jscl/impl)
 
-(/debug "loading compiler.lisp!")
+
 
 ;; Translates the Lisp code to Javascript. This will compile the special
 ;; forms. Some  primitive functions are  compiled as special  forms too.

@@ -15,7 +15,7 @@
 
 (in-package #-jscl :jscl #+jscl :jscl/impl)
 
-(/debug "loading backquote.lisp!")
+
 
 ;;; Backquote implementation.
 ;;;

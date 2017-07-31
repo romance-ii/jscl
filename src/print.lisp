@@ -15,7 +15,7 @@
 
 (in-package #-jscl :jscl #+jscl :jscl/impl)
 
-(/debug "loading print.lisp!")
+
 
 
 ;;; HACK HACK — if an error  occurs during startup before toplevel binds

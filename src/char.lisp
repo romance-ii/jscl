@@ -2,7 +2,7 @@
 
 (in-package #-jscl :jscl #+jscl :jscl/impl)
 
-(/debug "loading char.lisp!")
+
 
 ;; These comparison  functions heavily borrowed from  SBCL/CMUCL (public
 ;; domain).

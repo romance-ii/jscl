@@ -14,7 +14,7 @@
 ;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
 (in-package #-jscl :jscl #+jscl :jscl/impl)
 
-(/debug "loading sequence.lisp!")
+
 
 (defun sequencep (thing)
   (or (listp thing) (vectorp thing)))

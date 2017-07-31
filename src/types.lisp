@@ -7,7 +7,7 @@
 
 (in-package #-jscl :jscl #+jscl :jscl/impl)
 
-(/debug "Loading types.lisp…")
+
 
 
 ;; forward declarations to compiler.lisp

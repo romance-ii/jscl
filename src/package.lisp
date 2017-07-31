@@ -15,7 +15,7 @@
 
 (in-package #-jscl :jscl #+jscl :jscl/impl)
 
-(/debug "loading package.lisp!")
+
 
 (defvar *package-table* (jscl/js::%js-vref "packages"))
 
