@@ -64,7 +64,8 @@ or FUNCTION."
         (format stream "~&  Documentation:~%~A" documentation)))
     (let ((value (symbol-value object)))
       (format stream "~&Its current value is ~A" value)
-      (jscl/cl::describe value stream)))
+      (when value
+        (jscl/cl::describe value stream))))
   (when (jscl/cl::special-operator-p object)
     (format stream "~&~A names a special operator" object))
   (cond ((jscl/cl::macro-function object)
