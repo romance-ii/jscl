@@ -22,7 +22,7 @@
 ;;; Lisp  world from  scratch. This  code has  to define  enough of  the
 ;;; language for the compiler to be able to run.
 
-
+
 
 ;;; Package definitions for within the environment.
 
@@ -953,7 +953,7 @@ macro cache is so aggressive that it cannot be redefined."
     `(multiple-value-call (lambda ,gvars ,@setqs)
        ,@form)))
 
-
+
 ;;; Function names/values
 
 (defun fdefinition-soft (name)
@@ -995,7 +995,6 @@ This is SETF'able."
   (if (symbolp name)
       (jscl/js::%setf-symbol-function name function)
       (error "Cannot SETF SYMBOL-FUNCTION of ~s" name)))
-
 
 (defun jscl/cl::fboundp (x)
   (cond ((symbolp x) (jscl/js::fboundp x))

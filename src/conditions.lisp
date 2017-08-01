@@ -1,4 +1,4 @@
-;;; conditions.lisp — Signals, Conditions, et al.
+;;; conditions.lisp — Condition System
 
 ;; JSCL is free software: you can redistribute it and/or modify it under
 ;; the terms of the GNU General  Public License as published by the Free
@@ -91,7 +91,7 @@
   (apply #'make-instance type init-args))
 
 (defmacro jscl/cl::define-condition (name (&rest superclasses)
-                                     (&rest slot-specs)
+                                                 (&rest slot-specs)
                                      &body options)
   (check-type name symbol)
   (assert (every (lambda (superclass)

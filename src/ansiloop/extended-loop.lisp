@@ -1,8 +1,8 @@
 ;;;   -*- Mode: LISP; Syntax: Common-lisp; Package: ANSI-LOOP; Base: 10;
 ;;;   -*- Lowercase:T -*-
 ;;
-;; Portions  of  LOOP  are  Copyright  (c)  1986  by  the  Massachusetts
-;; Institute of Technology. All Rights Reserved.
+;; Portions of LOOP are Copyright  © 1986 by the Massachusetts Institute
+;; of Technology. All Rights Reserved.
 ;;
 ;; Permission to use, copy, modify  and distribute this software and its
 ;; documentation  for any  purpose and  without fee  is hereby  granted,
@@ -22,8 +22,8 @@
 ;;;     United States of America
 ;;      +1-617-253-1000
 ;;;>
-;; Portions  of  LOOP  are  Copyright  (c) 1989,  1990,  1991,  1992  by
-;; Symbolics, Inc. All Rights Reserved.
+;; Portions of LOOP are Copyright © 1989, 1990, 1991, 1992 by Symbolics,
+;; Inc. All Rights Reserved.
 ;;
 ;; Permission to use, copy, modify  and distribute this software and its
 ;; documentation  for any  purpose and  without fee  is hereby  granted,
@@ -74,7 +74,7 @@
 ;;;superset of the ansi universe.
 (defvar *loop-default-universe* (make-ansi-loop-universe t))
 
-
+
 ;;;
 
 (defmacro symbolics-loop:define-loop-iteration-path (path-name function

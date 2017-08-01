@@ -39,32 +39,32 @@
 
 (defun test-fn (successp form)
   (async
-    (cond
-      (successp
-       (sync-incf *passed-tests*))
-      (t
-       (with-lock-held (*sync*)
-         (push (list form :failed) *failed-tests-details*))
-       (if *use-html-output-p*
-           (format t "<font color='red'>Test `~S' failed.</font>~%" form)
-           (format t "Test `~S' failed.~%" form))
-       (push (list form :failed) *failed-tests-details*)
-       (sync-incf *failed-tests*)))
-    (sync-incf *total-tests*)))
+   (cond
+     (successp
+      (sync-incf *passed-tests*))
+     (t
+      (with-lock-held (*sync*)
+        (push (list form :failed) *failed-tests-details*))
+      (if *use-html-output-p*
+          (format t "<font color='red'>Test `~S' failed.</font>~%" form)
+          (format t "Test `~S' failed.~%" form))
+      (push (list form :failed) *failed-tests-details*)
+      (sync-incf *failed-tests*)))
+   (sync-incf *total-tests*)))
 
 (defun expected-failure-fn (condition form)
   (async
-    (cond
-      (condition
-       (if *use-html-output-p*
-           (format t "<font color='orange'>Test `~S' passed unexpectedly!</font>~%" form)
-           (format t "Test `~S' passed unexpectedly!~%" form))
-       (sync-incf *unexpected-passes*))
-      (t
-       (with-lock-held (*sync*)
-         (push (list form :failed-expected) *failed-tests-details*))
-       (sync-incf *expected-failures*)))
-    (sync-incf *total-tests*)))
+   (cond
+     (condition
+      (if *use-html-output-p*
+          (format t "<font color='orange'>Test `~S' passed unexpectedly!</font>~%" form)
+          (format t "Test `~S' passed unexpectedly!~%" form))
+      (sync-incf *unexpected-passes*))
+     (t
+      (with-lock-held (*sync*)
+        (push (list form :failed-expected) *failed-tests-details*))
+      (sync-incf *expected-failures*)))
+   (sync-incf *total-tests*)))
 
 (defmacro test (condition)
   `(test-fn ,condition ',condition))

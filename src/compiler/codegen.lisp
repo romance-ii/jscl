@@ -58,11 +58,11 @@
 
 (defvar *js-output* t
   "When generating  code, this  is the stream  to which  JavaScript will
-  be emitted.")
+ be emitted.")
 
 (defvar *js-pretty-print* t
   "When true, generated JavaScript code  will attempt to pretty-print to
-  a degree.")
+ a degree.")
 
 
 
@@ -73,8 +73,9 @@
 ;;;
 ;;; The same function would suffice  for both, but for javascript string
 ;;; literals it is  neater to use either depending on  the context, e.g:
-;;; foo's → "foo's" "foo" → '"foo"' which avoids having to escape quotes
-;;; where possible
+;;  foo's => "foo's"
+;;;  "foo" => '"foo"'
+;; …which avoids having to escape quotes where possible
 (defun js-escape-string (string)
   (let ((size (length string)))
     (flet ((%js-escape-string (string escape-single-quote-p)
@@ -205,7 +206,7 @@
     "while"
     "with"
     "yield")
-  "These  keywords  are not  permitted  to  be  used as  identifiers  in
+  "These “reserved words” are not  permitted  to  be  used as  identifiers  in
 JavaScript.  This  is  a  union  of  all  the  reserved  word  lists  in
 https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Lexical_grammar")
 
@@ -517,11 +518,11 @@ unnecessary parentheses."
                                precedence associativity operand-order))
       (t (error  "unreachable?")))))
 
-
+
 ;;; Statements generators
 ;;;
-;;; `js-stmt'  generates  code  for  Javascript statements.  A  form  is
-;;; provided  to   label  statements.   Remember  that   in  particular,
+;;; `js-stmt' generates code for Javascript statements. A form is
+;;; provided to label statements. Remember that in particular,
 ;;; expressions can be used as statements (semicolon suffixed).
 (defun js-expand-stmt (form)
   (cond
@@ -599,8 +600,8 @@ unnecessary parentheses."
                 (js-stmt false))))
            (group
             (let ((in-group-p
-                    (or (null parent)
-                        (and (consp parent) (eq (car parent) 'group)))))
+                   (or (null parent)
+                       (and (consp parent) (eq (car parent) 'group)))))
               (unless  in-group-p (js-format "{"))
               (mapc #'js-stmt (cdr form))
               (unless in-group-p (js-format "}"))))

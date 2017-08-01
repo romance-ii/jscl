@@ -274,22 +274,22 @@ format control string ~S." fmt))))
     ;; Lists
     (list
      (write-char #\( stream)
-                 (unless (null form)
-                   (write-aux (car form) stream known-objects object-ids)
-                   (do ((tail (cdr form) (cdr tail)))
-                       ;; Stop on symbol  OR if the object is already  known when we
-                       ;; accept circular printing.
-                       ((or (atom tail)
-                            (and *print-circle*
-                                 (let* ((ix (or (position tail known-objects) 0))
-                                        (id (aref object-ids ix)))
-                                   (not (zerop id)))))
-                        (unless (null tail)
-                          (write-string " . " stream)
-                          (write-aux tail stream known-objects object-ids)))
-                     (write-char #\space stream)
-                     (write-aux (car tail) stream known-objects object-ids)))
-                 (write-char #\) stream))
+     (unless (null form)
+       (write-aux (car form) stream known-objects object-ids)
+       (do ((tail (cdr form) (cdr tail)))
+           ;; Stop on symbol  OR if the object is already  known when we
+           ;; accept circular printing.
+           ((or (atom tail)
+                (and *print-circle*
+                     (let* ((ix (or (position tail known-objects) 0))
+                            (id (aref object-ids ix)))
+                       (not (zerop id)))))
+            (unless (null tail)
+              (write-string " . " stream)
+              (write-aux tail stream known-objects object-ids)))
+         (write-char #\space stream)
+         (write-aux (car tail) stream known-objects object-ids)))
+     (write-char #\) stream))
     ;; Vectors
     (vector
      (write-string "#(" stream)
@@ -367,7 +367,7 @@ format control string ~S." fmt))))
   (prog1 (prin1 x stream)
     (terpri stream)))
 
-
+
 ;;; FORMAT
 ;; Lots  of   helper  functions   first,  for  the   various  directives
 ;; and utilities.
@@ -804,7 +804,7 @@ dispatching on the CHR ending the format sequence."
            (#\[ #'format-conditional)
            (#\{ #'format-repeat)
            (t (warn "~~~a is not implemented yet, using ~~S instead" chr)
-            #'format-syntax))
+              #'format-syntax))
          arg colonp atp params))
 
 (defun format-nested (nesting-char

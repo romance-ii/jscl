@@ -1,4 +1,5 @@
 ;;; documentation.lisp — Accessing DOCUMENTATION
+
 (in-package #-jscl :jscl #+jscl :jscl/impl)
 
 
@@ -66,7 +67,7 @@ or FUNCTION."
       (jscl/cl::describe value stream)))
   (when (jscl/cl::special-operator-p object)
     (format stream "~&~A names a special form" object))
-  (cond ((jscl/cl::macro-function object) 
+  (cond ((jscl/cl::macro-function object)
          (format stream "~&~A names a macro-function" object)
          (jscl/cl::describe (macro-function object) stream))
         ((jscl/cl::fboundp object)

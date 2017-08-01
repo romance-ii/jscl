@@ -2,8 +2,6 @@
 
 (in-package #-jscl :jscl #+jscl :jscl/impl)
 
-
-
 ;; These comparison  functions heavily borrowed from  SBCL/CMUCL (public
 ;; domain).
 

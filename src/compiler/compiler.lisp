@@ -10,8 +10,8 @@
 ;; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
 ;; for more details.
 ;;
-;; You should have received a copy of the GNU General Public License
-;; along with JSCL.  If not, see <http://www.gnu.org/licenses/>.
+;; You should  have received a  copy of  the GNU General  Public License
+;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
 
 ;;;; Compiler
 
@@ -21,8 +21,6 @@
 ;; forms. Some  primitive functions are  compiled as special  forms too.
 ;; The respective  real functions are defined  in the target as  well as
 ;; some primitive functions.
-
-
 
 (defun convert-to-bool (expr)
   `(if ,expr ,(convert t) ,(convert nil)))
@@ -44,13 +42,13 @@
 ;;; Environment
 
 (defstruct binding
-  name
+    name
   type
   value
   declarations)
 
 (defstruct lexenv
-  variable
+    variable
   function
   setf-function
   block
@@ -72,9 +70,9 @@
                  (find name (lexenv-setf-function *global-environment*)
                        :key #'binding-name :test #'eql))))
   (find name (ecase namespace
-                (variable (lexenv-variable lexenv))
-                (function (lexenv-function lexenv))
-                (block    (lexenv-block    lexenv))
+               (variable (lexenv-variable lexenv))
+               (function (lexenv-function lexenv))
+               (block    (lexenv-block    lexenv))
                    (gotag	(lexenv-gotag	lexenv))
                    (type	(lexenv-type	lexenv))
                    (class	(lexenv-class	lexenv)))
@@ -279,7 +277,7 @@ specifier for the condition types that have been muffled.
   (flet ((canonicalize (keyarg)
            ;; Build a canonical keyword argument descriptor, filling the
            ;; optional  fields.  The  result  is  a  list  of  the  form
-	   ;; ((keyword-name var) init-form svar).
+           ;; ((keyword-name var) init-form svar).
            (let ((arg (ensure-list keyarg)))
              (cons (if (listp (car arg))
                        (car arg)
@@ -291,7 +289,7 @@ specifier for the condition types that have been muffled.
 
 (defun ll-keyword-arguments (ll)
   (mapcar (lambda (keyarg) (second (first keyarg)))
-	  (ll-keyword-arguments-canonical ll)))
+          (ll-keyword-arguments-canonical ll)))
 
 (defun ll-svars (lambda-list)
   (let ((args
@@ -323,7 +321,7 @@ specifier for the condition types that have been muffled.
 
 (defun lambda-name/docstring-wrapper (name docstring code)
   (let ((func (safe-js-fun-name name)))
-  (if (or name docstring)
+    (if (or name docstring)
         `(jscl/js::selfcall
           (jscl/js::var ,func ,code)
           ,(when name `(jscl/js::= (jscl/js::get ,func "fname") ,name))
@@ -355,21 +353,21 @@ specifier for the condition types that have been muffled.
       `(jscl/js::progn
          ,(when svars
             `(jscl/js::var ,@(mapcar (lambda (svar)
-                                  (list (translate-variable svar)
-                                        (convert t)))
-                                svars)))
+                              (list (translate-variable svar)
+                                    (convert t)))
+                            svars)))
          (jscl/js::switch (nargs)
-                 ,@(with-collect
-                    (dotimes (idx n-optional-arguments)
-                      (let ((arg (nth idx optional-arguments)))
-                        (collect `(case ,(+ idx n-required-arguments)))
+           ,@(with-collect
+                 (dotimes (idx n-optional-arguments)
+                   (let ((arg (nth idx optional-arguments)))
+                     (collect `(case ,(+ idx n-required-arguments)))
                    (collect `(jscl/js::= ,(translate-variable (car arg))
-                                     ,(convert (cadr arg))))
-                        (collect (when (third arg)
+                                  ,(convert (cadr arg))))
+                     (collect (when (third arg)
                               `(jscl/js::= ,(translate-variable (third arg))
-                                       ,(convert nil))))))
-                    (collect 'default)
-                    (collect '(break))))))))
+                                    ,(convert nil))))))
+               (collect 'default)
+               (collect '(break))))))))
 
 (defun compile-lambda-rest (ll)
   (let ((n-required-arguments (length (ll-required-arguments ll)))
@@ -387,45 +385,45 @@ specifier for the condition types that have been muffled.
 
 (defun compile-lambda-parse-keywords (ll)
   (let ((n-required-arguments
-	 (length (ll-required-arguments ll)))
-	(n-optional-arguments
-	 (length (ll-optional-arguments ll)))
-	(keyword-arguments
-	 (ll-keyword-arguments-canonical ll)))
+         (length (ll-required-arguments ll)))
+        (n-optional-arguments
+         (length (ll-optional-arguments ll)))
+        (keyword-arguments
+         (ll-keyword-arguments-canonical ll)))
     `(jscl/js::progn
        ;; Declare variables
        ,@(with-collect
-          (dolist (keyword-argument keyword-arguments)
-            (destructuring-bind ((keyword-name var) &optional initform svar)
-                keyword-argument
-              (declare (ignore keyword-name initform))
+             (dolist (keyword-argument keyword-arguments)
+               (destructuring-bind ((keyword-name var) &optional initform svar)
+                   keyword-argument
+                 (declare (ignore keyword-name initform))
                (collect `(jscl/js::var ,(translate-variable var)))
-              (when svar
-                (collect
+                 (when svar
+                   (collect
                      `(jscl/js::var ,(translate-variable svar)
                                     ,(convert nil)))))))
 
        ;; Parse keywords
        ,(flet ((parse-keyword (keyarg)
-                (destructuring-bind ((keyword-name var) &optional initform svar) keyarg
-                  ;; ((keyword-name var) init-form svar)
+                 (destructuring-bind ((keyword-name var) &optional initform svar) keyarg
+                   ;; ((keyword-name var) init-form svar)
                    `(jscl/js::progn
                       (jscl/js::for ((jscl/js::= i ,(+ n-required-arguments n-optional-arguments))
                                      (jscl/js::< i (nargs))
                                      (jscl/js::+= i 2))
-                          ;; ....
+                           ;; ....
                                     (jscl/js::if (jscl/js::=== (arg i) ,(convert keyword-name))
                                                  (jscl/js::progn
                                                    (jscl/js::= ,(translate-variable var) (arg (+ i 1)))
                                                    ,(when svar `(jscl/js::= ,(translate-variable svar)
-                                                ,(convert t)))
+                                                 ,(convert t)))
                                                    (jscl/js::break))))
                       (jscl/js::if (jscl/js::== i (nargs))
                                    (jscl/js::= ,(translate-variable var) ,(convert initform)))))))
-         (when keyword-arguments
+          (when keyword-arguments
             `(jscl/js::progn
                (jscl/js::var i)
-              ,@(mapcar #'parse-keyword keyword-arguments))))
+               ,@(mapcar #'parse-keyword keyword-arguments))))
 
        ;; Check for unknown keywords
        ,(when keyword-arguments
@@ -436,11 +434,11 @@ specifier for the condition types that have been muffled.
              (jscl/js::for ((jscl/js::= i start) (jscl/js::< i (nargs)) (jscl/js::+= i 2))
                            (jscl/js::if (jscl/js::and
                                          ,@(mapcar (lambda (keyword-argument)
-                                 (destructuring-bind ((keyword-name var) &optional initform svar)
-                                     keyword-argument
-                                   (declare (ignore var initform svar))
+                                       (destructuring-bind ((keyword-name var) &optional initform svar)
+                                           keyword-argument
+                                         (declare (ignore var initform svar))
                                                        `(jscl/js::!== (arg i) ,(convert keyword-name))))
-                               keyword-arguments))
+                                     keyword-arguments))
                                         (jscl/js::throw (jscl/js::+ "Unknown keyword argument "
                                                                     (jscl/js::property (arg i) "name"))))))))))
 
@@ -502,25 +500,25 @@ is NIL."
 
         (lambda-name/docstring-wrapper
          name documentation
-         `(named-function ,(safe-js-fun-name name)
+                                       `(named-function ,(safe-js-fun-name name)
                           (|values|
                            ,@(mapcar (lambda (x)
-                                                (translate-variable x))
+                                                                              (translate-variable x))
                                      (append required-arguments
                                              optional-arguments)))
-                          ;; Check number of arguments
+                                                        ;; Check number of arguments
                           ,(lambda-check-argument-count
                             n-required-arguments
-                                                        n-optional-arguments
-                                                        (or rest-argument keyword-arguments))
-                          ,(compile-lambda-optional ll)
-                          ,(compile-lambda-rest ll)
-                          ,(compile-lambda-parse-keywords ll)
-                          ,(bind-this)
-                          ,(let ((*multiple-value-p* t))
-                             (if block
-                                 (convert-block `((block ,block ,@body)) t)
-                                 (convert-block body t)))))))))
+                                                                                      n-optional-arguments
+                                                                                      (or rest-argument keyword-arguments))
+                                                        ,(compile-lambda-optional ll)
+                                                        ,(compile-lambda-rest ll)
+                                                        ,(compile-lambda-parse-keywords ll)
+                                                        ,(bind-this)
+                                                        ,(let ((*multiple-value-p* t))
+                                                           (if block
+                                                               (convert-block `((block ,block ,@body)) t)
+                                                               (convert-block body t)))))))))
 
 (defun setq-pair (var val)
   (unless (symbolp var)
@@ -528,9 +526,9 @@ is NIL."
   (let ((b (lookup-in-lexenv var *environment* 'variable)))
     (cond
       ((and b
-	    (eq (binding-type b) 'variable)
-	    (not (member 'special (binding-declarations b)))
-	    (not (member 'constant (binding-declarations b))))
+            (eq (binding-type b) 'variable)
+            (not (member 'special (binding-declarations b)))
+            (not (member 'constant (binding-declarations b))))
        `(jscl/js::= ,(binding-value b) ,(convert val)))
       ((and b (eq (binding-type b) 'macro))
        (convert `(setf ,var ,val)))
@@ -665,10 +663,10 @@ association list ALIST in the same order."
                          (array (dump-array sexp)))))
         (if (and recursivep (not (symbolp sexp)))
                dumped
-            (let ((jsvar (genlit (typecase sexp
-                                   (cons "expr")
-                                   (array "array")
-                                   (t (string sexp))))))
+               (let ((jsvar (genlit (typecase sexp
+                                      (cons "expr")
+                                      (array "array")
+                                      (t (string sexp))))))
                  (push (cons sexp jsvar) *literal-table*)
               (toplevel-compilation `(jscl/js::var ,jsvar ,dumped))
                  (when (keywordp sexp)
