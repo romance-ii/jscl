@@ -146,7 +146,7 @@
 (defun jscl/cl::log (number &optional (base +e+))
   (if (= base +e+)
       (jscl/impl::log number)
-      (error "BASE ≠ e")))
+      (/ (jscl/impl::log number) (jscl/impl::log base))))
 
 (defun gcd-2 (a b)
   (if (zerop b)
