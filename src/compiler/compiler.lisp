@@ -42,13 +42,13 @@
 ;;; Environment
 
 (defstruct binding
-    name
+  name
   type
   value
   declarations)
 
 (defstruct lexenv
-    variable
+  variable
   function
   setf-function
   block
@@ -69,10 +69,10 @@
                (unless (eq lexenv *global-environment*)
                  (find name (lexenv-setf-function *global-environment*)
                        :key #'binding-name :test #'eql))))
-  (find name (ecase namespace
-               (variable (lexenv-variable lexenv))
-               (function (lexenv-function lexenv))
-               (block    (lexenv-block    lexenv))
+      (find name (ecase namespace
+                   (variable (lexenv-variable lexenv))
+                   (function (lexenv-function lexenv))
+                   (block    (lexenv-block    lexenv))
                    (gotag	(lexenv-gotag	lexenv))
                    (type	(lexenv-type	lexenv))
                    (class	(lexenv-class	lexenv)))
@@ -142,7 +142,7 @@
     (and b (member claim (binding-declarations b)))))
 
 (defun !proclamation (decl type)
-     (dolist (name (cdr decl))
+  (dolist (name (cdr decl))
     (let ((b (global-binding name type type)))
       (push (car decl) (binding-declarations b)))))
 
@@ -183,9 +183,8 @@ specifier for the condition types that have been muffled.
     (push-to-lexenv b *environment* 'variable)
     name))
 
-
+
 ;;; Report functions which are called but not defined
-
 (defvar *fn-info* '())
 
 (defstruct fn-info
@@ -224,7 +223,7 @@ specifier for the condition types that have been muffled.
         (warn "The function `~s' is undefined." name))))
   (setq *fn-info* nil))
 
-
+
 ;;; Special forms
 
 (defvar *special-operators* (make-hash-table :test 'eql)
@@ -240,14 +239,16 @@ specifier for the condition types that have been muffled.
   `(let ((fn (lambda ,args (block ,name ,@body))))
      ,(when (member (symbol-package name) (list (find-package "COMMON-LISP")
                                                 (find-package "JSCL/COMMON-LISP")))
-        (format *trace-output* 
+        (format *trace-output*
                 "~& Defined special form ~a" name)
-        `(let ((binding (make-binding :name ',name :type 'macro 
+        `(let ((binding (make-binding :name ',name :type 'macro
                                       :value '(lambda (&rest args)
                                                (compile-special-form ',name args)))))
            (push-to-lexenv binding *global-environment* 'function)))
      (setf (gethash ',name *special-operators*) fn)))
 
+
+;;; Lambda lists
 (defvar *ll-keywords* '(&optional &rest &key))
 
 (defun list-until-keyword (list)
@@ -353,19 +354,19 @@ specifier for the condition types that have been muffled.
       `(jscl/js::progn
          ,(when svars
             `(jscl/js::var ,@(mapcar (lambda (svar)
-                              (list (translate-variable svar)
-                                    (convert t)))
-                            svars)))
+                                       (list (translate-variable svar)
+                                             (convert t)))
+                                     svars)))
          (jscl/js::switch (nargs)
            ,@(with-collect
-                 (dotimes (idx n-optional-arguments)
-                   (let ((arg (nth idx optional-arguments)))
-                     (collect `(case ,(+ idx n-required-arguments)))
+               (dotimes (idx n-optional-arguments)
+                 (let ((arg (nth idx optional-arguments)))
+                   (collect `(case ,(+ idx n-required-arguments)))
                    (collect `(jscl/js::= ,(translate-variable (car arg))
-                                  ,(convert (cadr arg))))
-                     (collect (when (third arg)
+                                         ,(convert (cadr arg))))
+                   (collect (when (third arg)
                               `(jscl/js::= ,(translate-variable (third arg))
-                                    ,(convert nil))))))
+                                           ,(convert nil))))))
                (collect 'default)
                (collect '(break))))))))
 
@@ -393,13 +394,13 @@ specifier for the condition types that have been muffled.
     `(jscl/js::progn
        ;; Declare variables
        ,@(with-collect
-             (dolist (keyword-argument keyword-arguments)
-               (destructuring-bind ((keyword-name var) &optional initform svar)
-                   keyword-argument
-                 (declare (ignore keyword-name initform))
+           (dolist (keyword-argument keyword-arguments)
+             (destructuring-bind ((keyword-name var) &optional initform svar)
+                 keyword-argument
+               (declare (ignore keyword-name initform))
                (collect `(jscl/js::var ,(translate-variable var)))
-                 (when svar
-                   (collect
+               (when svar
+                 (collect
                      `(jscl/js::var ,(translate-variable svar)
                                     ,(convert nil)))))))
 
@@ -411,12 +412,12 @@ specifier for the condition types that have been muffled.
                       (jscl/js::for ((jscl/js::= i ,(+ n-required-arguments n-optional-arguments))
                                      (jscl/js::< i (nargs))
                                      (jscl/js::+= i 2))
-                           ;; ....
+                                    ;; ....
                                     (jscl/js::if (jscl/js::=== (arg i) ,(convert keyword-name))
                                                  (jscl/js::progn
                                                    (jscl/js::= ,(translate-variable var) (arg (+ i 1)))
                                                    ,(when svar `(jscl/js::= ,(translate-variable svar)
-                                                 ,(convert t)))
+                                                                            ,(convert t)))
                                                    (jscl/js::break))))
                       (jscl/js::if (jscl/js::== i (nargs))
                                    (jscl/js::= ,(translate-variable var) ,(convert initform)))))))
@@ -434,11 +435,11 @@ specifier for the condition types that have been muffled.
              (jscl/js::for ((jscl/js::= i start) (jscl/js::< i (nargs)) (jscl/js::+= i 2))
                            (jscl/js::if (jscl/js::and
                                          ,@(mapcar (lambda (keyword-argument)
-                                       (destructuring-bind ((keyword-name var) &optional initform svar)
-                                           keyword-argument
-                                         (declare (ignore var initform svar))
+                                                     (destructuring-bind ((keyword-name var) &optional initform svar)
+                                                         keyword-argument
+                                                       (declare (ignore var initform svar))
                                                        `(jscl/js::!== (arg i) ,(convert keyword-name))))
-                                     keyword-arguments))
+                                                   keyword-arguments))
                                         (jscl/js::throw (jscl/js::+ "Unknown keyword argument "
                                                                     (jscl/js::property (arg i) "name"))))))))))
 
@@ -447,6 +448,8 @@ specifier for the condition types that have been muffled.
           (ll-optional-arguments ll)
           (ll-keyword-arguments  ll)
           (ll-rest-argument      ll)))
+
+
 
 (defun parse-body (body &key declarations docstring)
   "Process BODY for declarations and/or docstrings. Return as
@@ -500,25 +503,27 @@ is NIL."
 
         (lambda-name/docstring-wrapper
          name documentation
-                                       `(named-function ,(safe-js-fun-name name)
+         `(named-function ,(safe-js-fun-name name)
                           (|values|
                            ,@(mapcar (lambda (x)
-                                                                              (translate-variable x))
+                                       (translate-variable x))
                                      (append required-arguments
                                              optional-arguments)))
-                                                        ;; Check number of arguments
+                          ;; Check number of arguments
                           ,(lambda-check-argument-count
                             n-required-arguments
-                                                                                      n-optional-arguments
-                                                                                      (or rest-argument keyword-arguments))
-                                                        ,(compile-lambda-optional ll)
-                                                        ,(compile-lambda-rest ll)
-                                                        ,(compile-lambda-parse-keywords ll)
-                                                        ,(bind-this)
-                                                        ,(let ((*multiple-value-p* t))
-                                                           (if block
-                                                               (convert-block `((block ,block ,@body)) t)
-                                                               (convert-block body t)))))))))
+                            n-optional-arguments
+                            (or rest-argument keyword-arguments))
+                          ,(compile-lambda-optional ll)
+                          ,(compile-lambda-rest ll)
+                          ,(compile-lambda-parse-keywords ll)
+                          ,(bind-this)
+                          ,(let ((*multiple-value-p* t))
+                             (if block
+                                 (convert-block `((block ,block ,@body)) t)
+                                 (convert-block body t)))))))))
+
+
 
 (defun setq-pair (var val)
   (unless (symbolp var)
@@ -534,6 +539,8 @@ is NIL."
        (convert `(setf ,var ,val)))
       (t
        (convert `(set ',var ,val))))))
+
+
 
 ;;; Compilation of literals and object dumping
 
@@ -595,11 +602,11 @@ is NIL."
       (progn
         (warn "Quasi-quote leakage: ~s" cons)
         (dump-cons (sb-impl::expand-quasiquote cons nil)))
-  (let ((head (butlast cons))
-        (tail (last cons)))
+      (let ((head (butlast cons))
+            (tail (last cons)))
         `(jscl/js::call-internal |QIList|
-                    ,@(mapcar (lambda (x) (literal x t)) head)
-                    ,(literal (car tail) t)
+                                 ,@(mapcar (lambda (x) (literal x t)) head)
+                                 ,(literal (car tail) t)
                                  ,(literal (cdr tail) t)))))
 
 (defun dump-array (array)
@@ -626,51 +633,31 @@ association list ALIST in the same order."
 
                                         ; end ALEXANDRIA
 
-#+struct-ctor-FIXME-remove
-(defun constructor<-structure (object) ;; FIXME ☠☠☠
-  (let* ((class (class-of object))
-         (class-name (class-name class))
-         (constructor (intern (concatenate 'string
-                                           (string :make-)
-                                           (symbol-name class-name))
-                              (symbol-package class-name)))
-         (slot-names
-          #+sbcl
-           (mapcar #'sb-mop:slot-definition-name
-                   (sb-mop:class-slots (find-class class)))
-           #+jscl (mapcar #'jscl/mop:slot-definition-name
-                          (jscl/mop:class-slots (fnd-class class))))
-         (slot-values
-          (mapcar (lambda (slot-name)
-                    (literal (slot-value object slot-name)))
-                  slot-names)))
-    (convert-1 (cons constructor
-                     (alist-plist
-                      (mapcar #'cons slot-names slot-values))))))
-
 (defun dump-complex-literal (sexp &optional recursivep)
-     (or (cdr (assoc sexp *literal-table* :test #'eql))
-         (let ((dumped (typecase sexp
-                         (symbol (dump-symbol sexp))
-                         (string (dump-string sexp))
-                         (cons
+  (or (cdr (assoc sexp *literal-table* :test #'eql))
+      (let ((dumped (typecase sexp
+                      (symbol (dump-symbol sexp))
+                      (string (dump-string sexp))
+                      (cons
                        ;; BOOTSTRAP MAGIC:  See the root  file jscl.lisp
                        ;; and the function `dump-global-environment' for
                        ;; further information.
-                          (if (eq (car sexp) *magic-unquote-marker*)
-                              (convert (second sexp))
-                              (dump-cons sexp)))
-                         (array (dump-array sexp)))))
+                       (if (eq (car sexp) *magic-unquote-marker*)
+                           (convert (second sexp))
+                           (dump-cons sexp)))
+                      (array (dump-array sexp)))))
         (if (and recursivep (not (symbolp sexp)))
-               dumped
-               (let ((jsvar (genlit (typecase sexp
-                                      (cons "expr")
-                                      (array "array")
-                                      (t (string sexp))))))
-                 (push (cons sexp jsvar) *literal-table*)
-              (toplevel-compilation `(jscl/js::var ,jsvar ,dumped))
-                 (when (keywordp sexp)
-                (toplevel-compilation `(jscl/js::= (jscl/js::get ,jsvar "value") ,jsvar)))
+            dumped
+            (let ((jsvar (genlit (typecase sexp
+                                   (cons "expr")
+                                   (array "array")
+                                   (t (string sexp))))))
+              (push (cons sexp jsvar) *literal-table*)
+              (toplevel-compilation
+               `(jscl/js::var ,jsvar ,dumped))
+              (when (keywordp sexp)
+                (toplevel-compilation
+                 `(jscl/js::= (jscl/js::get ,jsvar "value") ,jsvar)))
               jsvar)))))
 
 (defun literal-sv (sv)
@@ -735,6 +722,8 @@ association list ALIST in the same order."
        (character (string sexp))       ; is this really the right thing?
        (t (dump-complex-literal sexp recursivep))))))
 
+
+
 (defun function-namestring (name)
   (cond
     ((symbolp name) (symbol-name name))
@@ -761,13 +750,13 @@ association list ALIST in the same order."
     (and b (binding-value b))))
 
 (defun compiled-function-code (def)
-                           (compile-lambda (cadr def)
-                                           `((block ,(car def)
-                                               ,@(cddr def)))))
+  (compile-lambda (cadr def)
+                  `((block ,(car def)
+                      ,@(cddr def)))))
 
 (defun environment+new-functions (fun-names)
   (extend-lexenv (mapcar #'make-function-binding fun-names)
-                         *environment*
+                 *environment*
                  'function))
 
 (defun labels/compiled-label-function (func)
@@ -779,8 +768,8 @@ association list ALIST in the same order."
 
 (defun macrolet-value (lambda-list body)
   (let ((g!form (gensym "FORM-")))
-                                       `(lambda (,g!form)
-                                          (destructuring-bind ,lambda-list ,g!form
+    `(lambda (,g!form)
+       (destructuring-bind ,lambda-list ,g!form
          ,@body))))
 
 (defun special-variable-p (x)
@@ -833,6 +822,8 @@ stored the old value."
       (convert-block body t t)
       (convert-block-with-special-bindings body special-bindings)))
 
+
+
 (defun add-let*-var-to-environment (var value)
   (let* ((v (gvarname var))
          (b (make-binding :name var :type 'variable :value v)))
@@ -870,7 +861,9 @@ let-binding-wrapper."
         ,body)
        (jscl/js::finally
         ,@(mapcar #'let*-wrapper-reset-value store)))))
-          
+
+
+
 (defun block-return-multiple-values ()
   `(jscl/js::return (jscl/js::method-call |values| "apply" this
                                           (jscl/js::call-internal |forcemv| (jscl/js::get cf "values")))))
@@ -882,11 +875,11 @@ let-binding-wrapper."
   `(jscl/js::selfcall
     (jscl/js::try
      (jscl/js::var ,idvar #())
-             ,cbody)
+     ,cbody)
     (jscl/js::catch (cf)
       (jscl/js::if (jscl/js::and (jscl/js::instanceof cf (jscl/js::internal |BlockNLX|))
                                  (jscl/js::== (jscl/js::get cf "id") ,idvar))
-                  ,(if *multiple-value-p*
+                   ,(if *multiple-value-p*
                         (block-return-multiple-values)
                         (block-return-single-value))
                    (jscl/js::throw cf)))))
@@ -902,6 +895,8 @@ let-binding-wrapper."
                       (make-binding :name label :type 'gotag :value (list tbidx tagidx))))
                   (remove-if-not #'go-tag-p body))))
     (extend-lexenv bindings *environment* 'gotag)))
+
+
 
 (defun variable-arity/check-numeric-arg (v x function args)
   `(jscl/js::if (jscl/js::!= (jscl/js::typeof ,v) "number")
@@ -933,10 +928,12 @@ generate the code which performs the transformation on these variables."
         (dolist (x args)
           (if (numberp x)
               (collect-fargs x)
-              (let ((v (make-symbol (concat "arg" (integer-to-string (incf counter))))))
-                (collect-prelude `(jscl/js::var ,v ,(convert x)))
-                (collect-prelude (variable-arity/check-numeric-arg v x
-                                                                   function args))
+              (let ((v (make-symbol
+                        (concat "arg" (integer-to-string (incf counter))))))
+                (collect-prelude
+                 `(jscl/js::var ,v ,(convert x)))
+                (collect-prelude
+                 (variable-arity/check-numeric-arg v x function args))
                 (collect-fargs v))))
         `(jscl/js::selfcall
           (jscl/js::progn
@@ -958,6 +955,8 @@ generate the code which performs the transformation on these variables."
             `(%js-vset ,var ,new-value)
             `(%js-vref ,var))))
 
+
+
 #-jscl
 (defparameter *macroexpander-cache*
   (make-hash-table :test #'eq))
@@ -967,7 +966,7 @@ generate the code which performs the transformation on these variables."
   (warn "Your Implementation's quasiquote may not be handled properly.")
   (cond
     ((not (symbolp symbol))
-    (error "`~S' is not a symbol." symbol))
+     (error "`~S' is not a symbol." symbol))
     #+ecl
     ((eql symbol 'si:quasiquote)
      (warn "ECL quasiquote is probably not handled properly yet")
@@ -977,23 +976,23 @@ generate the code which performs the transformation on these variables."
      (lambda (form environment)
        (declare (ignore environment))
        (sb-impl::expand-quasiquote form nil)))
-    (t 
+    (t
      (let ((b (lookup-in-lexenv symbol (or environment *global-environment*)
                                 'function)))
        (if (and b (eql (binding-type b) 'macro))
-        (let ((expander (binding-value b)))
-          (cond
-            #-jscl
+           (let ((expander (binding-value b)))
+             (cond
+               #-jscl
                ((gethash b *macroexpander-cache*))
-            ((listp expander)
-             (let ((compiled (eval expander)))
-               ;; The list representation are useful while
-               ;; bootstrapping, as we can dump the definition of the
-               ;; macros easily, but they are slow because we have to
-               ;; evaluate them and compile them now and again. So, let
-               ;; us replace the list representation version of the
-               ;; function with the compiled one.
-               #+jscl (setf (binding-value b) compiled)
+               ((listp expander)
+                (let ((compiled (eval expander)))
+                  ;; The   list   representation    are   useful   while
+                  ;; bootstrapping, as we can dump the definition of the
+                  ;; macros easily, but they are slow because we have to
+                  ;; evaluate them  and compile them now  and again. So,
+                  ;; let us  replace the list representation  version of
+                  ;; the function with the compiled one.
+                  #+jscl (setf (binding-value b) compiled)
                   #-jscl (setf (gethash b *macroexpander-cache*) compiled)))
                (expander)))
            nil)))))
@@ -1001,8 +1000,8 @@ generate the code which performs the transformation on these variables."
 (defun macroexpand-1/symbol (symbol &optional (env *environment*))
   (let ((b (lookup-in-lexenv symbol (or env *global-environment*)
                              'variable)))
-         (if (and b (eq (binding-type b) 'macro))
-             (values (binding-value b) t)
+    (if (and b (eq (binding-type b) 'macro))
+        (values (binding-value b) t)
         (values symbol nil))))
 
 (defun macroexpand-1/cons (form &optional (environment *environment*))
@@ -1042,9 +1041,11 @@ a generalized boolean indicating whether FORM were changed."
 See also: `MACROEXPAND-1'"
   (let ((continue t))
     (while continue
-      (multiple-value-setq (form continue) 
+      (multiple-value-setq (form continue)
         (jscl/cl::macroexpand-1 form environment))))
   form)
+
+
 
 (defun compile-funcall/function (function arglist)
   (when (and (symbolp function)
@@ -1099,7 +1100,7 @@ See also: `MACROEXPAND-1'"
             (jscl/cl:special-operator-p function))
        (error "Special operator ~s treated as function call"
               function))
-      ((and (symbolp function) 
+      ((and (symbolp function)
             (jscl/cl::macro-function function))
        (error "Macro function was not expanded: ~s" function))
       ((and (symbolp function)
@@ -1107,7 +1108,7 @@ See also: `MACROEXPAND-1'"
        (error "CL special operator ~s ~
 treated as function call in JSCL"
               function))
-      ((and (symbolp function) 
+      ((and (symbolp function)
             (macro-function function))
        (error "CL macro function was not expanded in JSCL: ~s" function))
       ((translate-function function)
@@ -1124,6 +1125,8 @@ treated as function call in JSCL"
        (compile-funcall/oget function args))
       (t
        (compile-funcall/error function)))))
+
+
 
 (defun convert-block (sexps &optional return-last-p decls-allowed-p)
   (multiple-value-bind (sexps decls)
@@ -1153,7 +1156,7 @@ treated as function call in JSCL"
     (cond
       (comp
        (apply comp args))
-      ((eql (symbol-package name) 
+      ((eql (symbol-package name)
             (find-package "COMMON-LISP"))
        (compile-special-form (intern (symbol-name name)
                                      (find-package "JSCL/COMMON-LISP"))
@@ -1307,16 +1310,16 @@ be used."
       (return-from convert-1 (convert sexp multiple-value-p)))
     ;; The expression has been macroexpanded. Now compile it!
     (let ((sexp (check-for-failed-macroexpansion sexp)))
-    (let ((*multiple-value-p* multiple-value-p)
-          (*convert-level* (1+ *convert-level*)))
-      (cond
+      (let ((*multiple-value-p* multiple-value-p)
+            (*convert-level* (1+ *convert-level*)))
+        (cond
           ((null sexp)	(literal nil))
           ((listp sexp)	(compile-sexp sexp))
           ((symbolp sexp)	(convert-1/symbol sexp))
           ((rational-float-p sexp)
            (literal (rational-float-p sexp)))
           ((object-evaluates-to-itself-p sexp)
-         (literal sexp))
+           (literal sexp))
           (t (error "How should I compile ~s `~S'?"
                     (type-of sexp) sexp)))))))
 
@@ -1406,7 +1409,7 @@ just fine."
 (defun convert-toplevel (sexp &optional multiple-value-p return-p)
   "Macroexpand SEXP as  much as possible, and process it  as a top-level
 form.
- 
+
 If MULTIPLE-VALUE-P, then SEXP may return multiple values (and they will
 be   bound);    otherwise,   use   a   simpler    form   that   discards
 non-primary values.
