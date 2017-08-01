@@ -227,7 +227,7 @@ specifier for the condition types that have been muffled.
 
 ;;; Special forms
 
-(defvar *special-forms* (make-hash-table :test 'eql)
+(defvar *special-operators* (make-hash-table :test 'eql)
   "Special forms that have direct compilations rather than typical macros")
 
 (defun lambda-list-keyword-p (symbol)
@@ -246,7 +246,7 @@ specifier for the condition types that have been muffled.
                                       :value '(lambda (&rest args)
                                                (compile-special-form ',name args)))))
            (push-to-lexenv binding *global-environment* 'function)))
-     (setf (gethash ',name *special-forms*) fn)))
+     (setf (gethash ',name *special-operators*) fn)))
 
 (defvar *ll-keywords* '(&optional &rest &key))
 
@@ -1144,12 +1144,12 @@ treated as function call in JSCL"
    (and (eql (symbol-package name) (find-package "COMMON-LISP"))
         (gethash (intern (symbol-name name)
                          (find-package "JSCL/COMMON-LISP"))
-                 *special-forms*))
+                 *special-operators*))
    (and (eql (symbol-package name) (find-package "JSCL/COMMON-LISP"))
-        (gethash name *special-forms*))))
+        (gethash name *special-operators*))))
 
 (defun compile-special-form (name args)
-  (let ((comp (gethash name *special-forms*)))
+  (let ((comp (gethash name *special-operators*)))
     (cond
       (comp
        (apply comp args))

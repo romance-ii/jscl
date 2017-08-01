@@ -66,7 +66,7 @@ or FUNCTION."
       (format stream "~&Its current value is ~A" value)
       (jscl/cl::describe value stream)))
   (when (jscl/cl::special-operator-p object)
-    (format stream "~&~A names a special form" object))
+    (format stream "~&~A names a special operator" object))
   (cond ((jscl/cl::macro-function object)
          (format stream "~&~A names a macro-function" object)
          (jscl/cl::describe (macro-function object) stream))
