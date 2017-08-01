@@ -56,7 +56,7 @@
 (in-package :jscl/loop)
 
 (unless (fboundp 'declaration-information)
-  (defun declaration-information (type environment)
+  (defun declaration-information (type &optional environment)
     (declare (ignore type environment))
     (warn "No DECLARATION-INFORMATION available")))
 
