@@ -15,8 +15,6 @@ git ;;; numbers.lisp
 
 (in-package #-jscl :jscl #+jscl :jscl/impl)
 
-
-
 ;;;; Various numeric functions and constants
 
 (macrolet ((def (operator initial-value)
@@ -154,13 +152,13 @@ git ;;; numbers.lisp
 
 (defun jscl/cl::sin (x) (sin x))
 
-(defun sinh (x) (sinh x))
+(defun jscl/cl::sinh (x) (sinh x))
 
-(defun sqrt (x) (sqrt x))
+(defun jscl/cl::sqrt (x) (sqrt x))
 
-(defun tan (x) (tan x))
+(defun jscl/cl::tan (x) (tan x))
 
-(defun tanh (x) (tanh x))
+(defun jscl/cl::tanh (x) (tanh x))
 
 (defun gcd-2 (a b)
   (if (zerop b)
