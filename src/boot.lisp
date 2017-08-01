@@ -794,21 +794,31 @@
          ,@decls
          (tagbody ,@forms)))))
 
+(defmacro jscl/cl::prog* (inits &rest body )
+  (multiple-value-bind (forms decls docstring) (parse-body body)
+    (declare (ignore docstring))  ; TODO
+    `(block nil
+       (let* ,inits
+         ,@decls
+         (tagbody ,@forms)))))
+
 (defmacro jscl/cl::psetq (&rest pairs)
   (let (;;  For  each pair, we store  here a list of  the form (VARIABLE
         ;;  GENSYM VALUE).
         (assignments '()))
-    (while t
-      (cond
-        ((null pairs) (return))
-        ((null (cdr pairs))
-         (error "Odd pairs in PSETQ; dangling ~s" pairs))
-        (t
-         (let ((variable (car pairs))
-               (value (cadr pairs)))
-           (push (list variable (gensym (string variable)) value)
-                 assignments)
-           (setq pairs (cddr pairs))))))
+    (prog ((assignments '()))
+     top
+     (cond
+       ((null pairs) (return))
+       ((null (cdr pairs))
+        (error "Odd pairs in PSETQ; dangling ~s" pairs))
+       (t
+        (let ((variable (car pairs))
+              (value (cadr pairs)))
+          (push (list variable (gensym (string variable)) value)
+                assignments)
+          (setq pairs (cddr pairs)))))
+     (go top))
     (setq assignments (reverse assignments))
     ;;
     `(let ,(mapcar #'cdr assignments)
