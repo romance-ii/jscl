@@ -410,8 +410,8 @@ permissions on FILENAME, if we  know how in the current implementation."
     ("compiler"
      ("codegen"      :both)
      ("builtins"	 :both)
-     ("special-operators"	:both)
      ("compiler"     :both)
+     ("special-operators"	:both)
      ("compile-file"	:both))
     ("documentation" :both)
     ("misc"          :both)
