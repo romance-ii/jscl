@@ -95,18 +95,32 @@
   (convert-to-bool `(jscl/js::== (jscl/js::typeof ,x) "number")))
 
 (define-builtin %floor (x)
-  `(jscl/js::method-call |Math| "floor" ,x))
+  `(jscl/js::method-call |Math| "floor" ,x))  ; Should return two values
 
 (define-builtin %ceiling (x)
-  `(jscl/js::method-call |Math| "ceil" ,x))
+  `(jscl/js::method-call |Math| "ceil" ,x))   ; Should return two values
 
+(defmacro define-builtin-math (lisp-fn &optional
+                                 (math-fn (string-downcase lisp-fn)))
+  `(define-builtin ,lisp-fn (x)
+     `(method-call |Math| ,,math-fn ,x)))
 
+(define-builtin-math acos)
+(define-builtin-math acosh)
+(define-builtin-math asin)
+(define-builtin-math atan)
+(define-builtin-math atanh)
+(define-builtin-math cos)
+(define-builtin-math cosh)
+(define-builtin-math log)
+(define-builtin-math sin)
+(define-builtin-math sinh)
+(define-builtin-math sqrt)
+(define-builtin-math tan)
+(define-builtin-math tanh)
 
-(define-builtin expt (x y)
-  `(jscl/js::method-call |Math| "pow" ,x ,y))
-
-(define-builtin sqrt (x)
-  `(jscl/js::method-call |Math| "sqrt" ,x))
+(define-builtin expt (base power)
+  `(method-call |Math| "pow" ,base ,power))
 
 (define-builtin float-to-string (x)
   `(jscl/js::call-internal |make_lisp_string| (jscl/js::method-call ,x |toString|)))
@@ -116,7 +130,6 @@
 
 (define-builtin consp (x)
   (convert-to-bool `(instanceof ,x (internal |Cons|))))
-
 
 (define-builtin car (x)
   `(jscl/js::call-internal |car| ,x))

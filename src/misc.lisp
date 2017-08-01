@@ -10,11 +10,9 @@
 ;; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
 ;; for more details.
 ;;
-;; You should  have received a  copy of  the GNU General  Public License
-;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
+;; You should have received a copy of the GNU General Public License
+;; along with JSCL.  If not, see <http://www.gnu.org/licenses/>.
 (in-package #-jscl :jscl #+jscl :jscl/impl)
-
-
 
 (defparameter jscl/cl::*features* '(:jscl :common-lisp))
 
@@ -130,12 +128,12 @@
             (format t "`~S' is already traced.~%" name)
             (let ((func (fdefinition name)))
               (jscl/js::fset name (lambda (&rest args)
-                                    (let (values)
-                                      (trace-report-call name args)
-                                      (let ((*trace-level* (+ *trace-level* 1)))
-                                        (setq values (multiple-value-list (apply func args))))
-                                      (trace-report-return name values)
-                                      (values-list values))))
+                           (let (values)
+                             (trace-report-call name args)
+                             (let ((*trace-level* (+ *trace-level* 1)))
+                               (setq values (multiple-value-list (apply func args))))
+                             (trace-report-return name values)
+                             (values-list values))))
               (push (cons name func) *traced-functions*))))))
 
 (defun untrace-functions (names)

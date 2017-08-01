@@ -10,8 +10,8 @@
 ;; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
 ;; for more details.
 ;;
-;; You should  have received a  copy of  the GNU General  Public License
-;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
+;; You should have received a copy of the GNU General Public License
+;; along with JSCL.  If not, see <http://www.gnu.org/licenses/>.
 
 (in-package #-jscl :jscl #+jscl :jscl/impl)
 
@@ -95,14 +95,14 @@
 
 (macrolet ((def (operator)
              `(defun ,(intern (symbol-name operator) :jscl/cl) (x &rest args)
-                (dolist (y args)
+                (dolist (y args) 
                   (if (,operator x y)
                       (setq x    (car args))
                       (return-from ,(intern (symbol-name operator) :jscl/cl) nil)))
                 t)))
   (def >)
   (def >=)
-  (def =)
+  (def =) 
   (def <)
   (def <=)
   (def /=))
@@ -114,7 +114,7 @@
 
 (macrolet ((def (name comparison)
              `(defun ,(intern (string name) :jscl/cl) (x &rest xs)
-                (dolist (y xs)
+                (dolist (y xs) 
                   (when (,comparison y x)
                     (setq x y)))
                 x)))
@@ -123,37 +123,73 @@
 
 (defun jscl/cl::abs (x) (if (> x 0) x (- x)))
 
+(defun jscl/cl::acos (x) (acos x))
+
 (defun jscl/cl::expt (base power) (expt base              power))
 (defun jscl/cl::exp  (power)      (expt 2.718281828459045 power))
 
-(defun jscl/cl::sqrt (x) (sqrt x))
+(defun jscl/cl::acosh (x) (acosh x))
+
+(defun jscl/cl::asin (x) (asin x))
+
+(defun jscl/cl::asinh (x) (asinh x))
+
+(defun jscl/cl::atan (x) (atan x))
+
+(defun jscl/cl::atanh (x) (atanh x))
+
+(defun jscl/cl::cos (x) (cos x))
+
+(defun jscl/cl::cosh (x) (cosh x))
+
+(defun jscl/cl::expt (base power) (expt base power))
+
+(defconstant +e+ 2.718281828459045)
+
+(defun jscl/cl::exp (power) (expt +e+ power))
+
+(defun jscl/cl::isqrt (x) (floor (sqrt x)))
+
+(defun jscl/cl::log (x) (log x))
+
+(defun jscl/cl::sin (x) (sin x))
+
+(defun sinh (x) (sinh x))
+
+(defun sqrt (x) (sqrt x))
+
+(defun tan (x) (tan x))
+
+(defun tanh (x) (tanh x))
 
 (defun gcd-2 (a b)
   (if (zerop b)
       (abs a)
-      (gcd-2 b (mod a b))))
+    (gcd-2 b (mod a b))))
 
 (defun jscl/cl::gcd (&rest integers)
   (cond ((null integers)
-         0)
-        ((null (cdr integers))
-         (abs (first integers)))
-        ((null (cddr integers))
-         (gcd-2 (first integers) (second integers)))
-        (t
-         (apply #'gcd (gcd (first integers) (second integers)) (nthcdr 2 integers)))))
+	 0)
+	((null (cdr integers))
+	 (abs (first integers)))
+	((null (cddr integers))
+	 (gcd-2 (first integers) (second integers)))
+	(t
+	 (apply #'gcd (gcd (first integers) (second integers)) (nthcdr 2 integers)))))
 
 (defun lcm-2 (a b)
   (if (or (zerop a) (zerop b))
       0
-      (/ (abs (* a b)) (gcd a b))))
+    (/ (abs (* a b)) (gcd a b))))
 
 (defun jscl/cl::lcm (&rest integers)
   (cond ((null integers)
-         1)
-        ((null (cdr integers))
-         (abs (first integers)))
-        ((null (cddr integers))
-         (lcm-2 (first integers) (second integers)))
-        (t
-         (apply #'lcm (lcm (first integers) (second integers)) (nthcdr 2 integers)))))
+	 1)
+	((null (cdr integers))
+	 (abs (first integers)))
+	((null (cddr integers))
+	 (lcm-2 (first integers) (second integers)))
+	(t
+	 (apply #'lcm (lcm (first integers) (second integers)) (nthcdr 2 integers)))))
+
+
