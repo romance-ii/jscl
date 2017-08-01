@@ -1137,8 +1137,6 @@ treated as function call in JSCL"
            (jscl/js::return ,(convert (car (last sexps)) *multiple-value-p*)))
         `(jscl/js::progn ,@(mapcar #'convert sexps)))))
 
-(defvar *builtins* (make-hash-table :test 'eql))
-
 (defun inline-builtin-p (name)
   (and (gethash name *builtins*)
        (not (claimp name 'function 'notinline))))

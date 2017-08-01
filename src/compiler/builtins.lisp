@@ -17,6 +17,8 @@
 
 ;;; Primitives
 
+(defvar *builtins* (make-hash-table :test 'eql))
+
 (defmacro define-raw-builtin (name args &body body)
   " Creates  a new  primitive function `name'  with parameters  args and
  @body.  The body  can access  to  the local  environment through  the
