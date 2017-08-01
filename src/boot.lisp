@@ -691,6 +691,12 @@
   `(block nil (jscl/js::%while ,condition ,@body)))
 
 (defvar jscl/cl::*gensym-counter* 0)
+
+(unless (fboundp 'integer-to-string)
+  (defun integer-to-string (n)
+    "Early definition, to be replaced in bootstrap"
+    (jscl::float-to-string n)))
+
 (defun jscl/cl::gensym (&optional (prefix "G"))
   ;; INCF not available in bootstrap, so …
   (setq *gensym-counter* (1+ *gensym-counter*))
@@ -939,6 +945,12 @@ macro cache is so aggressive that it cannot be redefined."
 (defmacro jscl/cl::multiple-value-list (value-from)
   `(multiple-value-call #'list ,value-from))
 
+(unless (fboundp 'limit-string-length)
+  (defun limit-string-length (string length)
+    "Early version, to be replaced"
+    (declare (ignore length))
+    string))
+
 (defmacro jscl/cl::multiple-value-setq ((&rest vars) &rest form)
   (let ((gvars (mapcar (lambda (x) (gensym (limit-string-length x 40))) vars))
         (setqs '()))
@@ -1015,6 +1027,12 @@ This is SETF'able."
   (not (some fn seq)))
 
 (defconstant jscl/cl::internal-time-units-per-second 1000)
+
+(unless (fboundp 'list-to-vector)
+  (defun list-to-vector (list)
+    "A broken placeholder during bootstrap"
+    (declare (ignore list))
+    (error "Don't call this before UTILS has been loaded!")))
 
 (defun jscl/cl::values-list (list)
   (jscl/js::values-array (list-to-vector list)))
