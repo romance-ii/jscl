@@ -471,10 +471,10 @@ compiled in the host.")
               (,files-count$ (length ,file-list$))
               (,counter$ 0))
          (dolist (,name ,file-list$)
-           (format *trace-output* ";;; File ~:d of ~:d (~d%) is ~a"
+           (format *trace-output* "~&;;; File ~:d of ~:d (~d%) is ~a"
                    (incf ,counter$)
                    ,files-count$
-                   (round (* 100 (/ ,counter$ ,files-count$)))
+                   (round (* 100 (/ (1- ,counter$) ,files-count$)))
                    ,name)
            (force-output *trace-output*)
            ,@body)))))
