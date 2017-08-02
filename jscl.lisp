@@ -547,7 +547,8 @@ which occurred within ~r file~:p: ~
   (format *trace-output* "~& → cross-compiling ~a" (enough-namestring file))
   (finish-output *trace-output*)
   (multiple-value-bind (js warn fail)
-      (let ((*features* (symbol-value (intern "*FEATURES*" :jscl/cl))))
+      (let ((*features* (cons :jscl-xc (symbol-value (intern "*FEATURES*" :jscl/cl))))
+            (*package* (find-package :jscl/impl)))
         (funcall (intern "COMPILE-FILE" :jscl/cl) file))
     (values
      (when (or warn fail)
