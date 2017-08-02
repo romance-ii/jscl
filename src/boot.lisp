@@ -648,6 +648,7 @@
 
 (defmacro jscl/cl::defparameter (name value &optional docstring)
   `(progn
+     (declaim (special ,name))
      (setq ,name ,value)
      ,@(when (stringp docstring)
          `(setf (oget ',name "vardoc") ,docstring))
