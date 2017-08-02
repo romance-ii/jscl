@@ -376,7 +376,8 @@
       (convert-block body nil t))))
 
 (define-compilation jscl/cl::defmacro (name args &rest body)
-  (warn "Compiling a macro-expander for ~s" name)
+  (format *trace-output* "~& Defining a macro-function ~s ~s"
+          name args) ; ☠ debugging bootstrap
   (let* ((body (parse-body body :declarations t :docstring t))
          (ll (parse-destructuring-lambda-list args))
          (whole (or (lambda-list-wholevar ll)

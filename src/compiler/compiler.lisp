@@ -1005,17 +1005,17 @@ generate the code which performs the transformation on these variables."
         (values symbol nil))))
 
 (defun macroexpand-1/cons (form &optional (environment *environment*))
-  (let ((macrofun (jscl/cl::macro-function (car form) environment)))
-    (cond ((special-operator-p (car form))
-           (values form nil))
-          (macrofun
-           (values (funcall macrofun (cdr form) environment) t))
-          ((macro-function (car form) nil)
-           (break "MACROEXPAND-1 has no macro binding for ~a::~a, ~
+  (if (jscl/cl::special-operator-p (car form))
+      (values form nil)
+      (let ((macrofun (jscl/cl::macro-function (car form) environment)))
+        (cond (macrofun
+               (values (funcall macrofun (cdr form) environment) t))
+              ((macro-function (car form) nil)
+               (break "MACROEXPAND-1 has no macro binding for ~a::~a, ~
 but one exists in the global environment of the host compiler."
-                  (package-name (symbol-package (car form)))
-                  (car form)))
-          (t (values form nil)))))
+                      (package-name (symbol-package (car form)))
+                      (car form)))
+              (t (values form nil))))))
 
 (defun jscl/cl::macroexpand-1 (form &optional (environment *environment*))
   "If FORM is a macro form or symbol in ENVIRONMENT, expand it.
