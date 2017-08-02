@@ -578,25 +578,24 @@
       (when (atom clause)
         (error "COND clause ~s is not a list" clause))
       (destructuring-bind (condition &body body) clause
-        (cond
-          ((or (eq condition t)
-               (and (constantp condition)
-                    condition))
-           (when more
-             (if (find :jscl-xc *features*)
-                 (cerror "Continue" "Unreachable in COND: ~s" more)
-                 (warn "Unreachable in COND: ~s" more)))
-           `(progn ,@body))
-          ((endp body)
-           (let ((test-symbol (gensym "COND-TEST-")))
-             `(let ((,test-symbol ,condition))
-                (if ,test-symbol
-                    ,test-symbol
-                    ,(when more `(cond ,@more))))))
-          (t
-           `(if ,condition
-                (progn ,@body)
-                ,(when more `(cond ,@more)))))))))
+        (if (or (eq condition t)
+                (and (constantp condition)
+                     condition))
+            (progn
+              (when more
+                (warn "Unreachable in COND: ~s" more))
+              `(progn ,@body))
+
+            (if (endp body)
+                (let ((test-symbol (gensym "COND-TEST-")))
+                  `(let ((,test-symbol ,condition))
+                     (if ,test-symbol
+                         ,test-symbol
+                         ,(when more `(cond ,@more)))))
+
+                `(if ,condition
+                     (progn ,@body)
+                     ,(when more `(cond ,@more)))))))))
 
 (defmacro jscl/cl::when (condition &body body)
   "When CONDITION is true, evaluate BODY as a PROGN"
@@ -676,7 +675,7 @@
 (defmacro jscl/cl::return (&optional value)
   `(return-from nil ,value))
 
-(defmacro jscl/cl::while (condition &body body)
+(defmacro while (condition &body body)
   `(block nil (jscl/js::%while ,condition ,@body)))
 
 (defvar jscl/cl::*gensym-counter* 0)
