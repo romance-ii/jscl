@@ -46,7 +46,15 @@
   (:nicknames :jscl/cl)
   (:documentation
    "The  COMMON-LISP  package  contains   the  symbols  defined  in  the
- ANSI standard."))
+ ANSI standard.")
+  ;; not importing  these exact symbols turns  out to be a  real pain in
+  ;; cross-compilation,  but   they're  actually  used   as  self-valued
+  ;; symbols,   as  keywords   are,   so  there   should   not  be   any
+  ;; conflicting definitions.
+  (:import-from :common-lisp
+                t nil
+                &optional &rest &key &aux &allow-other-keys &body
+                &whole &environment))
 
 (defpackage jscl/javascript-low-level
   (:use) ; nothing
