@@ -22,8 +22,6 @@
 ;;; Lisp  world from  scratch. This  code has  to define  enough of  the
 ;;; language for the compiler to be able to run.
 
-
-
 ;;; Package definitions for within the environment.
 
 #+jscl
