@@ -17,7 +17,6 @@
 
 (in-package #-jscl :jscl #+jscl :jscl/impl)
 
-
 (defvar !lambda-list-keywords
   '(&optional &rest &key &aux &allow-other-keys &body
     &whole &environment))

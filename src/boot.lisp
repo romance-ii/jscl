@@ -27,7 +27,7 @@
 ;;; Package definitions for within the environment.
 
 #+jscl
-(jscl/cl::eval-when (:compile-toplevel :load-toplevel :execute)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (jscl/cl::make-package "KEYWORD"
                          'jscl::if-exists :ignore)
 
@@ -539,20 +539,16 @@
             #:yes-or-no-p                     	#:zerop)))
 
 ;; not yet available XXX (in-package #-jscl :jscl #+jscl :jscl/impl)
-(setq *package* (find-package #-jscl :jscl #+jscl :jscl/impl))
-
-
+(setq *package* (find-package :jscl/impl))
 
 
 ;;; Special forms treated as macros
-#-jscl
-(progn
-  (defmacro jscl/cl::let (bindings &body body)
-    `(jscl/js::let ,bindings ,@body))
-  (defmacro jscl/cl::let* (bindings &body body)
-    `(jscl/js::let* ,bindings ,@body))
-  (defmacro jscl/cl::setq (&body assignment-pairs)
-    `(jscl/js::setq ,@assignment-pairs)))
+(defmacro jscl/cl::let (bindings &body body)
+  `(jscl/js::let ,bindings ,@body))
+(defmacro jscl/cl::let* (bindings &body body)
+  `(jscl/js::let* ,bindings ,@body))
+(defmacro jscl/cl::setq (&body assignment-pairs)
+  `(jscl/js::setq ,@assignment-pairs))
 
 
 ;;; DECLAIM
