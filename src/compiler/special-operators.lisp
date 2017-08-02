@@ -392,9 +392,9 @@
     ;; to be dumped in the final environment somehow.
     (when (find :jscl-xc *features*)
       (setq expander `(quote ,expander)))
-    
-    `(eval-when (:compile-toplevel :execute)
-       (%compile-defmacro ',name ,expander))))
+    (%compile-defmacro name expander)
+    `(jscl/cl::eval-when (:compile-toplevel :execute)
+                         (%compile-defmacro ',name ,expander))))
 
 (defmacro define-transformation (name args form)
   `(define-compilation ,name ,args
