@@ -1039,11 +1039,13 @@ a generalized boolean indicating whether FORM were changed."
   "Fully expand all macro forms in FORM (in context of any given ENVIRONMENT)
 
 See also: `MACROEXPAND-1'"
-  (let ((continue t))
-    (while continue
-      (multiple-value-setq (form continue)
-        (jscl/cl::macroexpand-1 form environment))))
-  form)
+  (tagbody again
+     (multiple-value-bind (expanded continue)
+         (jscl/cl::macroexpand-1 form environment)
+       (when continue
+         (setq form expanded)
+         (go again))
+       (return-from jscl/cl:macroexpand form))))
 
 
 
@@ -1405,9 +1407,10 @@ be   bound);    otherwise,   use   a   simpler    form   that   discards
 non-primary values.
 
 If RETURN-P, emit a JavaScript “return” operator on the value."
-  (multiple-value-bind (expansion expandedp) (jscl/cl::macroexpand-1 sexp)
+  (multiple-value-bind (expansion expandedp) (jscl/cl::macroexpand sexp)
     (when expandedp
-      (warn "Macro-expansion done on top level (~s …)…" (car sexp))
+      (format *trace-output* "~&Macro-expansion top level…~%~s~%↓~%~s" 
+              sexp expansion)
       (return-from convert-toplevel
         (convert-toplevel expansion multiple-value-p return-p))))
   ;; Process as toplevel
@@ -1453,7 +1456,8 @@ More than ~:d levels of recursion were encountered."
     (format *trace-output* "~&; compiling form ~a"
             (if (consp sexp) (car sexp) sexp))
     (finish-output *trace-output*)
-    (js-format "/* Toplevel form evaluated in ~a */" (lisp-implementation-type)))
+    (js-format " /* Toplevel form evaluated in ~a */ "
+               (lisp-implementation-type)))
   #+jscl
   (with-output-to-string (*js-output*)
     (js (process-toplevel sexp multiple-value-p return-p))))
