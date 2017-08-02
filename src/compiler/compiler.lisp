@@ -1241,14 +1241,10 @@ It should be macroexpanded before reaching COMPILE-SEXP"
        ;; almost not a macro and almost,  but not quite, a special form,
        ;; so we have to work around that here.
        (not (eql 'destructuring-bind (car sexp)))
+       (not (jscl/cl::special-operator-p (car sexp)))
        (eql (find-package :common-lisp)
             (symbol-package (car sexp)))
        (macro-function (car sexp))))
-
-(defun prefix-! (symbol)
-  (intern (concatenate 'string "!"
-                       (symbol-name symbol))
-          :jscl))
 
 (defun complain-failed-macroexpansion (sexp)
   (emit-uncompilable-form
@@ -1267,19 +1263,13 @@ it as a macro within JSCL  as well. The notable exception (inversion) is
 means either that  we have a compile-time dependency  ordering issue, or
 just haven't gotten  around to defining that macro at  all, yet. It also
 jumps out and  shouts when macro-expansion is  broken completely, rather
-than baffling errors because of macro-forms being treated as functions.
-
-FIXME redocument with !
-
-Notably,  a  macro defined  as  !NAME  will be  used  for  NAME to  make
-cross-compilation less  sticky about symbol  names in the  JSCL package.
-If the  JSCL/CL package were separate  from the JSCL/INT package  or so,
-this might go  away, but that will  take a good bit  of rewriting symbol
-names throughout the tree. "
+than baffling errors because of macro-forms being treated as functions."
   (cond ((not (should-be-macroexpanded-in-cl-p sexp)) sexp)
-        ((jscl/cl::macro-function (prefix-! (car sexp)))
-         (warn "Substituting !~s for ~:*~s" (car sexp))
-         (jscl/cl::macroexpand (cons (prefix-! (car sexp))
+        ((jscl/cl::macro-function (car sexp))
+         (cerror "Continue"
+                 "Macroexpansion failed but caught it later~%~s"
+                 sexp)
+         (jscl/cl::macroexpand (cons (car sexp)
                                      (cdr sexp))))
         (t (complain-failed-macroexpansion sexp))))
 
