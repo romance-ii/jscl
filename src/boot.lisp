@@ -568,40 +568,8 @@
      ,@(when (stringp docstring) `((oset ,docstring ',name "vardoc")))
      ',name))
 
-(defconstant jscl/cl::t t)
-(defconstant jscl/cl::nil nil)
-#+jscl (jscl/js::%js-vset "t" t)
-#+jscl (jscl/js::%js-vset "nil" nil)
-
 (defmacro jscl/cl::lambda (args &body body)
   `(function (lambda ,args ,@body)))
-
-
-;;; AND, OR
-
-(defmacro jscl/cl::and (&rest forms)
-  (cond
-    ((null forms)
-     t)
-    ((null (cdr forms))
-     (car forms))
-    (t
-     `(if ,(car forms)
-          (and ,@(cdr forms))
-          nil))))
-
-(defmacro jscl/cl::or (&rest forms)
-  (cond
-    ((null forms)
-     nil)
-    ((null (cdr forms))
-     (car forms))
-    (t
-     (let ((g (gensym "OR-")))
-       `(let ((,g ,(car forms)))
-          (if ,g
-              ,g
-              (or ,@(cdr forms))))))))
 
 
 ;;; COND, WHEN, UNLESS
@@ -639,6 +607,32 @@
 (defmacro jscl/cl::unless (condition &body body)
   "When CONDITION is false, evaluate BODY as a PROGN"
   `(cond ((not ,condition) ,@body)))
+
+;;; AND, OR
+
+(defmacro jscl/cl::and (&rest forms)
+  (cond
+    ((null forms)
+     t)
+    ((null (cdr forms))
+     (car forms))
+    (t
+     `(if ,(car forms)
+          (and ,@(cdr forms))
+          nil))))
+
+(defmacro jscl/cl::or (&rest forms)
+  (cond
+    ((null forms)
+     nil)
+    ((null (cdr forms))
+     (car forms))
+    (t
+     (let ((g (gensym "OR-")))
+       `(let ((,g ,(car forms)))
+          (if ,g
+              ,g
+              (or ,@(cdr forms))))))))
 
 
 ;;; DEFVAR, DEFPARAMETER, DEFUN
