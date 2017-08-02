@@ -1152,16 +1152,16 @@ treated as function call in JSCL"
         (gethash name *special-operators*))))
 
 (defun compile-special-form (name args)
-  (let ((comp (gethash name *special-operators*)))
+  (let ((compilation-function (gethash name *special-operators*)))
     (cond
-      (comp
-       (apply comp args))
+      (compilation-function
+       (apply compilation-function args))
       ((eql (symbol-package name)
             (find-package "COMMON-LISP"))
        (compile-special-form (intern (symbol-name name)
                                      (find-package "JSCL/COMMON-LISP"))
                              args))
-      (t (assert comp () "~S must name a special form" name)))))
+      (t (assert compilation-function () "~S must name a special form" name)))))
 
 (defun compile-builtin-function (name args)
   (let ((built-in (gethash name *builtins*)))
