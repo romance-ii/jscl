@@ -20,7 +20,7 @@
 
 (eval-when(:compile-toplevel :load-toplevel :execute)
   (defvar *setf-expanders* nil)
-  (defun jscl/cl::get-setf-expansion (place)
+  (defun jscl/cl:get-setf-expansion (place)
     (if (symbolp place)
         (let ((value (gensym "VALUE-")))
           (values nil
@@ -28,7 +28,7 @@
                   `(,value)
                   `(setq ,place ,value)
                   place))
-        (let ((place (jscl/cl::macroexpand-1 place)))
+        (let ((place (jscl/cl:macroexpand-1 place)))
           (assert (consp place) (place)
                   "SETF PLACE not a SYMBOL nor CONS: ~s" place)
           (let* ((access-fn (car place))
@@ -46,7 +46,7 @@
                   (t
                    (error "Unknown generalized reference: ~s" access-fn))))))))
 
-(defmacro jscl/cl::define-setf-expander (access-fn lambda-list &body body)
+(defmacro jscl/cl:define-setf-expander (access-fn lambda-list &body body)
   (unless (symbolp access-fn)
     (error "ACCESS-FN `~S' must be a symbol." access-fn))
   (let ((g!args (gensym "ARGS-")))
@@ -79,7 +79,7 @@
   (declare (ignore access-fn lambda-list store-variables body))
   (error "The long form of defsetf is not implemented"))
 
-(defmacro jscl/cl::defsetf (&whole args first second &rest others)
+(defmacro jscl/cl:defsetf (&whole args first second &rest others)
   (declare (ignore first others))
   (if (consp second)
       `(long-defsetf ,@args)
@@ -96,7 +96,7 @@
 
   (defun setf/apply-setf-expander (place value)
     (multiple-value-bind (vars vals store-vars writer-form reader-form)
-        (jscl/cl::get-setf-expansion place)
+        (jscl/cl:get-setf-expansion place)
       (declare (ignorable reader-form))
       ;; TODO:  Optimize the  expansion a  little bit  to avoid  let* or
       ;; multiple-value-bind when unnecesary.
@@ -105,7 +105,7 @@
              ,value
            ,writer-form)))))
 
-(defmacro jscl/cl::setf (&rest pairs)
+(defmacro jscl/cl:setf (&rest pairs)
   "Takes pairs  of arguments  like SETQ.  The first is  a place  and the
 second is the value that is supposed  to go into that place. Returns the
 last value. The place argument may be  any of the access forms for which
@@ -116,7 +116,7 @@ SETF knows a corresponding setting form."
      (error "Odd number of arguments to SETF (trailing ~s)"
             (car pairs)))
     ((null (cddr pairs))                ; meaning exactly one pair
-     (let ((place (jscl/cl::macroexpand-1 (first pairs)))
+     (let ((place (jscl/cl:macroexpand-1 (first pairs)))
            (value (second pairs)))
        (let* ((access-fn (first place))
               (params (rest place))
@@ -128,9 +128,9 @@ SETF knows a corresponding setting form."
 
 ;;; SETF-Based macros
 
-(defmacro jscl/cl::incf (place &optional (delta 1))
+(defmacro jscl/cl:incf (place &optional (delta 1))
   (multiple-value-bind (dummies vals newval setter getter)
-      (jscl/cl::get-setf-expansion place)
+      (jscl/cl:get-setf-expansion place)
     (let ((d (gensym "DELTA-")))
       `(let* (,@(mapcar #'list dummies vals)
               (,d ,delta)
@@ -138,9 +138,9 @@ SETF knows a corresponding setting form."
               ,@(cdr newval))
          ,setter))))
 
-(defmacro jscl/cl::decf (place &optional (delta 1))
+(defmacro jscl/cl:decf (place &optional (delta 1))
   (multiple-value-bind (dummies vals newval setter getter)
-      (jscl/cl::get-setf-expansion place)
+      (jscl/cl:get-setf-expansion place)
     (let ((d (gensym "DELTA-")))
       `(let* (,@(mapcar #'list dummies vals)
               (,d ,delta)
@@ -148,9 +148,9 @@ SETF knows a corresponding setting form."
               ,@(cdr newval))
          ,setter))))
 
-(defmacro jscl/cl::push (x place)
+(defmacro jscl/cl:push (x place)
   (multiple-value-bind (dummies vals newval setter getter)
-      (jscl/cl::get-setf-expansion place)
+      (jscl/cl:get-setf-expansion place)
     (let ((g (gensym "VALUE-")))
       `(let* ((,g ,x)
               ,@(mapcar #'list dummies vals)
@@ -158,9 +158,9 @@ SETF knows a corresponding setting form."
               ,@(cdr newval))
          ,setter))))
 
-(defmacro jscl/cl::pop (place)
+(defmacro jscl/cl:pop (place)
   (multiple-value-bind (dummies vals newval setter getter)
-      (jscl/cl::get-setf-expansion place)
+      (jscl/cl:get-setf-expansion place)
     (let ((head (gensym "HEAD-")))
       `(let* (,@(mapcar #'list dummies vals)
               (,head ,getter)
@@ -169,10 +169,10 @@ SETF knows a corresponding setting form."
          ,setter
          (car ,head)))))
 
-(defmacro jscl/cl::pushnew (x place &rest keys &key key test test-not)
+(defmacro jscl/cl:pushnew (x place &rest keys &key key test test-not)
   (declare (ignore key test test-not))
   (multiple-value-bind (dummies vals newval setter getter)
-      (jscl/cl::get-setf-expansion place)
+      (jscl/cl:get-setf-expansion place)
     (let ((g (gensym "VALUE-"))
           (v (gensym "V-")))
       `(let* ((,g ,x)

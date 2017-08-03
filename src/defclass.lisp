@@ -138,7 +138,7 @@
             (check-type new-value ,(slot-info-type slot-info))
             (setf (slot-value ,class ',(slot-info-name slot-info)) new-value)))))
 
-(defmacro jscl/cl::defclass (name (&rest direct-superclasses)
+(defmacro jscl/cl:defclass (name (&rest direct-superclasses)
                              (&rest direct-slots) &rest options)
   (let ((slot-infos (mapcar (lambda (description)
                               (defclass/make-slot-info name description))

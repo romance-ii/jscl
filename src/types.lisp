@@ -29,7 +29,7 @@
 
 
 
-(defmacro jscl/cl::deftype (name lambda-list &body body)
+(defmacro jscl/cl:deftype (name lambda-list &body body)
   `(push-to-lexenv (make-binding
                     :name ',name
                     :type 'type
@@ -48,7 +48,7 @@
 
 
 
-(defstruct jscl/cl::built-in-class
+(defstruct jscl/cl:built-in-class
   name predicate superclasses)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -58,7 +58,7 @@
 
 (in-package :jscl/mop)
 ;; so MOP:EQL-SPECIALIZER-OBJECT is in the right place
-(cl:defstruct jscl/cl::eql-specializer
+(cl:defstruct jscl/cl:eql-specializer
   object)
 (cl:in-package :jscl)
 
@@ -105,7 +105,7 @@ match the allowed types for an operation."))
       (error 'type-error-undefined-type :specifier type)
       #+jscl (error "~s does not name a type" type)))
 
-(defun jscl/cl::subtypep (subtype supertype)
+(defun jscl/cl:subtypep (subtype supertype)
   (let* ((sub (find-type-definition subtype))
          (known-supertypes (type-definition-supertypes sub)))
     (or (find supertype known-supertypes)
@@ -132,7 +132,7 @@ match the allowed types for an operation."))
           (funcall (type-definition-predicate type)
                    value))))))
 
-(defun jscl/cl::type-of (value)
+(defun jscl/cl:type-of (value)
   (if value
       (let* ((curry (curry-type-check value))
              (type (or
@@ -156,7 +156,7 @@ match the allowed types for an operation."))
           (t type)))
       'null))
 
-(defun jscl/cl::class-of (value)
+(defun jscl/cl:class-of (value)
   (type-definition-class (find-type-definition (type-of value))))
 
 (defstruct deftype-class-metaobject
@@ -204,7 +204,7 @@ specifier that is more complex than JSCL is able to parse currently."))
           (t (error 'type-specifier-parse-error)))))
 
 
-(defun jscl/cl::typep (object type &optional (environment *environment*))
+(defun jscl/cl:typep (object type &optional (environment *environment*))
   (cond
     ((jscl/mop:eql-specializer-p type)
      (eql object (eql-specializer-object type)))
@@ -220,13 +220,13 @@ specifier that is more complex than JSCL is able to parse currently."))
               object))
     (t (error 'type-specifier-parse-error type))))
 
-(defmacro jscl/cl::restart-case (expression &body clauses)
+(defmacro jscl/cl:restart-case (expression &body clauses)
   ;; FIXME: I don't belong here
   (declare (ignore clauses))
   (warn "Dropping restart cases: TODO")
   expression)
 
-(defmacro jscl/cl::check-type (place type &optional type-string)
+(defmacro jscl/cl:check-type (place type &optional type-string)
   "Signal a restartable  error of type TYPE-ERROR if the  value of PLACE
 is not of the  specified type. If an error is  signalled and the restart
 is used  to return, this can  only return if the  STORE-VALUE restart is
@@ -314,7 +314,7 @@ since the supertype comes first, the subtype~1@*~p will never be matched."
       (when (rest rest)
         (typecase-unreachable-after-supertype rest)))))
 
-(defmacro jscl/cl::typecase (value &rest clauses)
+(defmacro jscl/cl:typecase (value &rest clauses)
   "A fair approximation of TYPECASE for limited cases"
   (let ((evaluated (gensym "TYPECASE-EVALUATED-"))
         (unique-types (typecase-unique-types (mapcar #'car clauses))))
@@ -347,14 +347,14 @@ Allowed types are ~{~s~^, ~}"
                      (type-of (etypecase-failure-object c))
                      (etypecase-allowed-types c)))))
 
-(defmacro jscl/cl::etypecase (value &rest clauses)
+(defmacro jscl/cl:etypecase (value &rest clauses)
   (let ((evaluated (gensym "ETYPECASE-VALUE-"))
         (unique-types (typecase-unique-types (mapcar #'car clauses))))
     (when (member t unique-types)
       (warn "ETYPECASE contains type T, which matches everything; ~
 nothing will fall through this case"))
     `(let ((,evaluated ,value))
-       (jscl/cl::typecase ,evaluated
+       (jscl/cl:typecase ,evaluated
          ,@clauses
          (t (error 'etypecase-failure
                    :object ,evaluated 

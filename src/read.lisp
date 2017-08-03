@@ -75,11 +75,11 @@
   (lambda ()
     (error "Internal error in fixup creation during read")))
 
-(defun jscl/cl::make-string-input-stream (string)
+(defun jscl/cl:make-string-input-stream (string)
  ;;; FIXME. Use the new stream fake-generics stuff.
   (cons string 0))
 
-(defun jscl/cl::peek-char (&optional (peek-type nil) (stream *standard-input*)
+(defun jscl/cl:peek-char (&optional (peek-type nil) (stream *standard-input*)
                                      (eof-error-p t) (eof-value nil))
   (assert (null peek-type))
   (cond ((< (cdr stream) (length (car stream)))
@@ -87,7 +87,7 @@
         (eof-error-p
          (error "End of file in PEEK-CHAR"))
         (t eof-value)))
-(defun jscl/cl::read-char (stream &optional (eof-error-p t)
+(defun jscl/cl:read-char (stream &optional (eof-error-p t)
                                             (eof-value nil))
   (cond ((< (cdr stream) (length (car stream)))
          (prog1 (char (car stream) (cdr stream))
@@ -179,7 +179,7 @@ FUNC will NOT be returned."
                                        (lambda (obj)
                                          (rplaca cell obj))))
               (eof (gensym "EOF-"))
-              (next (jscl/cl::read stream nil eof t)))
+              (next (jscl/cl:read stream nil eof t)))
          (rplaca cell next)
          (skip-whitespaces-and-comments stream)
          (cond
@@ -195,7 +195,7 @@ FUNC will NOT be returned."
                                                      (lambda (obj)
                                                        (rplacd cell obj)))))
                         ;; Dotted pair notation
-                        (rplacd cell (jscl/cl::read stream eof-error-p eof-value t))
+                        (rplacd cell (jscl/cl:read stream eof-error-p eof-value t))
                         (skip-whitespaces-and-comments stream)
                         (let ((ch (peek-char nil stream nil nil)))
                           (if (or (null ch) (char= #\) ch))
@@ -290,10 +290,10 @@ for details.'"
   (let ((ch (read-char stream nil nil)))
     (case ch
       (#\apostrophe
-       (list 'function (jscl/cl::read stream eof-error-p eof-value t)))
+       (list 'function (jscl/cl:read stream eof-error-p eof-value t)))
       (#\.
        (if *read-eval*
-           (eval (jscl/cl::read stream))
+           (eval (jscl/cl:read stream))
            nil))
       (#\(
        (do ((elements nil)
@@ -312,7 +312,7 @@ for details.'"
                                          (lambda (obj)
                                            (aset result ix obj))))
                 (eof (gensym "EOF-"))
-                (value (jscl/cl::read stream nil eof t)))
+                (value (jscl/cl:read stream nil eof t)))
            (push value elements))))
       (#\:
        (make-symbol
@@ -339,13 +339,13 @@ for details.'"
       ((#\+ #\-)
        (let* ((expression
                (let ((*package* (find-package :keyword)))
-                 (jscl/cl::read stream eof-error-p eof-value t))))
+                 (jscl/cl:read stream eof-error-p eof-value t))))
 
          (if (eql (char= ch #\+) (eval-feature-expression expression))
-             (jscl/cl::read stream eof-error-p eof-value t)
+             (jscl/cl:read stream eof-error-p eof-value t)
              (prog2 (let ((*read-skip-p* t))
-                      (jscl/cl::read stream))
-                 (jscl/cl::read stream eof-error-p eof-value t)))))
+                      (jscl/cl:read stream))
+                 (jscl/cl:read stream eof-error-p eof-value t)))))
       ((#\B #\b)
        (let ((*read-base* 2))
          (read-integer-from-stream stream)))
@@ -355,7 +355,7 @@ for details.'"
        (let ((*read-base* 8))
          (read-integer-from-stream stream)))
       ((#\S #\s)
-       (let ((struct-list (jscl/cl::read stream)))
+       (let ((struct-list (jscl/cl:read stream)))
          (check-type struct-list list "a structure #s list form")
          (assert (oddp (length struct-list)) ()
                  "Structure #s() form must have an odd number of elements, but read ~r elements"
@@ -386,7 +386,7 @@ for details.'"
                       (read-char stream nil nil)
                       (read-til-bar-sharpsign)))))
          (read-til-bar-sharpsign)
-         (jscl/cl::read stream eof-error-p eof-value t)))
+         (jscl/cl:read stream eof-error-p eof-value t)))
       (otherwise
        ;; FIXME:  the  reading of  the  numeric  prefix argument  should
        ;; respect the  reader's current radix, and  the numeric argument
@@ -404,7 +404,7 @@ for details.'"
                    (error "Duplicated label #~S=" id)
                    (progn
                      (add-labelled-object id *future-value*)
-                     (let ((obj (jscl/cl::read stream eof-error-p eof-value t)))
+                     (let ((obj (jscl/cl:read stream eof-error-p eof-value t)))
                        ;; FIXME:  somehow the  more  natural (setf  (cdr
                        ;; (find-labelled-object id)) obj) doesn't work
                        (rplacd (find-labelled-object id) obj)
@@ -638,7 +638,7 @@ for details.'"
       (read-float string)
       (read-symbol string)))
 
-(defun jscl/cl::read (stream &optional (eof-error-p t) eof-value recursive-p)
+(defun jscl/cl:read (stream &optional (eof-error-p t) eof-value recursive-p)
   (let ((save-labelled-objects *labelled-objects*)
         (save-fixup-locations *fixup-locations*))
     (unless recursive-p
@@ -658,14 +658,14 @@ for details.'"
                (%read-list stream eof-error-p eof-value))
               ((char= ch #\apostrophe)
                (read-char stream nil nil)
-               (list 'quote (jscl/cl::read stream eof-error-p eof-value t)))
+               (list 'quote (jscl/cl:read stream eof-error-p eof-value t)))
               ((char= ch #\grave_accent)
                (read-char stream nil nil)
                (if (char= (peek-char nil stream nil nil) #\#)
                    (warn "`# might be `#(vec) form, not yet supported;
 rewrite `#(v1 v2…) as (apply #'vector `(v1 v2…))"))
 
-               (list 'backquote (jscl/cl::read stream eof-error-p eof-value t)))
+               (list 'backquote (jscl/cl:read stream eof-error-p eof-value t)))
               ((char= ch #\")
                (read-char stream nil nil)
                (read-string stream))
@@ -675,8 +675,8 @@ rewrite `#(v1 v2…) as (apply #'vector `(v1 v2…))"))
                        (char= (peek-char nil stream nil nil) #\.))
                    (progn (read-char stream nil nil)
                           (list 'unquote-splicing
-                                (jscl/cl::read stream eof-error-p eof-value t)))
-                   (list 'unquote (jscl/cl::read stream eof-error-p eof-value t))))
+                                (jscl/cl:read stream eof-error-p eof-value t)))
+                   (list 'unquote (jscl/cl:read stream eof-error-p eof-value t))))
               ((char= ch #\#)
                (read-sharp stream eof-error-p eof-value))
               (t
@@ -694,12 +694,12 @@ rewrite `#(v1 v2…) as (apply #'vector `(v1 v2…))"))
     ;; but we're mimicking the CL:Read-from-string function, so we don't
     ;; care about that particular warning.
     #+sbcl (declare (sb-ext:muffle-conditions style-warning))
-    (defun jscl/cl::read-from-string (string
+    (defun jscl/cl:read-from-string (string
                                       &optional (eof-error-p t) eof-value
                                       &key (start 0) (end nil)
                                            (preserve-whitespace t))
       (funcall (if preserve-whitespace
-                   #'jscl/cl::read-preserving-whitespace
-                   #'jscl/cl::read)
+                   #'jscl/cl:read-preserving-whitespace
+                   #'jscl/cl:read)
                (make-string-input-stream string start (or end (length string)))
                eof-error-p eof-value)))

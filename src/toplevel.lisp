@@ -20,46 +20,46 @@
 
 
 
-(defun jscl/cl::eval (x)
+(defun jscl/cl:eval (x)
   #+jscl
   (js-eval (with-compilation-environment
              (compile-toplevel x t t)))
   #-jscl
   (eval x))
 
-(defvar jscl/cl::* nil)
-(defvar jscl/cl::** nil)
-(defvar jscl/cl::*** nil)
-(defvar jscl/cl::/ nil)
-(defvar jscl/cl::// nil)
-(defvar jscl/cl::/// nil)
-(defvar jscl/cl::+ nil)
-(defvar jscl/cl::++ nil)
-(defvar jscl/cl::+++ nil)
-(defvar jscl/cl::- nil)
+(defvar jscl/cl:* nil)
+(defvar jscl/cl:** nil)
+(defvar jscl/cl:*** nil)
+(defvar jscl/cl:/ nil)
+(defvar jscl/cl:// nil)
+(defvar jscl/cl:/// nil)
+(defvar jscl/cl:+ nil)
+(defvar jscl/cl:++ nil)
+(defvar jscl/cl:+++ nil)
+(defvar jscl/cl:- nil)
 
 (defun eval-interactive (x)
-  (setf jscl/cl::- x)
+  (setf jscl/cl:- x)
   (handler-case
       (let ((results (multiple-value-list (eval x))))
-        (setf jscl/cl::/// jscl/cl:://
-              jscl/cl::// jscl/cl::/
-              jscl/cl::/ results
-              jscl/cl::*** jscl/cl::**
-              jscl/cl::** jscl/cl::*
-              jscl/cl::* (car results)))
+        (setf jscl/cl:/// jscl/cl://
+              jscl/cl:// jscl/cl:/
+              jscl/cl:/ results
+              jscl/cl:*** jscl/cl:**
+              jscl/cl:** jscl/cl:*
+              jscl/cl:* (car results)))
     (serious-condition (c)
       (format *terminal-io* "~a~%~10t(Condition of type ~:(~a~)"
               c (type-of c))
       (return-from eval-interactive nil)))
-  (unless (boundp 'jscl/cl::*)
-    (setf jscl/cl::* nil))
-  (setf jscl/cl::+++ jscl/cl::++
-        jscl/cl::++ jscl/cl::+
-        jscl/cl::+ jscl/cl::-)
-  (values-list jscl/cl::/))
+  (unless (boundp 'jscl/cl:*)
+    (setf jscl/cl:* nil))
+  (setf jscl/cl:+++ jscl/cl:++
+        jscl/cl:++ jscl/cl:+
+        jscl/cl:+ jscl/cl:-)
+  (values-list jscl/cl:/))
 
-(setq jscl/cl::*package* *user-package*)
+(setq jscl/cl:*package* *user-package*)
 
 (defun compilation-notice ()
   #.(multiple-value-bind (second minute hour date month year)
@@ -141,7 +141,7 @@ https://github.com/jscl-project/jscl.~%~%")
 
 ;;; Basic *standard-output*  stream. This  will usually be  overriden by
 ;;; web or node REPL.
-(setq jscl/cl::*standard-output* (make-web-console-output-stream))
+(setq jscl/cl:*standard-output* (make-web-console-output-stream))
 
 #+jscl
 (if (find :node *features*)

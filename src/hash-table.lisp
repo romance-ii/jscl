@@ -78,7 +78,7 @@
       ((eq test-fn #'equal) 	'equal)
       ((eq test-fn #'equalp) 	'equalp))))
 
-(defun jscl/cl::make-hash-table (&key (test 'eql) size)
+(defun jscl/cl:make-hash-table (&key (test 'eql) size)
   (declare (ignore size))
   (let ((sv (make-storage-vector 1 (list 'hash-table (hash-table-function/invert test)))))
     (setf (storage-vector-ref sv 0) (jscl/js::new))
@@ -87,7 +87,7 @@
 (defun hash-key-for-table (key hash-table)
   (funcall (hash-table-function (second (storage-vector-kind hash-table))) key))
 
-(defun jscl/cl::gethash (key hash-table &optional default)
+(defun jscl/cl:gethash (key hash-table &optional default)
   (let* ((obj (storage-vector-ref hash-table 0))
          (hash (hash-key-for-table key hash-table))
          (exists (jscl/js::in hash obj)))
@@ -101,7 +101,7 @@
     (jscl/ffi:oset (cons key new-value) obj hash)
     new-value))
 
-(define-setf-expander jscl/cl::gethash (key hash-table &optional defaults)
+(define-setf-expander jscl/cl:gethash (key hash-table &optional defaults)
   (let ((g!key (gensym "KEY-"))
         (g!hash-table (gensym "HASH-TABLE-"))
         (g!defaults (gensym "DEFAULTS-"))
@@ -115,13 +115,13 @@
             `(gethash ,g!new-value ,g!key ,g!hash-table)    ; accessing form
             )))
 
-(defun jscl/cl::remhash (key hash-table)
+(defun jscl/cl:remhash (key hash-table)
   (let ((obj (storage-vector-ref hash-table 0))
         (hash (hash-key-for-table key hash-table)))
     (prog1 (jscl/js::in hash obj)
       (jscl/js::delete-property hash obj))))
 
-(defun jscl/cl::hash-table-count (hash-table)
+(defun jscl/cl:hash-table-count (hash-table)
   (let ((count 0))
     (jscl/js::map-for-in (lambda (x)
                            (declare (ignore x))
@@ -129,7 +129,7 @@
                          (storage-vector-ref hash-table 0))
     count))
 
-(defun jscl/cl::maphash (function hash-table)
+(defun jscl/cl:maphash (function hash-table)
   (jscl/js::map-for-in (lambda (x)
                          (funcall function (car x) (cdr x)))
                        (storage-vector-ref hash-table 0))

@@ -15,14 +15,14 @@
 
 (in-package #-jscl :jscl #+jscl :jscl/impl)
 
-(define-compilation jscl/cl::if (condition true &optional false)
+(define-compilation jscl/cl:if (condition true &optional false)
   `(jscl/js::if (jscl/js::!== ,(convert condition) ,(convert nil))
                 ,(convert true *multiple-value-p*)
                 ,(convert false *multiple-value-p*)))
 
-(define-compilation jscl/cl::setq (&rest pairs)
+(define-compilation jscl/cl:setq (&rest pairs)
   (when (null pairs)
-    (return-from jscl/cl::setq (convert nil)))
+    (return-from jscl/cl:setq (convert nil)))
   (with-collector (result)
     (loop
        (cond
@@ -35,7 +35,7 @@
           (setq pairs (cddr pairs)))))
     `(progn ,@result)))
 
-(define-compilation jscl/cl::quote (sexp)
+(define-compilation jscl/cl:quote (sexp)
   (literal sexp))
 
 (define-compilation %while (pred &rest body)
@@ -61,7 +61,7 @@
     (otherwise
      (error "Can't compile #'~s" list))))
 
-(define-compilation jscl/cl::function (x)
+(define-compilation jscl/cl:function (x)
   (cond
     ((listp x)
      (coerce-list-to-function x))
@@ -72,7 +72,7 @@
            (convert `(symbol-function ',x)))))
     (t (error "~s is not a function designator" x))))
 
-(define-compilation jscl/cl::flet (definitions &rest body)
+(define-compilation jscl/cl:flet (definitions &rest body)
   (let* ((flet-fun-names (mapcar #'car definitions))
          (flet-compiled-funs (mapcar #'compiled-function-code definitions))
          (*environment* (environment+new-functions flet-fun-names)))
@@ -80,14 +80,14 @@
                              ,(convert-block body t))
                    ,@flet-compiled-funs)))
 
-(define-compilation jscl/cl::labels (definitions &rest body)
+(define-compilation jscl/cl:labels (definitions &rest body)
   (let* ((label-fun-names (mapcar #'car definitions))
          (*environment* (environment+new-functions label-fun-names)))
     `(jscl/js::selfcall
       ,@(mapcar #'labels/compiled-label-function definitions)
       ,(convert-block body t))))
 
-(define-compilation jscl/cl::eval-when (situations &rest body)
+(define-compilation jscl/cl:eval-when (situations &rest body)
   "NOTE: It  is probably wrong  in many cases but  we will not  use this
  heavily. Please, do not rely on wrong cases of this implementation."
   ;; TODO: Error checking
@@ -129,14 +129,14 @@
            situations body)
      (convert nil))))
 
-(define-compilation jscl/cl::progn (&rest body)
+(define-compilation jscl/cl:progn (&rest body)
   (if (null (cdr body))
       (convert (car body) *multiple-value-p*)
       `(jscl/js::progn
          ,@(append (mapcar #'convert (butlast body))
                    (list (convert (car (last body)) t))))))
 
-(define-compilation jscl/cl::macrolet (definitions &rest body)
+(define-compilation jscl/cl:macrolet (definitions &rest body)
   (let ((*environment* (copy-lexenv *environment*)))
     (dolist (def definitions)
       (destructuring-bind (name lambda-list &body body) def
@@ -145,7 +145,7 @@
           (push-to-lexenv binding  *environment* 'function))))
     (convert (cons 'progn body) *multiple-value-p*)))
 
-(define-compilation jscl/cl::let (bindings &rest body)
+(define-compilation jscl/cl:let (bindings &rest body)
   (multiple-value-bind (lexical-variables values special-bindings)
       (process-bindings bindings)
     (let ((compiled-values (mapcar #'convert values))
@@ -154,10 +154,10 @@
                                ,(let-bind-dynamic-vars special-bindings body))
                      ,@compiled-values))))
 
-(define-compilation jscl/cl::lambda (lambda-list &rest body)
+(define-compilation jscl/cl:lambda (lambda-list &rest body)
   (compile-lambda lambda-list body))
 
-(define-compilation jscl/cl::let* (bindings &rest body)
+(define-compilation jscl/cl:let* (bindings &rest body)
   (let ((bindings (mapcar #'ensure-list bindings))
         (*environment* (copy-lexenv *environment*)))
     (let ((specials (remove-if-not #'special-variable-p (mapcar #'first bindings)))
@@ -166,7 +166,7 @@
                    ,(convert-block body t t))))
       `(jscl/js::selfcall ,(let*-binding-wrapper specials body)))))
 
-(define-compilation jscl/cl::block (name &rest body)
+(define-compilation jscl/cl:block (name &rest body)
   "  We  use  Javascript  exceptions  to  implement  non  local  control
  transfer.  Exceptions  has  dynamic  scoping, so  we  use  a  uniquely
  generated object to identify the block.  The instance of a empty array
@@ -185,7 +185,7 @@
 
 
 
-(define-compilation jscl/cl::return-from (name &optional value)
+(define-compilation jscl/cl:return-from (name &optional value)
   (let* ((binding (or (lookup-in-lexenv name *environment* 'block)
                       (error "Return from unknown block `~S'." name)))
          (multiple-value-p (member 'multiple-value
@@ -204,7 +204,7 @@
 
 
 
-(define-compilation jscl/cl::catch (id &rest body)
+(define-compilation jscl/cl:catch (id &rest body)
   (let ((values (if *multiple-value-p* '|values| '(internal |pv|))))
     `(jscl/js::selfcall
       (jscl/js::var id ,(convert id))
@@ -220,7 +220,7 @@
                                         (jscl/js::get cf "values"))))
                      (jscl/js::throw cf))))))
 
-(define-compilation jscl/cl::throw (id value)
+(define-compilation jscl/cl:throw (id value)
   `(jscl/js::selfcall
     (jscl/js::var |values| (internal |mv|))
     (jscl/js::throw
@@ -229,12 +229,12 @@
                                  ,(convert id)
                                  ,(convert value t))))))
 
-(define-compilation jscl/cl::tagbody (&rest body)
+(define-compilation jscl/cl:tagbody (&rest body)
   ;; Ignore the  tagbody if it does  not contain any go-tag.  We do this
   ;; because  1)  it is  easy  and  2)  many  built-in forms  expand  to
   ;; a implicit tagbody, so we save some space.
   (unless (some #'go-tag-p body)
-    (return-from jscl/cl::tagbody (convert `(progn ,@body nil))))
+    (return-from jscl/cl:tagbody (convert `(progn ,@body nil))))
   ;; The translation assumes the first form in BODY is a label
   (unless (go-tag-p (car body))
     (push (gensym "START") body))
@@ -270,7 +270,7 @@
                                          (jscl/js::throw jump)))))
         (jscl/js::return ,(convert nil))))))
 
-(define-compilation jscl/cl::go (label)
+(define-compilation jscl/cl:go (label)
   (let ((b (lookup-in-lexenv label *environment* 'gotag)))
     (when (null b)
       (error "Unknown tag `~S'" label))
@@ -279,7 +279,7 @@
                                                             ,(first (binding-value b))
                                                             ,(second (binding-value b))))))))
 
-(define-compilation jscl/cl::unwind-protect (form &rest clean-up)
+(define-compilation jscl/cl:unwind-protect (form &rest clean-up)
   `(jscl/js::selfcall
     (jscl/js::var ret ,(convert nil))
     (jscl/js::try
@@ -288,7 +288,7 @@
      ,(convert-block clean-up))
     (jscl/js::return ret)))
 
-(define-compilation jscl/cl::multiple-value-call (func-form &rest forms)
+(define-compilation jscl/cl:multiple-value-call (func-form &rest forms)
   `(jscl/js::selfcall
     (jscl/js::var func ,(convert func-form))
     (jscl/js::var args ,(vector (if *multiple-value-p* '|values| '(internal |pv|))))
@@ -306,17 +306,17 @@
                              (jscl/js::method-call args "push" vs))))))
        (jscl/js::return (jscl/js::method-call func "apply" null args))))))
 
-(define-compilation jscl/cl::multiple-value-prog1 (first-form &rest forms)
+(define-compilation jscl/cl:multiple-value-prog1 (first-form &rest forms)
   `(jscl/js::selfcall
     (jscl/js::var args ,(convert first-form *multiple-value-p*))
     (jscl/js::progn ,@(mapcar #'convert forms))
     (jscl/js::return args)))
 
-(define-compilation jscl/cl::the (value-type form)
+(define-compilation jscl/cl:the (value-type form)
   (warn "discarding THE ~a" value-type) ; XXX perhaps one day
   (convert form *multiple-value-p*))
 
-(define-compilation jscl/cl::symbol-name (x)
+(define-compilation jscl/cl:symbol-name (x)
   (convert `(jscl/ffi:oget ,x "name")))
 
 (define-compilation %js-vref (var &optional raw)
@@ -366,7 +366,7 @@
       ,catch-compilation
       ,finally-compilation)))
 
-(define-compilation jscl/cl::symbol-macrolet (macrobindings &rest body)
+(define-compilation jscl/cl:symbol-macrolet (macrobindings &rest body)
   (let ((new (copy-lexenv *environment*)))
     (dolist (macrobinding macrobindings)
       (destructuring-bind (symbol expansion) macrobinding
@@ -375,7 +375,7 @@
     (let ((*environment* new))
       (convert-block body nil t))))
 
-(define-compilation jscl/cl::defmacro (name args &rest body)
+(define-compilation jscl/cl:defmacro (name args &rest body)
   (format *trace-output* "~& Defining a macro-function ~s ~s"
           name args) ; ☠ debugging bootstrap
   (let* ((body (parse-body body :declarations t :docstring t))
@@ -393,7 +393,7 @@
     (when (find :jscl-xc *features*)
       (setq expander `(quote ,expander)))
     (%compile-defmacro name expander)
-    `(jscl/cl::eval-when (:compile-toplevel :execute)
+    `(jscl/cl:eval-when (:compile-toplevel :execute)
                          (%compile-defmacro ',name ,expander))))
 
 (defmacro define-transformation (name args form)

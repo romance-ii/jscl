@@ -21,7 +21,7 @@
 
 (defvar *handler-bindings* nil)
 
-(defmacro jscl/cl::handler-bind (bindings &body body)
+(defmacro jscl/cl:handler-bind (bindings &body body)
   (let ((install-handlers nil))
 
     (dolist (binding bindings)
@@ -36,7 +36,7 @@
         (catch (err)
           (if (%%nlx-p err)
               (%%throw err)
-              (jscl/cl::error (or (jscl/ffi:oget err "message") err))))))))
+              (jscl/cl:error (or (jscl/ffi:oget err "message") err))))))))
 
 ;; Implementation if :NO-ERROR case is missing.
 (defmacro %handler-case-1 (form &body cases)
@@ -71,7 +71,7 @@
               ,@(reverse tagbody-content)))))))
 
 ;;; General case
-(defmacro jscl/cl::handler-case (form &body cases)
+(defmacro jscl/cl:handler-case (form &body cases)
   (let ((last-case (car (last cases))))
     (if (and last-case (eq (car last-case) :no-error))
         (destructuring-bind (lambda-list &body body) (cdr last-case)
@@ -85,14 +85,14 @@
                        ,@(butlast cases))))))))
         `(%handler-case-1 ,form ,@cases))))
 
-(defun jscl/cl::make-condition (type &rest init-args)
+(defun jscl/cl:make-condition (type &rest init-args)
   (assert (subtypep type 'condition) (type)
           "~S does not name a class of condition" type)
   (apply #'make-instance type init-args))
 
-(defmacro jscl/cl::define-condition (name (&rest superclasses)
-                                                 (&rest slot-specs)
-                                     &body options)
+(defmacro jscl/cl:define-condition (name (&rest superclasses)
+                                                (&rest slot-specs)
+                                    &body options)
   (check-type name symbol)
   (assert (every (lambda (superclass)
                    (subtypep superclass 'condition))
@@ -114,6 +114,7 @@
 (defun coerce-to-condition (default datum args)
   (cond
     ((condition-p datum)
+     (assert (null args))
      datum)
     ((stringp datum)
      (make-condition
@@ -133,7 +134,7 @@
   (and (subtypep type 'condition)
        (typep object type)))
 
-(defun jscl/cl::signal (datum &rest args)
+(defun jscl/cl:signal (datum &rest args)
   (let ((condition (coerce-to-condition 'condition datum args)))
     (dolist (binding *handler-bindings*)
       (let ((type (car binding))
@@ -141,9 +142,9 @@
         (when (condition-type-p condition type)
           (funcall handler condition))))))
 
-(defun jscl/cl::warn (datum &rest args)
+(defun jscl/cl:warn (datum &rest args)
   (let ((condition (coerce-to-condition 'warning datum args)))
-    (jscl/cl::signal condition)
+    (jscl/cl:signal condition)
     (format *error-output* "⚠ Warning: ~?" datum args)
     nil))
 
@@ -152,9 +153,9 @@
 (locally
     (declaim #+sbcl (sb-ext:muffle-conditions
                      sb-kernel::function-redefinition-warning))
-  (defun jscl/cl::error (datum &rest args)
+  (defun jscl/cl:error (datum &rest args)
     (let ((condition (coerce-to-condition 'error datum args)))
-      (jscl/cl::signal condition)
+      (jscl/cl:signal condition)
       #-jscl
       (cl:error datum args)
       #+jscl

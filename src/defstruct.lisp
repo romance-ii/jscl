@@ -286,7 +286,7 @@ can't be defined without CLOS: Option will be ignored" type)))
 ;; redirection. In  future, if this hack  is kept in play,  it should be
 ;; updated to  reflect JSCL/CL::DEFSTRUCT  and JSCL/INTERNALS::DEFSTRUCT
 ;; or something similar.
-(defmacro jscl/cl::defstruct (name-and-options &rest slots)
+(defmacro jscl/cl:defstruct (name-and-options &rest slots)
   `(progn
      #-jscl
      (eval-when (:compile-toplevel)

@@ -14,14 +14,14 @@
 ;; along with JSCL.  If not, see <http://www.gnu.org/licenses/>.
 (in-package #-jscl :jscl #+jscl :jscl/impl)
 
-(defparameter jscl/cl::*features* '(:jscl :common-lisp))
+(defparameter jscl/cl:*features* '(:jscl :common-lisp))
 
-(defun jscl/cl::lisp-implementation-type ()
+(defun jscl/cl:lisp-implementation-type ()
   #+jscl "JSCL"
   #-jscl (concatenate 'string "JSCL cross hosted by "
                       (cl:lisp-implementation-type)))
 
-(defun jscl/cl::lisp-implementation-version ()
+(defun jscl/cl:lisp-implementation-version ()
   #.jscl/bootstrap::*version*)
 
 #.(read-#j)
@@ -34,14 +34,14 @@
 (defun null-if-empty (x)
   (if (and x (zerop (length x))) nil x))
 
-(defun jscl/cl::short-site-name ()
+(defun jscl/cl:short-site-name ()
   (null-if-empty
    #+jscl (or (and #j:location #j:location:hostname)
               (and #j:os #j:os:hostname (#j:os:hostname)))
    #+sbcl (jscl/bootstrap::run-program-compile-time "hostname" '("-d"))
    #-(or jscl sbcl) "localdomain"))
 
-(defun jscl/cl::long-site-name ()
+(defun jscl/cl:long-site-name ()
   (null-if-empty
    #+jscl (or (and #j:location #j:location:origin)
               (and #j:os #j:os:hostname (#j:os:hostname)))
@@ -49,14 +49,14 @@
                                    (jscl/bootstrap::run-program-compile-time "hostname" '("-d"))))
    #-(or jscl sbcl) "Local Domain"))
 
-(defun jscl/cl::machine-instance ()
+(defun jscl/cl:machine-instance ()
   (null-if-empty
    #+jscl (or (and #j:location #j:location:hostname)
               (and #j:os #j:os:hostname (#j:os:hostname)))
    #+sbcl (jscl/bootstrap::run-program-compile-time "hostname" ())
    #-(or jscl sbcl) "localhost"))
 
-(defun jscl/cl::machine-version ()
+(defun jscl/cl:machine-version ()
   "The platform or OS type"
   (null-if-empty (let ((platform (or (and #j:navigator #j:navigator:platform)
                                      (and #j:process #j:process:platform))))
@@ -64,7 +64,7 @@
                        (subseq platform 0 (position #\Space platform))
                        platform))))
 
-(defun jscl/cl::machine-type ()
+(defun jscl/cl:machine-type ()
   "Probably a CPU type"
   #+jscl
   (null-if-empty (let ((platform (or (and #j:navigator #j:navigator:platform)
@@ -74,7 +74,7 @@
                        platform)))
   #-jscl (cl:machine-type))
 
-(defun jscl/cl::software-type ()
+(defun jscl/cl:software-type ()
   "The browser's Product name; eg, Gecko for Firefox"
   #+jscl
   (null-if-empty (or (and #j:navigator #j:navigator:product)
@@ -82,14 +82,14 @@
   #-jscl
   (cl:software-type))
 
-(defun jscl/cl::software-version ()
+(defun jscl/cl:software-version ()
   "The User-Agent string provided by the browser, or Node.js version"
   #+jscl
   (null-if-empty (or (and #j:navigator #j:navigator:userAgent)
                      (and #j:process #j:process:version)))
   #-jscl (cl:software-version))
 
-(defmacro jscl/cl::time (form)
+(defmacro jscl/cl:time (form)
   (let ((start (gensym "START-TIME-"))
         (end (gensym "END-TIME-")))
     `(let ((,start (get-internal-real-time))
@@ -145,20 +145,20 @@
           (jscl/js::fset name func)
           (format t "~S is not being traced.~%" name)))))
 
-(defmacro jscl/cl::trace (&rest names)
+(defmacro jscl/cl:trace (&rest names)
   `(trace-functions ',names))
 
-(defmacro jscl/cl::untrace (&rest names)
+(defmacro jscl/cl:untrace (&rest names)
   `(untrace-functions ',names))
 
 
 ;;; Time related functions
 
-(defun jscl/cl::get-internal-real-time ()
+(defun jscl/cl:get-internal-real-time ()
   (jscl/js::get-internal-real-time))
 
 (defun get-unix-time ()
   (truncate (/ (get-internal-real-time) 1000)))
 
-(defun jscl/cl::get-universal-time ()
+(defun jscl/cl:get-universal-time ()
   (+ (get-unix-time) 2208988800))

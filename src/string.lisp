@@ -16,27 +16,27 @@
 
 
 
-(defun jscl/cl::stringp (s)
+(defun jscl/cl:stringp (s)
   (stringp s))
 
-(defun jscl/cl::string-length (string)
+(defun jscl/cl:string-length (string)
   (storage-vector-size string))
 
-(defun jscl/cl::make-string (n &key initial-element)
+(defun jscl/cl:make-string (n &key initial-element)
   (make-array n :element-type 'character :initial-element initial-element))
 
-(defun jscl/cl::char (string index)
+(defun jscl/cl:char (string index)
   (check-type string string)
   (check-type index (and fixnum (integer 0 *)))
   (storage-vector-ref string index))
 
-(defun jscl/cl::string (x)
+(defun jscl/cl:string (x)
   (etypecase x
     (string x)
     (symbol (symbol-name x))
     (character (make-string 1 :initial-element x))))
 
-(defun jscl/cl::string= (s1 s2 &key (start1 0) end1 (start2 0) end2)
+(defun jscl/cl:string= (s1 s2 &key (start1 0) end1 (start2 0) end2)
   (let* ((s1 (string s1))
          (s2 (string s2))
          (end1 (or end1 (length s1)))
@@ -44,9 +44,9 @@
     (when (= (- end2 start2) (- end1 start1))
       (dotimes (i (- end2 start2) t)
         (unless (char= (char s1 (+ start1 i)) (char s2 (+ start2 i)))
-          (return-from jscl/cl::string= nil))))))
+          (return-from jscl/cl:string= nil))))))
 
-(defun jscl/cl::string/= (s1 s2 &key (start1 0) end1 (start2 0) end2)
+(defun jscl/cl:string/= (s1 s2 &key (start1 0) end1 (start2 0) end2)
   (let* ((s1 (string s1))
          (s2 (string s2))
          (n1 (length s1))
@@ -56,9 +56,9 @@
     (dotimes (i (max (- end1 start1) (- end2 start2)) nil)
       (when (or (>= (+ start1 i) n1)
                 (>= (+ start2 i) n2))
-        (return-from jscl/cl::string/= (+ start1 i)))
+        (return-from jscl/cl:string/= (+ start1 i)))
       (unless (char= (char s1 (+ start1 i)) (char s2 (+ start2 i)))
-        (return-from jscl/cl::string/= (+ start1 i))))))
+        (return-from jscl/cl:string/= (+ start1 i))))))
 
 
 (defun compare-strings (s1 s2 start1 end1 start2 end2
@@ -88,39 +88,39 @@
                 (+ start1 i)
                 nil)))))))
 
-(defun jscl/cl::string< (s1 s2 &key (start1 0) end1 (start2 0) end2)
+(defun jscl/cl:string< (s1 s2 &key (start1 0) end1 (start2 0) end2)
   (compare-strings s1 s2 start1 end1 start2 end2
                    #'char= #'char> nil t nil))
 
-(defun jscl/cl::string> (s1 s2 &key (start1 0) end1 (start2 0) end2)
+(defun jscl/cl:string> (s1 s2 &key (start1 0) end1 (start2 0) end2)
   (compare-strings s1 s2 start1 end1 start2 end2
                    #'char= #'char< nil nil t))
 
-(defun jscl/cl::string<= (s1 s2 &key (start1 0) end1 (start2 0) end2)
+(defun jscl/cl:string<= (s1 s2 &key (start1 0) end1 (start2 0) end2)
   (compare-strings s1 s2 start1 end1 start2 end2
                    #'char= #'char> t t nil))
 
-(defun jscl/cl::string>= (s1 s2 &key (start1 0) end1 (start2 0) end2)
+(defun jscl/cl:string>= (s1 s2 &key (start1 0) end1 (start2 0) end2)
   (compare-strings s1 s2 start1 end1 start2 end2
                    #'char= #'char< t nil t))
 
-(defun jscl/cl::string-lessp (s1 s2 &key (start1 0) end1 (start2 0) end2)
+(defun jscl/cl:string-lessp (s1 s2 &key (start1 0) end1 (start2 0) end2)
   (compare-strings s1 s2 start1 end1 start2 end2
                    #'char-equal #'char-greaterp nil t nil))
 
-(defun jscl/cl::string-greaterp (s1 s2 &key (start1 0) end1 (start2 0) end2)
+(defun jscl/cl:string-greaterp (s1 s2 &key (start1 0) end1 (start2 0) end2)
   (compare-strings s1 s2 start1 end1 start2 end2
                    #'char-equal #'char-lessp nil nil t))
 
-(defun jscl/cl::string-not-greaterp (s1 s2 &key (start1 0) end1 (start2 0) end2)
+(defun jscl/cl:string-not-greaterp (s1 s2 &key (start1 0) end1 (start2 0) end2)
   (compare-strings s1 s2 start1 end1 start2 end2
                    #'char-equal #'char-greaterp t t nil))
 
-(defun jscl/cl::string-not-lessp (s1 s2 &key (start1 0) end1 (start2 0) end2)
+(defun jscl/cl:string-not-lessp (s1 s2 &key (start1 0) end1 (start2 0) end2)
   (compare-strings s1 s2 start1 end1 start2 end2
                    #'char-equal #'char-lessp t nil t))
 
-(defun (setf jscl/cl::char) (value string index)
+(defun (setf jscl/cl:char) (value string index)
   (aset string index value))
 
 
@@ -134,7 +134,7 @@
     (reduce #'concat-two strs :initial-value "")))
 
 
-(defun jscl/cl::concatenate (target &rest objects)
+(defun jscl/cl:concatenate (target &rest objects)
   "A simple CONCATENATE that works for  strings and vectors. It does not
 accept  all of  the target  object types  that it  should, and  does not
 correctly handle  checking if  the type  of elements  in the  target can
@@ -157,18 +157,18 @@ handled correctly yet."
  cannot fit into ~s"
                 (length objects) (reduce #'+ objects :key #'length)
                 target)
-        (apply #'jscl/cl::concatenate (car target) objects))
+        (apply #'jscl/cl:concatenate (car target) objects))
        ((array simple-array)
         (assert (and (listp (third target))
                      (= 1 (length (third target))))
                 (target)
                 "Cannot concatenate multi-dimensional arrays")
-        (apply #'jscl/cl::concatenate
+        (apply #'jscl/cl:concatenate
                (list 'vector (second target) (third target))
                objects))))))
 
 
-(defun jscl/cl::string-upcase (string &key (start 0) end)
+(defun jscl/cl:string-upcase (string &key (start 0) end)
   (let* ((string (string string))
          (new (make-string (length string))))
     (dotimes (i (length string) new)
@@ -178,13 +178,13 @@ handled correctly yet."
                 (char-upcase (char string i))
                 (char string i))))))
 
-(defun jscl/cl::nstring-upcase (string &key (start 0) end)
+(defun jscl/cl:nstring-upcase (string &key (start 0) end)
   (let ((end (or end (length string))))
     (dotimes (i (- end start) string)
       (aset string (+ start i)
             (char-upcase (char string (+ start i)))))))
 
-(defun jscl/cl::string-downcase (string &key (start 0) end)
+(defun jscl/cl:string-downcase (string &key (start 0) end)
   (let* ((string (string string))
          (new (make-string (length string))))
     (dotimes (i (length string) new)
@@ -194,13 +194,13 @@ handled correctly yet."
                 (char-downcase (char string i))
                 (char string i))))))
 
-(defun jscl/cl::nstring-downcase (string &key (start 0) end)
+(defun jscl/cl:nstring-downcase (string &key (start 0) end)
   (let ((end (or end (length string))))
     (dotimes (i (- end start) string)
       (aset string (+ start i)
             (char-downcase (char string (+ start i)))))))
 
-(defun jscl/cl::string-capitalize (string &key (start 0) end)
+(defun jscl/cl:string-capitalize (string &key (start 0) end)
   (let* ((string (string string))
          (new (make-string (length string)))
          (just-saw-alphanum-p nil))
@@ -216,7 +216,7 @@ handled correctly yet."
                    (char-downcase (char string i)))))
       (setq just-saw-alphanum-p (alphanumericp (char string i))))))
 
-(defun jscl/cl::nstring-capitalize (string &key (start 0) end)
+(defun jscl/cl:nstring-capitalize (string &key (start 0) end)
   (let ((end (or end (length string)))
         (just-saw-alphanum-p nil))
     (dotimes (i (- end start) string)
@@ -227,7 +227,7 @@ handled correctly yet."
                 (char-downcase (char string (+ start i)))))
       (setq just-saw-alphanum-p (alphanumericp (char string (+ start i)))))))
 
-(defun jscl/cl::string-equal (s1 s2 &key start1 end1 start2 end2)
+(defun jscl/cl:string-equal (s1 s2 &key start1 end1 start2 end2)
   (let* ((s1 (string s1))
          (s2 (string s2))
          (n1 (length s1))
@@ -239,11 +239,11 @@ handled correctly yet."
     (when (= (- end2 start2) (- end1 start1))
       (dotimes (i (- end2 start2) t)
         (unless (char-equal (char s1 (+ start1 i)) (char s2 (+ start2 i)))
-          (return-from jscl/cl::string-equal nil))))))
+          (return-from jscl/cl:string-equal nil))))))
 
 ;; just like  string/= but with  char-equal instead of char=  (TODO: use
 ;; the same code then?)
-(defun jscl/cl::string-not-equal (s1 s2 &key (start1 0) end1 (start2 0) end2)
+(defun jscl/cl:string-not-equal (s1 s2 &key (start1 0) end1 (start2 0) end2)
   (let* ((s1 (string s1))
          (s2 (string s2))
          (n1 (length s1))
@@ -253,14 +253,14 @@ handled correctly yet."
     (dotimes (i (max (- end1 start1) (- end2 start2)) nil)
       (when (or (>= (+ start1 i) n1)
                 (>= (+ start2 i) n2))
-        (return-from jscl/cl::string-not-equal (+ start1 i)))
+        (return-from jscl/cl:string-not-equal (+ start1 i)))
       (unless (char-equal (char s1 (+ start1 i)) (char s2 (+ start2 i)))
-        (return-from jscl/cl::string-not-equal (+ start1 i))))))
+        (return-from jscl/cl:string-not-equal (+ start1 i))))))
 
-(defun jscl/cl::string-trim (character-bag string)
+(defun jscl/cl:string-trim (character-bag string)
   (string-left-trim character-bag (string-right-trim character-bag string)))
 
-(defun jscl/cl::string-left-trim (character-bag string)
+(defun jscl/cl:string-left-trim (character-bag string)
   (let* ((string (string string))
          (n (length string))
          (start (or (position-if-not (lambda (c) (find c character-bag))
@@ -268,9 +268,9 @@ handled correctly yet."
                     n)))
     (subseq string start)))
 
-(defun jscl/cl::string-right-trim (character-bag string)
+(defun jscl/cl:string-right-trim (character-bag string)
   (let* ((string (string string))
          (n (length string)))
     (dotimes (i n "")
       (when (not (find (char string (- n i 1)) character-bag))
-        (return-from jscl/cl::string-right-trim (subseq string 0 (- n i)))))))
+        (return-from jscl/cl:string-right-trim (subseq string 0 (- n i)))))))

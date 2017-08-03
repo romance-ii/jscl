@@ -18,21 +18,21 @@
 
 
 
-(defun jscl/cl::symbol-plist (x)
+(defun jscl/cl:symbol-plist (x)
   (cond
     ((not (symbolp x))
      (error "`~a' is not a symbol." x))
     ((jscl/js::in "plist" x)
      (jscl/ffi:oget* x "plist"))))
 
-(defun jscl/cl::set-symbol-plist (new-value x)
+(defun jscl/cl:set-symbol-plist (new-value x)
   (unless (symbolp x )
     (error "`~a' is not a symbol." x))
   (unless (listp new-value)
     (error "`~a' is not a list." new-value))
   (jscl/ffi::oset* new-value x "plist"))
 
-(define-setf-expander jscl/cl::symbol-plist (x)
+(define-setf-expander jscl/cl:symbol-plist (x)
   (let ((g!x (gensym "SYMBOL-"))
         (g!value (gensym "VALUE-")))
     (values (list g!x)
@@ -41,5 +41,5 @@
             `(set-symbol-plist ,g!value ,g!x)
             `(symbol-plist ,g!x))))
 
-(defun jscl/cl::get (symbol indicator &optional default)
+(defun jscl/cl:get (symbol indicator &optional default)
   (getf (symbol-plist symbol) indicator default))

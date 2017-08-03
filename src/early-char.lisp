@@ -115,11 +115,11 @@
     (120772 . 120779) (131072 . 173782) (173824 . 177972) (194560 . 195101))
   "(Start . End) ranges of codepoints for alphabetic characters, as of Unicode 6.2.")
 
-(defun jscl/cl::alpha-char-p (char)
+(defun jscl/cl:alpha-char-p (char)
   (let ((code (char-code char)))
     (dolist (alpha-pair +unicode-alphas+)
       (when (<= (car alpha-pair) code (cdr alpha-pair))
-        (return-from jscl/cl::alpha-char-p t)))
+        (return-from jscl/cl:alpha-char-p t)))
     nil))
 
 ;; I made this  list by running DIGIT-CHAR-P in SBCL  on every codepoint
@@ -143,7 +143,7 @@
       1)))
 
 ;; From comment #4 on <https://bugs.launchpad.net/sbcl/+bug/1177986>:
-(defun jscl/cl::digit-char-p (char &optional (radix 10))
+(defun jscl/cl:digit-char-p (char &optional (radix 10))
   "Includes ASCII 0-9 a-z A-Z, plus any Unicode decimal digit characters or fullwidth variants A-Z."
   ;; Check-Type   not  available   yet.   This  could   maybe  move   to
   ;; char.lisp though?
@@ -163,7 +163,7 @@
                           (t nil))))
     (and potential (< potential radix) potential)))
 
-(defun jscl/cl::digit-char (weight &optional (radix 10))
+(defun jscl/cl:digit-char (weight &optional (radix 10))
   "All arguments must be integers. Returns a character object that represents
 a digit of the given weight in the specified radix. Returns NIL if no such
 character exists."

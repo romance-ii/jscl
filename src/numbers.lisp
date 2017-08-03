@@ -44,69 +44,69 @@
   (def / (/ 1 x)))
 
 
-(defconstant jscl/cl::most-positive-fixnum
+(defconstant jscl/cl:most-positive-fixnum
   #+jscl (jscl/ffi:oget (jscl/js::%js-vref "Number" t) "MAX_SAFE_INTEGER")
   #-jscl +most-positive-fixnum+
   "JS integers  are really floats with  no exponent, there is  a limited
  range; see
  https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/MAX_SAFE_INTEGER")
 
-(defconstant jscl/cl::most-negative-fixnum
+(defconstant jscl/cl:most-negative-fixnum
   #+jscl (jscl/ffi:oget (jscl/js::%js-vref "Number" t) "MIN_SAFE_INTEGER")
   #-jscl +most-negative-fixnum+
   "JS integers  are really floats with  no exponent, there is  a limited
  range; see
  https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/MIN_SAFE_INTEGER")
 
-(defun jscl/cl::fixnump (number)
+(defun jscl/cl:fixnump (number)
   (declare #+jscl jscl::pure)
   (and (integerp number)
-       (<= jscl/cl::most-negative-fixnum
+       (<= jscl/cl:most-negative-fixnum
            number
-           jscl/cl::most-positive-fixnum)))
+           jscl/cl:most-positive-fixnum)))
 
-(defun jscl/cl::1+ (x)
+(defun jscl/cl:1+ (x)
   (declare #+jscl jscl::pure)
   (+ x 1))
-(defun jscl/cl::1- (x)
+(defun jscl/cl:1- (x)
   (declare #+jscl jscl::pure)
   (- x 1))
 
 
-(defun jscl/cl::floor (x &optional (y 1))
+(defun jscl/cl:floor (x &optional (y 1))
   (declare #+jscl jscl::pure)
   (jscl/js::%floor (/ x y)))
 
-(defun jscl/cl::ceiling (x &optional (y 1))
+(defun jscl/cl:ceiling (x &optional (y 1))
   (declare #+jscl jscl::pure)
   (jscl/js::%ceiling (/ x y)))
 
-(defun jscl/cl::truncate (x &optional (y 1))
+(defun jscl/cl:truncate (x &optional (y 1))
   (declare #+jscl jscl::pure)
   (let ((z (/ x y)))
     (if (> z 0)
         (jscl/js::%floor z)
         (jscl/js::%ceiling z))))
 
-(defun jscl/cl::integerp (x)
+(defun jscl/cl:integerp (x)
   (declare #+jscl jscl::pure)
   (and (numberp x) (= (floor x) x)))
 
-(defun jscl/cl::floatp (x)
+(defun jscl/cl:floatp (x)
   (declare #+jscl jscl::pure)
   (and (numberp x) (not (integerp x))))
 
-(defun jscl/cl::minusp (x)
+(defun jscl/cl:minusp (x)
   (declare #+jscl jscl::pure)
   (< x 0))
-(defun jscl/cl::zerop (x)
+(defun jscl/cl:zerop (x)
   (declare #+jscl jscl::pure)
   (= x 0))
-(defun jscl/cl::plusp (x) 
+(defun jscl/cl:plusp (x) 
   (declare #+jscl jscl::pure)
   (< 0 x))
 
-(defun jscl/cl::signum (x)
+(defun jscl/cl:signum (x)
   (declare #+jscl jscl::pure)
   (cond ((zerop x) 0)
         ((not (realp x)) (/ x (abs x)))
@@ -127,10 +127,10 @@
   (def <=)
   (def /=))
 
-(defconstant jscl/cl::pi 3.141592653589793)
+(defconstant jscl/cl:pi 3.141592653589793)
 
-(defun jscl/cl::evenp (x) (= (mod x 2) 0))
-(defun jscl/cl::oddp  (x) (not (evenp x)))
+(defun jscl/cl:evenp (x) (= (mod x 2) 0))
+(defun jscl/cl:oddp  (x) (not (evenp x)))
 
 (macrolet ((def (name comparison)
              `(defun ,(intern (string name) :jscl/cl) (x &rest xs)
@@ -159,23 +159,23 @@
   (def sqrt)
   (def tan)
   (def tanh))
-(defun jscl/cl::abs (x) 
+(defun jscl/cl:abs (x) 
   (declare #+jscl jscl::pure)
   (if (> x 0) x (- x)))
 
-(defun jscl/cl::expt (base power)
+(defun jscl/cl:expt (base power)
   (declare #+jscl jscl::pure)
   (expt base power))
 (defconstant +e+ 2.718281828459045)
-(defun jscl/cl::exp (power)
+(defun jscl/cl:exp (power)
   (declare #+jscl jscl::pure)
   (expt +e+ power))
 
-(defun jscl/cl::isqrt (x)
+(defun jscl/cl:isqrt (x)
   (declare #+jscl jscl::pure)
   (floor (sqrt x)))
 
-(defun jscl/cl::log (number &optional (base +e+))
+(defun jscl/cl:log (number &optional (base +e+))
   (declare #+jscl jscl::pure)
   (if (= base +e+)
       (jscl/impl::log number)
@@ -187,7 +187,7 @@
       (abs a)
       (gcd-2 b (mod a b))))
 
-(defun jscl/cl::gcd (&rest integers)
+(defun jscl/cl:gcd (&rest integers)
   (declare #+jscl jscl::pure)
   (cond ((null integers)
          0)
@@ -204,7 +204,7 @@
       0
       (/ (abs (* a b)) (gcd a b))))
 
-(defun jscl/cl::lcm (&rest integers)
+(defun jscl/cl:lcm (&rest integers)
   (declare #+jscl jscl::pure)
   (cond ((null integers)
          1)
