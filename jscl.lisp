@@ -91,8 +91,23 @@ During  bootstrap,  these  forms  are  evaluated  instead  as  calls  to
   #-(or sbcl clisp ecl lispworks)
   (:use #.(warn "You will probably need to add your Gray Streams ~
 and MOP into JSCL USE list"))
-  (:export #:run-tests-in-host #:with-sharp-j #:read-#j
-           #:write-javascript-for-files #:compile-application)
+  (:export #:run-tests-in-host #:write-javascript-for-files #:compile-application)
+  (:export #:with-sharp-j #:read-#j)
+  (:export #:muffle-conditions)
+  (:export
+   #:early-deprecation-warning
+   #:format-too-few-args-warning
+   #:format-too-many-args-warning
+   #:ftype-proclamation-mismatch-warning
+   #:function-redefinition-warning
+   #:implicit-generic-function-warning
+   #:redefine-layout-warning
+   #:redefine-structure-warning
+   #:redefinition-warning
+   #:simple-style-warning
+   #:style-warning
+   #:type-proclamation-mismatch-warning
+   #:type-warning)
   (:nicknames :jscl/hosted)
   (:documentation "JavaScript  from Common  Lisp. This  package contains
  the   internals   and   exports    some   utility   functions   needed
