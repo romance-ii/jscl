@@ -82,12 +82,28 @@
       (car name)
       name))
 
+(define-condition jscl/cl:error (#-jscl error) ())
+
+(define-condition jscl/cl:type-error (jscl/cl:error #-jscl type-error) ()
+  (:report "A Type-Error has occurred.
+
+This error  condition is signaled  when the Type  of an object  does not
+match the allowed types for an operation."))
+
+(define-condition type-error-undefined-type (jscl/cl:type-error)
+  ((specifier :reader type-error-undefined-type-specifier
+              :initarg :specifier))
+  (:report (lambda (c s)
+             (format s "The type specifier ~s does not represent any defined type."
+                     (type-error-undefined-type-specifier c)))))
+
 (defun find-type-definition (type &optional (environment *environment*))
   (or (let ((b (or (lookup-in-lexenv type environment 'type)
                    (lookup-in-lexenv type *global-environment* 'type))))
         (when b
           (binding-value b)))
-      (error "~s does not name a type" type)))
+      (error 'type-error-undefined-type :specifier type)
+      #+jscl (error "~s does not name a type" type)))
 
 (defun jscl/cl::subtypep (subtype supertype)
   (let* ((sub (find-type-definition subtype))
@@ -146,6 +162,15 @@
 (defstruct deftype-class-metaobject
   name)
 
+(define-condition syntax-error (jscl/cl:error) ())
+
+(define-condition type-specifier-parse-error (syntax-error)
+  ()
+  (:report "The type specifier could not be understood.
+
+Since  JSCL is  still not  ANSI compliant,  this could  indicate a  type
+specifier that is more complex than JSCL is able to parse currently."))
+
 (defun make-deftype-predicate (name lambda-list body)
   (assert (and (listp body)
                (listp (car body))
@@ -163,7 +188,7 @@
                                     (rest body))))
           ;; FIXME: compound specifiers handling
           ((not (= (length body) 2))
-           (error "Don't understand type specifier ~s" body))
+           (error 'type-specifier-parse-error))
           ((eql (car body) 'not)
            (cons (car body) (mapcar (lambda (form)
                                       (make-deftype-predicate name lambda-list form))
@@ -176,7 +201,7 @@
                 (eql 'mod (car body)))
            `(and (integerp object) (<= 0 object) (< object ,(second body))))
           ;; TODO: VALUES forms
-          (t (error "Don't understand type specifier ~s" body)))))
+          (t (error 'type-specifier-parse-error)))))
 
 
 (defun jscl/cl::typep (object type &optional (environment *environment*))
@@ -188,13 +213,12 @@
                        (find-type-definition (car type) environment))))
        (if predicate
            (apply predicate object (cdr type))
-           (error "Can't handle type specifier ~s; is it valid?"
-                  type))))
+           (error 'type-specifier-parse-error))))
     ((symbolp type)
      (funcall (type-definition-predicate
                (find-type-definition type environment))
               object))
-    (t (error "~s is not a valid type specifier" type))))
+    (t (error 'type-specifier-parse-error type))))
 
 (defmacro jscl/cl::restart-case (expression &body clauses)
   ;; FIXME: I don't belong here
@@ -308,6 +332,21 @@ since the supertype comes first, the subtype~1@*~p will never be matched."
                          ,@(or body (cons nil nil)))))
                    clauses)))))
 
+(define-condition etypecase-failure (jscl/cl:error)
+  ((allowed :reader etypecase-allowed-types
+            :initarg :allowed)
+   (object :reader etypecase-failure-object
+           :initarg :object))
+  (:report (lambda (c s)
+             (format s "ETypeCase failure
+
+The object ~s (type ~s) did not match any type name in ETYPECASE.
+
+Allowed types are ~{~s~^, ~}"
+                     (etypecase-failure-object c)
+                     (type-of (etypecase-failure-object c))
+                     (etypecase-allowed-types c)))))
+
 (defmacro jscl/cl::etypecase (value &rest clauses)
   (let ((evaluated (gensym "ETYPECASE-VALUE-"))
         (unique-types (typecase-unique-types (mapcar #'car clauses))))
@@ -317,12 +356,10 @@ nothing will fall through this case"))
     `(let ((,evaluated ,value))
        (jscl/cl::typecase ,evaluated
          ,@clauses
-         (t (error "~S (type: ~s) fell through etypecase expression.
-Expected one of: ~a"
-                   ,evaluated (type-of ,evaluated)
-                   ,(format nil "~{~a~^, ~}"
-                            (sort unique-types #'string<
-                                  :key #'symbol-name))))))))
+         (t (error 'etypecase-failure
+                   :object ,evaluated 
+                   ,(sort unique-types #'string<
+                          :key #'symbol-name)))))))
 
 
 ;;; Standard  compound type  specifiers  based on  the  regular types  —
