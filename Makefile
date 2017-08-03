@@ -88,6 +88,7 @@ jscl-repl:	$(ALL_LISP)
 
 repl-web.js:	$(ALL_LISP)
 	$(LISP) $(LISPFLAGS) $(LISPLOAD)jscl.lisp \
+		$(LISPEVAL)'(jscl/bootstrap::load-jscl)' \
 		$(LISPEVAL)'(jscl/bootstrap::bootstrap)' \
 		$(LISPEVAL)'(jscl/bootstrap::compile-web-repl)' 2>&1 |tee repl-web.js.build.log
 
