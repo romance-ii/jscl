@@ -76,6 +76,7 @@
     ("backquote"     :both)
     ("compiler"
      ("codegen"      :both)
+     ("source-map"	:both)
      ("compiler"     :both))
     ("documentation" :target)
     ("toplevel"      :target)))
