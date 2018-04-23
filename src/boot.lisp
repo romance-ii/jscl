@@ -1,6 +1,7 @@
 ;;; boot.lisp --- First forms to be cross compiled
 
-;; Copyright (C) 2012, 2013 David Vazquez Copyright (C) 2012 Raimon Grau
+;; Copyright (C) 2012, 2013 David Vazquez
+;;; Copyright (C) 2012 Raimon Grau
 
 ;; JSCL is  free software:  you can  redistribute it  and/or modify it  under the  terms of  the GNU
 ;; General Public  License as published  by the  Free Software Foundation,  either version 3  of the
@@ -36,12 +37,12 @@
                   ;; macroexpander will need to be dumped in the final environment somehow.
                   (when (find :jscl-xc *features*)
                     (setq expander `(quote ,expander)))
-
+                  
                   `(eval-when (:compile-toplevel :execute)
                      (%compile-defmacro ',name ,expander))
 
                   )))))
-
+    
     (%compile-defmacro 'defmacro defmacro-macroexpander)))
 
 (defmacro declaim (&rest decls)
@@ -117,6 +118,9 @@
 
 (defun apply (function arg &rest args)
   (apply function (apply #'list* arg args)))
+
+(defun symbol-name (x)
+  (symbol-name x))
 
 ;; Basic macros
 
@@ -245,7 +249,7 @@
   `(block nil
      (let ,(mapcar (lambda (x) (if (symbolp x)
                                    (list x nil)
-                                   (list (first x) (second x)))) varlist)
+                                 (list (first x) (second x)))) varlist)
        (while t
          (when ,(car endlist)
            (return (progn ,@(cdr endlist))))
@@ -262,7 +266,7 @@
   `(block nil
      (let* ,(mapcar (lambda (x1) (if (symbolp x1)
                                      (list x1 nil)
-                                     (list (first x1) (second x1)))) varlist)
+                                   (list (first x1) (second x1)))) varlist)
        (while t
          (when ,(car endlist)
            (return (progn ,@(cdr endlist))))
@@ -409,23 +413,23 @@ macro cache is so aggressive that it cannot be redefined."
                      (if (find (car c) '(t otherwise))
                          `(t ,@(rest c))
                          `((,(ecase (car c)
-                               (fixnum 'integerp)
+                                    (fixnum 'integerp)
                                (number 'numberp)
-                               (integer 'integerp)
-                               (cons 'consp)
-                               (list 'listp)
-                               (vector 'vectorp)
-                               (character 'characterp)
-                               (sequence 'sequencep)
-                               (symbol 'symbolp)
-                               (keyword 'keywordp)
-                               (function 'functionp)
-                               (float 'floatp)
-                               (array 'arrayp)
-                               (string 'stringp)
-                               (atom 'atom)
-                               (null 'null)
-                               (package 'packagep))
+                                    (integer 'integerp)
+                                    (cons 'consp)
+                                    (list 'listp)
+                                    (vector 'vectorp)
+                                    (character 'characterp)
+                                    (sequence 'sequencep)
+                                    (symbol 'symbolp)
+                                    (keyword 'keywordp)
+                                    (function 'functionp)
+                                    (float 'floatp)
+                                    (array 'arrayp)
+                                    (string 'stringp)
+                                    (atom 'atom)
+                                    (null 'null)
+                                    (package 'packagep))
                              ,value)
                            ,@(or (rest c)
                                  (list nil)))))
@@ -440,7 +444,16 @@ macro cache is so aggressive that it cannot be redefined."
 
 ;;; No type system is implemented yet.
 (defun subtypep (type1 type2)
-  (values nil nil))
+  (cond
+    ((null type1)
+     (values t t))
+    ((eq type1 type2)
+     (values t t))
+    ((eq type2 'number)
+     (values (and (member type1 '(fixnum integer)) t)
+             t))
+    (t
+     (values nil nil))))
 
 (defun notany (fn seq)
   (not (some fn seq)))

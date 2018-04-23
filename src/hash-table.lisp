@@ -10,10 +10,10 @@
 ;; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
 ;; for more details.
 ;;
-;; You should  have received a  copy of  the GNU General  Public License
-;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
+;; You should have received a copy of the GNU General Public License
+;; along with JSCL.  If not, see <http://www.gnu.org/licenses/>.
 
-;;; Plain Javascript  objects are  the natural  way to  implement Common
+;;; Plain Javascript objects are the natural way to implement Common
 ;;; Lisp hash tables. However, there  is a big differences betweent them
 ;;; which we need to work around. Javascript objects require the keys to
 ;;; be strings. To solve that, we  map Lisp objects to strings such that
@@ -44,8 +44,8 @@
   (eq-hash x))
 
 
-;;; In the case of equal-based hash tables,  we do not store the hash in
-;;; the objects, but compute a hash from the elements it contains.
+;;; In the case of equal-based hash tables, we do not store the hash
+;;; in the objects, but compute a hash from the elements it contains.
 (defun equal-hash (x)
   (typecase x
     (cons
@@ -56,8 +56,7 @@
      (eql-hash x))))
 
 (defun equalp-hash (x)
-  ;; equalp is not implemented as predicate. So I am skipping this one by now.
-  )
+  (error 'unimplemented))
 
 
 (defun make-hash-table (&key (test #'eql) size)
@@ -98,8 +97,8 @@
             (list g!new-value)                              ; store variables
             `(progn
                (sethash ,g!new-value ,g!key ,g!hash-table)  ; storing form
-               ,g!new-value)
-            `(gethash ,g!new-value ,g!key ,g!hash-table)    ; accessing form
+               ,g!new-value)              
+            `(gethash ,g!key ,g!hash-table)    ; accessing form
             )))
 
 
@@ -121,6 +120,6 @@
 
 (defun maphash (function hash-table)
   (map-for-in (lambda (x)
-                (funcall function (car x) (cdr x)))
-              (caddr hash-table))
+		(funcall function (car x) (cdr x)))
+	      (caddr hash-table))
   nil)

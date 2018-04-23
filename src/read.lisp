@@ -1,6 +1,7 @@
-;;; read.lisp ---
+;;; read.lisp --- 
 
-;; Copyright (C) 2012, 2013 David Vazquez Copyright (C) 2012 Raimon Grau
+;; Copyright (C) 2012, 2013 David Vazquez
+;;; Copyright (C) 2012 Raimon Grau
 
 ;; JSCL is free software: you can redistribute it and/or modify it under
 ;; the terms of the GNU General  Public License as published by the Free
@@ -12,18 +13,18 @@
 ;; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
 ;; for more details.
 ;;
-;; You should  have received a  copy of  the GNU General  Public License
-;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
+;; You should have received a copy of the GNU General Public License
+;; along with JSCL.  If not, see <http://www.gnu.org/licenses/>.
 
 (/debug "loading read.lisp!")
 
 ;;;; Reader
 
-;;; If it  is not NIL, we  do not want  to read the expression  but just
+;;; If it is not NIL, we do not want to read the expression but just
 ;;; ignore it. For example, it is used in conditional reads #+.
 (defvar *read-skip-p* nil)
 
-;;; The Lisp  reader, parse  strings and return  Lisp objects.  The main
+;;; The Lisp reader, parse strings and return Lisp objects. The main
 ;;; entry points are `ls-read' and `ls-read-from-string'.
 
 ;;; #= / ## implementation
@@ -220,7 +221,6 @@
         (destructuring-bind (subexpr) (rest expression)
           (not (eval-feature-expression subexpr))))))))
 
-
 (defun read-integer-from-stream (stream)
   (parse-integer (read-until stream
                              (lambda (ch)
@@ -247,7 +247,7 @@
             (dotimes (i index)
               (aset result (decf index) (pop elements)))
             result)
-         (let* ((ix index)      ; Can't just use index: the same var would be captured in all fixups
+         (let* ((ix index) ; Can't just use index: the same var would be captured in all fixups
                 (*make-fixup-function* (lambda ()
                                          (lambda (obj)
                                            (aset result ix obj))))
@@ -267,15 +267,15 @@
               (let ((*read-base* 16))
                 (code-char (read-integer-from-stream stream))))
              (t (let ((cname
-                       (concat (string (%read-char stream))
-                               (read-until stream #'terminalp))))
+              (concat (string (%read-char stream))
+                      (read-until stream #'terminalp))))
                   (let ((ch (name-char cname)))
                     (or ch (char cname 0)))))))
       ((#\+ #\-)
        (let* ((expression
                (let ((*package* (find-package :keyword)))
                  (ls-read stream eof-error-p eof-value t))))
-
+         
          (if (eql (char= ch #\+) (eval-feature-expression expression))
              (ls-read stream eof-error-p eof-value t)
              (prog2 (let ((*read-skip-p* t))
@@ -367,7 +367,7 @@
     (dotimes (i (length s))
       (let ((ch (char s i)))
         (if last-escape
-            (progn
+           (progn
               (setf last-escape nil)
               (setf result (concat result (string ch))))
             (if (char= ch #\\)
@@ -375,9 +375,10 @@
                 (setf result (concat result (string-upcase (string ch))))))))
     result))
 
-;;; Parse a  string of  the form NAME,  PACKAGE:NAME or  PACKAGE::NAME and return  the name.  If the
-;;; string is of the form  1) or 3), but the symbol does not exist, it  will be created and interned
-;;; in that package.
+;;; Parse a string of the form NAME, PACKAGE:NAME or
+;;; PACKAGE::NAME and return the symbol. If the string is of the
+;;; form 1) or 3), but the symbol does not exist, it will be created
+;;; and interned in that package.
 (defun read-symbol (string)
   (let ((size (length string))
         package name internalp index)
@@ -506,39 +507,39 @@
 
 (defun !parse-integer (string junk-allow &optional (radix *read-base*))
   (let ((radix (or radix 10)))
-    (block nil
-      (let ((value 0)
-            (index 0)
-            (size (length string))
-            (sign 1))
-        ;; Leading whitespace
-        (while (and (< index size)
-                    (whitespacep (char string index)))
-          (incf index))
-        (unless (< index size) (return (values nil 0)))
-        ;; Optional sign
-        (case (char string 0)
-          (#\+ (incf index))
-          (#\- (setq sign -1)
-               (incf index)))
-        ;; First digit
-        (unless (and (< index size)
+  (block nil
+    (let ((value 0)
+          (index 0)
+          (size (length string))
+          (sign 1))
+      ;; Leading whitespace
+      (while (and (< index size)
+                  (whitespacep (char string index)))
+        (incf index))
+      (unless (< index size) (return (values nil 0)))
+      ;; Optional sign
+      (case (char string 0)
+        (#\+ (incf index))
+        (#\- (setq sign -1)
+             (incf index)))
+      ;; First digit
+      (unless (and (< index size)
                      (setq value (digit-char-p (char string index) radix)))
-          (return (values nil index)))
-        (incf index)
-        ;; Other digits
-        (while (< index size)
+        (return (values nil index)))
+      (incf index)
+      ;; Other digits
+      (while (< index size)
           (let ((digit (digit-char-p (char string index) radix)))
-            (unless digit (return))
+          (unless digit (return))
             (setq value (+ (* value radix) digit))
-            (incf index)))
-        ;; Trailing whitespace
-        (do ((i index (1+ i)))
-            ((or (= i size) (not (whitespacep (char string i))))
-             (and (= i size) (setq index i))))
-        (if (or junk-allow
-                (= index size))
-            (values (* sign value) index)
+          (incf index)))
+      ;; Trailing whitespace
+      (do ((i index (1+ i)))
+          ((or (= i size) (not (whitespacep (char string i))))
+           (and (= i size) (setq index i))))
+      (if (or junk-allow
+              (= index size))
+          (values (* sign value) index)
             (values nil index))))))
 
 #+jscl

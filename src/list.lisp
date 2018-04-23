@@ -302,6 +302,12 @@
             `(progn (rplacd ,cons ,new-value) ,new-value)
             `(cdr ,cons))))
 
+(define-setf-expander first (x)
+  (get-setf-expansion `(car ,x)))
+
+(define-setf-expander rest (x)
+  (get-setf-expansion `(cdr ,x)))
+
 
 ;; The NCONC function is based on the SBCL's one.
 (defun nconc (&rest lists)

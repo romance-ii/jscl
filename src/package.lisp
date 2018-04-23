@@ -10,8 +10,8 @@
 ;; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
 ;; for more details.
 ;;
-;; You should  have received a  copy of  the GNU General  Public License
-;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
+;; You should have received a copy of the GNU General Public License
+;; along with JSCL.  If not, see <http://www.gnu.org/licenses/>.
 
 (/debug "loading package.lisp!")
 
@@ -102,12 +102,19 @@
          (setf exports (append exports (cdr option))))))
     `(progn
        (eval-when (:load-toplevel :execute)
-         (%defpackage ',(string package) ',use)
-         ,@(mapcar (lambda (symbol)
-                     `(export (intern ,(string symbol) (find-package ,(string package)))))
-                   exports))
+         (let ((package (%defpackage ',(string name) ',use)))
+           (export
+            (mapcar (lambda (symbol) (intern (symbol-name symbol) package)) ',exports)
+            package)
+           package))
        (eval-when (:compile-toplevel)
-         (make-package ',(string package) :use ',use)))))
+         (let ((package
+                 (or (find-package ,name)
+                     (make-package ',(string name) :use ',use))))
+           (export
+            (mapcar (lambda (symbol) (intern (symbol-name symbol) package)) ',exports)
+            package)
+           package)))))
 
 (defun redefine-package (package use)
   (setf (oget package "use") use)
@@ -133,7 +140,7 @@
        (dolist (used (package-use-list package) (values nil nil))
          (let ((exports (%package-external-symbols used)))
            (when (in name exports)
-             (return (values (oget exports name) :inherit)))))))))
+             (return (values (oget exports name) :inherited)))))))))
 
 ;;; It is a function to call when a symbol is interned. The function
 ;;; is invoked with the already interned symbol as argument.
@@ -164,7 +171,7 @@
 
 (defun export (symbols &optional (package *package*))
   (let ((exports (%package-external-symbols package)))
-    (dolist (symb symbols t)
+    (dolist (symb (ensure-list symbols) t)
       (setf (oget exports (symbol-name symb)) symb))))
 
 (defun %map-external-symbols (function package)
@@ -194,7 +201,7 @@
      ,result-form))
 
 (defmacro do-external-symbols ((var &optional (package '*package*)
-                                    result-form)
+                                              result-form)
                                &body body)
   `(block nil
      (%map-external-symbols

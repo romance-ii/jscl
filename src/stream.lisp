@@ -21,33 +21,66 @@
 (/debug "loading stream.lisp!")
 
 (defvar *standard-output*)
+(defvar *standard-input*)
 
-(defun streamp (x)
-  (and (vectorp x) (eq (aref x 0) 'stream)))
+(def!struct (stream (:predicate streamp))
+  write-fn
+  read-char-fn
+  peek-char-fn
+  kind
+  data)
+
+
+;;; Input streams
+
+(defun make-string-input-stream (string)
+  (let ((index 0))
+    (flet ((peek (eof-error-p)
+             (cond
+               ((< index (length string))
+                (char string index))
+               (eof-error-p
+                (error "End of file"))
+               (t
+                nil))))
+
+      (make-stream
+       :read-char-fn (lambda (eof-error-p)
+                       (prog1 (peek eof-error-p)
+                         (incf index)))
+
+       :peek-char-fn (lambda (eof-error-p)
+                       (peek eof-error-p))))))
+
+(defun peek-char (&optional type (stream *standard-input*) (eof-error-p t))
+  (unless (null type)
+    (error "peek-char with non-null TYPE is not implemented."))
+  (funcall (stream-peek-char-fn stream) eof-error-p))
+
+(defun read-char (&optional (stream *standard-input*) (eof-error-p t))
+  (funcall (stream-read-char-fn stream) eof-error-p))
+
+
+;;; Ouptut streams
 
 (defun write-char (char &optional (stream *standard-output*))
-  (funcall (aref stream 1) char))
+  (funcall (stream-write-fn stream) (string char)))
 
 (defun write-string (string &optional (stream *standard-output*))
-  (funcall (aref stream 2) string))
-
+  (funcall (stream-write-fn stream) string))
 
 (defun make-string-output-stream ()
-  (let ((buffer (make-string 0)))
-    (vector 'stream
-            ;; write-char
-            (lambda (ch)
-              (vector-push-extend ch buffer))
-            (lambda (string)
-              (dotimes (i (length string))
-                (vector-push-extend (aref string i) buffer)))
-            'string-stream
-            buffer)))
+  (let ((buffer (make-array 0 :element-type 'character :fill-pointer 0)))
+    (make-stream
+     :write-fn (lambda (string)
+       (dotimes (i (length string))
+         (vector-push-extend (aref string i) buffer)))
+     :kind 'string-stream
+     :data buffer)))
 
 (defun get-output-stream-string (stream)
-  (eq (aref stream 3) 'string-stream)
-  (prog1 (aref stream 4)
-    (aset stream 4 (make-string 0))))
+  (prog1 (stream-data stream)
+    (setf (stream-data stream) (make-string 0))))
 
 (defmacro with-output-to-string ((var) &body body)
   `(let ((,var (make-string-output-stream)))

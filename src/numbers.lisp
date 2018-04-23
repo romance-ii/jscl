@@ -42,12 +42,21 @@
   (def / (/ 1 x)))
 
 
+(defconstant most-positive-fixnum
+  (oget (%js-vref "Number" t) "MAX_SAFE_INTEGER"))
+
+(defconstant most-negative-fixnum
+  (oget (%js-vref "Number" t) "MIN_SAFE_INTEGER"))
+
+
 (defun 1+ (x) (+ x 1))
 (defun 1- (x) (- x 1))
 
 
 (defun floor (x &optional (y 1))
-  (%floor (/ x y)))
+  (let ((quotient (%floor (/ x y))))
+    (values quotient
+            (- x (* quotient y)))))
 
 (defun ceiling (x &optional (y 1))
   (%ceiling (/ x y)))

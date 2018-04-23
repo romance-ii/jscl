@@ -10,8 +10,8 @@
 ;; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
 ;; for more details.
 ;;
-;; You should  have received a  copy of  the GNU General  Public License
-;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
+;; You should have received a copy of the GNU General Public License
+;; along with JSCL.  If not, see <http://www.gnu.org/licenses/>.
 
 (/debug "loading array.lisp!")
 
@@ -32,12 +32,18 @@
           (setf element-type 'character
                 initial-element (or initial-element #\space)))
         (setf element-type t))
+
+    (when (and (listp dimensions)
+               (not (null (cdr dimensions)))
+               fill-pointer)
+      (error "FILL-POINTER cannot be specified on multidimensional arrays."))
+
     ;; Initialize array
-    (dotimes (i size)
-      (storage-vector-set array i initial-element))
+    (storage-vector-fill array initial-element)
     ;; Record and return the object
-    (oset element-type array "type")
-    (oset dimensions array "dimensions")
+    (setf (oget array "type") element-type)
+    (setf (oget array "dimensions") dimensions)
+    (setf (oget array "fillpointer") fill-pointer)
     array))
 
 
@@ -67,12 +73,12 @@
 
 (defun aref (array index)
   (unless (arrayp array)
-    (error "~S is not an array." array))
+    (error "~S is not an array." array))  
   (storage-vector-ref array index))
 
 (defun aset (array index value)
   (unless (arrayp array)
-    (error "~S is not an array." array))
+    (error "~S is not an array." array))  
   (storage-vector-set array index value))
 
 (define-setf-expander aref (array index)
@@ -86,6 +92,26 @@
             `(aref ,g!array ,g!index))))
 
 
+(defun array-has-fill-pointer-p (array)
+  (and (oget array "fillpointer") t))
+
+(defun fill-pointer (array)
+  (unless (arrayp array)
+    (error "~S is not an array" array))
+  (unless (array-has-fill-pointer-p array)
+    (error "~S does not have a fill pointer" array))
+  (oget array "fillpointer"))
+
+(defun set-fill-pointer (array new-value)
+  (unless (arrayp array)
+    (error "~S is not an array" array))
+  (unless (array-has-fill-pointer-p array)
+    (error "~S does not have a fill pointer" array))
+  (setf (oget array "fillpointer") new-value))
+
+(defsetf fill-pointer set-fill-pointer)
+
+
 ;;; Vectors
 
 (defun vectorp (x)
@@ -95,11 +121,10 @@
   (list-to-vector objects))
 
 ;;; FIXME: should take optional min-extension.
-;;; FIXME: should use fill-pointer instead of the absolute end of array
-(defun vector-push-extend (new vector)
+(defun vector-push-extend (new-element vector)
   (unless (vectorp vector)
-    (error "~S is not a vector." vector))
-  (let ((size (storage-vector-size vector)))
-    (resize-storage-vector vector (1+ size))
-    (aset vector size new)
-    size))
+    (error "~S is not a vector." vector))  
+  ;; Note that JS will automatically grow the array as new elements
+  ;; are assigned, so no need to do `adjust-array` here.
+  (storage-vector-set! vector (fill-pointer vector) new-element)
+  (incf (fill-pointer vector)))
