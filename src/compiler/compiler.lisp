@@ -1202,7 +1202,7 @@ It should be macroexpanded before reaching COMPILE-SEXP"
        (apply name args))
       (t (compile-funcall name args)))))
 
-(defun convert-1/symbol (sexp)
+(defun convert%/symbol (sexp)
   (let ((b (lookup-in-lexenv sexp *environment* 'variable)))
     (cond
       ((and b (not (member 'special (binding-declarations b))))
@@ -1287,9 +1287,10 @@ than baffling errors because of macro-forms being treated as functions."
       (keywordp object)
       (typep object 'structure-object)))
 
-(defun convert-1 (sexp &optional multiple-value-p)
+(defun convert% (sexp &optional (multiple-value-p t))
   "Translate  SEXP  (which  can  be  a  single  symbol  or  value)  into
-JavaScript  AST  form  for  the   code  generator.
+JavaScript AST form  for the code generator. This is  the internal form;
+users should call `CONVERT', which has a recursion guard around it.
 
 Expands  all  macros.
 
@@ -1299,7 +1300,7 @@ not, the simplified forms that accept  only a primary value returned can
 be used."
   (multiple-value-bind (sexp expandedp) (jscl/cl::macroexpand-1 sexp)
     (when expandedp
-      (return-from convert-1 (convert sexp multiple-value-p)))
+      (return-from convert% (convert sexp multiple-value-p)))
     ;; The expression has been macroexpanded. Now compile it!
     (let ((sexp (check-for-failed-macroexpansion sexp)))
       (let ((*multiple-value-p* multiple-value-p)
@@ -1307,7 +1308,7 @@ be used."
         (cond
           ((null sexp)	(literal nil))
           ((listp sexp)	(compile-sexp sexp))
-          ((symbolp sexp)	(convert-1/symbol sexp))
+          ((symbolp sexp)	(convert%/symbol sexp))
           ((rational-float-p sexp)
            (literal (rational-float-p sexp)))
           ((object-evaluates-to-itself-p sexp)
@@ -1317,14 +1318,22 @@ be used."
 
 (defvar *convert-recursion-guard* 100)
 
-(defun convert (sexp &optional multiple-value-p)
+(defun convert (sexp &optional (multiple-value-p t))
+  "Given SEXP, convert it into the low-level form for the JSVM.
+
+Expands all macros
+
+If MULTIPLE-VALUE-P,  then it's possible  that SEXP may  return multiple
+values, and  the appropriate  JavaScript wrappers must  be in  place; if
+not, the simplified forms that accept  only a primary value returned can
+be used."
   (let ((*convert-recursion-guard* (1- *convert-recursion-guard*)))
     (when (minusp *convert-recursion-guard*)
       (cerror "Continue, expecting doom"
               "CONVERT recursed very deeply (~:d past the guard limit);~
  this may be out of control."
               (- *convert-recursion-guard*)))
-    (convert-1 sexp multiple-value-p)))
+    (convert% sexp multiple-value-p)))
 
 (defvar *compile-print-toplevels* nil)
 

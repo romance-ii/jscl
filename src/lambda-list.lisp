@@ -344,13 +344,13 @@ where the form is bound is returned."
 ;;; to    avoid   a    circularity.   So    just   define    the   macro
 ;;; function explicitly.
 
-#-jscl-xc
-(defmacro !destructuring-bind (lambda-list expression &body body)
+#- (and fubar jscl-xc)
+(defmacro jscl/cl::destructuring-bind (lambda-list expression &body body)
   (apply #'!expand-destructuring-bind lambda-list expression body))
 
 
 
-#+jscl-xc
+#+ (and fubar jscl-xc)
 (eval-when (:compile-toplevel)
   (let ((macroexpander
          '#'(lambda (form &optional environment)
