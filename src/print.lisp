@@ -954,7 +954,7 @@ but wanted ~~~c in format string"
                ((char= #\/ next)        ; Funcall
                 (let ((function-name-string ""))
                   (while (not (char= #\/ (char control-string 0)))
-                    (concatf function-name-string (pop-char)))
+                    (concatf function-name-string (string (pop-char))))
                   (pop-char)            ; take the trailing /
                   (assert (every (lambda (char)
                                    (or (alphanumericp char)

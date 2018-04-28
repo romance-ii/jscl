@@ -23,7 +23,7 @@
   " Creates  a new  primitive function `name'  with parameters  args and
  @body.  The body  can access  to  the local  environment through  the
  variable *ENVIRONMENT*."
-  (let ((name (intern (symbol-name name) :jscl/cl)))
+  (let ((name (intern (symbol-name name) :jscl/js)))
     `(progn    
        #-jscl
        (defmacro ,name ,args
@@ -394,7 +394,7 @@
 
 
 (define-builtin get-internal-real-time ()
-  `(jscl/js::method-call (jscl/js::new (jscl/js::call |Date|)) "getTime"))
+  `(jscl/js::method-call |Performance| "now"))
 
 
 

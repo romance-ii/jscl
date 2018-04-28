@@ -12,7 +12,7 @@
 ;;
 ;; You should have received a copy of the GNU General Public License
 ;; along with JSCL.  If not, see <http://www.gnu.org/licenses/>.
-(in-package #-jscl :jscl #+jscl :jscl/impl)
+(in-package :jscl)
 
 (defparameter jscl/cl::*features* '(:jscl :common-lisp))
 
@@ -38,31 +38,36 @@
   (null-if-empty
    #+jscl (or (and #j:location #j:location:hostname)
               (and #j:os #j:os:hostname (#j:os:hostname)))
-   #+sbcl (jscl/bootstrap::run-program-compile-time "hostname" '("-d"))
-   #-(or jscl sbcl) "localdomain"))
+   #-jscl (or (cl:short-site-name)
+              (jscl/bootstrap::run-program-compile-time "hostname" '("-d")))))
 
 (defun jscl/cl::long-site-name ()
   (null-if-empty
    #+jscl (or (and #j:location #j:location:origin)
               (and #j:os #j:os:hostname (#j:os:hostname)))
-   #+sbcl (substitute #\Space #\. (string-capitalize
-                                   (jscl/bootstrap::run-program-compile-time "hostname" '("-d"))))
-   #-(or jscl sbcl) "Local Domain"))
+   #-jscl (or (cl:long-site-name)
+              (substitute #\Space #\. 
+                          (string-capitalize
+                           (or (short-site-name)
+                               (jscl/bootstrap::run-program-compile-time
+                                "hostname" '("-d"))))))))
 
 (defun jscl/cl::machine-instance ()
   (null-if-empty
    #+jscl (or (and #j:location #j:location:hostname)
               (and #j:os #j:os:hostname (#j:os:hostname)))
-   #+sbcl (jscl/bootstrap::run-program-compile-time "hostname" ())
-   #-(or jscl sbcl) "localhost"))
+   #+sbcl (or (cl:machine-instance)
+              (jscl/bootstrap::run-program-compile-time "hostname" ()))))
 
 (defun jscl/cl::machine-version ()
   "The platform or OS type"
-  (null-if-empty (let ((platform (or (and #j:navigator #j:navigator:platform)
+  (null-if-empty #+jscl
+                 (let ((platform (or (and #j:navigator #j:navigator:platform)
                                      (and #j:process #j:process:platform))))
                    (if (and platform (find #\Space platform))
                        (subseq platform 0 (position #\Space platform))
-                       platform))))
+                       platform))
+                 #-jscl (cl:machine-version)))
 
 (defun jscl/cl::machine-type ()
   "Probably a CPU type"

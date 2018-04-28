@@ -97,7 +97,7 @@
 
 (defvar *global-environment* (make-lexenv))
 (defvar *environment* *global-environment*)
-(defvar *variable-counter*)
+(defvar *variable-counter* 0)
 
 (defun gvarname (symbol)
   (incf *variable-counter*)
@@ -117,7 +117,7 @@
 
 
 ;;; Toplevel compilations
-(defvar *toplevel-compilations*)
+(defvar *toplevel-compilations* nil)
 
 (defun toplevel-compilation (string)
   (push string *toplevel-compilations*))
@@ -304,9 +304,39 @@ specifier for the condition types that have been muffled.
       (char= #\$ char)
       (alphanumericp char)))
 
+(defun make-camel-case (string)
+  (when (< (length string) 3)
+    (return-from make-camel-case (string-downcase string)))
+  (let ((output (copy-seq string))
+        (offset 0)
+        (index 0))
+    (tagbody start
+       (cond ((and (char= #\- (char string index))
+                   (alpha-char-p (char string (1+ index))))
+              (decf offset)
+              (incf index)
+              (setf (char output (+ index offset)) 
+                    (char-upcase (char string index))))
+             (t
+              (setf (char output (+ index offset))
+                    (char-downcase (char string index)))))
+       
+       (incf index)
+       (when (< index (length string))
+         (go start)))
+    (subseq output 0 (+ index offset))))
+
+(defun string* (object)
+  (etypecase object
+    (string object)
+    (character (string object))
+    (symbol (symbol-name object))
+    (number (princ-to-string object))
+    (vector (coerce object 'string))))
+
 (defun js-name-part (name)
   (substitute-if #\$ (complement #'js-identifier-char-p)
-                 (substitute #\_ #\- (string name))))
+                 (make-camel-case (string* name))))
 
 (defun safe-js-name (&rest name-parts)
   (intern (join (mapcar #'js-name-part name-parts) "_")))
@@ -564,8 +594,8 @@ is NIL."
         (declare (ignore environment))
         (second form)))
 
-(defvar *literal-table*)
-(defvar *literal-counter*)
+(defvar *literal-table* nil)
+(defvar *literal-counter* 0)
 
 (defun limit-string-length (string length)
   (and string
@@ -651,7 +681,7 @@ association list ALIST in the same order."
             (let ((jsvar (genlit (typecase sexp
                                    (cons "expr")
                                    (array "array")
-                                   (t (string sexp))))))
+                                   (t (string* sexp))))))
               (push (cons sexp jsvar) *literal-table*)
               (toplevel-compilation
                `(jscl/js::var ,jsvar ,dumped))
@@ -662,7 +692,7 @@ association list ALIST in the same order."
 
 (defun literal-sv (sv)
   (let* ((kind (storage-vector-kind sv))
-         (jsvar (genlit (string kind)))
+         (jsvar (genlit (string* kind)))
          (vec (storage-vector-underlying-vector sv)))
     (push (cons sv jsvar) *literal-table*)
     `(jscl/js::var ,jsvar
@@ -673,7 +703,8 @@ association list ALIST in the same order."
                     (jscl/js::return r)))))
 
 (defun literal-symbol (sexp)
-  (let ((jsvar (genlit)))
+  (let ((jsvar (genlit (when (symbolp sexp)
+                         (symbol-name sexp)))))
     (toplevel-compilation `(var (,jsvar ,(dump-symbol sexp))))
     jsvar))
 
@@ -719,7 +750,7 @@ association list ALIST in the same order."
        (standard-object (literal-sv sexp))
        (function ;; FIXME?
         (list 'function (list 'quote (nth-value 2 (function-lambda-expression sexp)))))
-       (character (string sexp))       ; is this really the right thing?
+       (character (string* sexp))       ; is this really the right thing?
        (t (dump-complex-literal sexp recursivep))))))
 
 
@@ -929,7 +960,7 @@ generate the code which performs the transformation on these variables."
           (if (numberp x)
               (collect-fargs x)
               (let ((v (make-symbol
-                        (concat "arg" (integer-to-string (incf counter))))))
+                        (concatenate 'string "arg" (integer-to-string (incf counter))))))
                 (collect-prelude
                  `(jscl/js::var ,v ,(convert x)))
                 (collect-prelude
@@ -1014,24 +1045,24 @@ generate the code which performs the transformation on these variables."
            (values (funcall macrofun form environment) t))
           
           ((inline-builtin-p verb)
-           ;; don't complain about macro definitions of builtins
+           ;; don't complain about (absence of) macro definitions of builtins
            (values form nil))
           
           ((macro-function verb nil)
            (break "MACROEXPAND-1/CONS: ~
-There is no macro binding for ~a::~a, ~
-but one exists in the global environment of the host compiler."
+There is no macro binding in JSCL for ~a::~a, ~
+but one exists in the global environment of ~a."
                   (package-name (symbol-package verb))
-                  verb))
+                  verb
+                  (lisp-implementation-type)))
 
           ((and (equal "JSCL/COMMON-LISP" (package-name (symbol-package verb)))
                 (let ((cl-sym (find-symbol (symbol-name verb) :common-lisp)))
                   (and cl-sym (macro-function cl-sym))))
            (break "MACROEXPAND-1/CONS: ~
-There is no macro binding for ~a::~a, ~
-but COMMON-LISP::~:*~a is a macro."
-                  (package-name (symbol-package verb))
-                  verb))
+There is no macro binding for JSCL/CL::~a, ~
+but COMMON-LISP::~:*~a is a macro in ~a."
+                  verb (lisp-implementation-type)))
 
           (t (values form nil)))))
 
@@ -1436,8 +1467,9 @@ non-primary values.
 If RETURN-P, emit a JavaScript “return” operator on the value."
   (multiple-value-bind (expansion expandedp) (jscl/cl::macroexpand sexp)
     (when expandedp
-      (format *trace-output* "~&Macro-expansion top level…~%~s~%↓~%~s"
-              sexp expansion)
+      (format *trace-output*
+              "~&Macro-expansion top level…~%~< | ~@;~s~:>~% ↓~%~< | ~@;~s~:>"
+              (list sexp) (list expansion))
       (return-from convert-toplevel
         (convert-toplevel expansion multiple-value-p return-p))))
   ;; Process as toplevel

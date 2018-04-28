@@ -15,7 +15,7 @@
 ;;
 ;; You should  have received a  copy of  the GNU General  Public License
 ;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
-(in-package #-jscl :jscl #+jscl :jscl/impl)
+(in-package :jscl)
 
 
 (defmacro with-collect (&body body)
@@ -51,7 +51,7 @@ accumulated, in the order."
            ,@body)))))
 
 (defmacro concatf (place &body form)
-  `(setf ,place (concat ,place (progn ,@form))))
+  `(setf ,place (concatenate 'string ,place (progn ,@form))))
 
 ;;; This couple of helper functions will  be defined in both Common Lisp
 ;;; and in JSCL
@@ -64,13 +64,13 @@ accumulated, in the order."
 (defun join (list &optional (separator ""))
   (if (null list)
       ""
-      (reduce (lambda (s o) (concat s separator o))
+      (reduce (lambda (s o) (concatenate 'string s separator o))
               list)))
 
 (defun join-trailing (list &optional (separator ""))
   (if (null list)
       ""
-      (concat (car list) separator (join-trailing (cdr list) separator))))
+      (concatenate 'string (car list) separator (join-trailing (cdr list) separator))))
 
 (defun mapconcat (func list)
   (join (mapcar func list)))
@@ -93,30 +93,33 @@ accumulated, in the order."
      (when it ,@body)))
 
 (defun integer-to-string (x &optional (radix (or *print-base* 10)) plusp)
-  (let ((radix (or radix *print-base* 10))) ; some callers screw up and pass literal NIL
-    (cond
-      ((zerop x)
-       (if plusp "+0" "0"))
-      ((minusp x)
-       (concat "-" (integer-to-string (- x) radix)))
-      ((and plusp (plusp x))
-       (concat "+" (integer-to-string x radix)))
-      (*print-radix*
-       (let ((*print-radix* nil))
-         (case *print-base*
-           (2 (concat "#b" (integer-to-string x radix)))
-           (8 (concat "#o" (integer-to-string x radix)))
-           (10 (concat (integer-to-string x) "."))
-           (16 (concat "#x" (integer-to-string x radix)))
-           (otherwise (concat "#" (integer-to-string radix 10 nil)
-                              "r" (integer-to-string x radix))))))
-      (t
-       (let ((digits nil))
-         (while (not (zerop x))
-           (push (mod x radix) digits)
-           (setq x (truncate x radix)))
-         (mapconcat (lambda (x) (string (digit-char x radix)))
-                    digits))))))
+  (coerce 
+   (let ((radix (or radix *print-base* 10))) ; some callers screw up and pass literal NIL
+     (cond
+       ((zerop x)
+        (if plusp "+0" "0"))
+       ((minusp x)
+        (concatenate 'string "-" (integer-to-string (- x) radix)))
+       ((and plusp (plusp x))
+        (concatenate 'string "+" (integer-to-string x radix)))
+       (*print-radix*
+        (let ((*print-radix* nil))
+          (case *print-base*
+            (2 (concatenate 'string "#b" (integer-to-string x radix)))
+            (8 (concatenate 'string "#o" (integer-to-string x radix)))
+            (10 (concatenate 'string (integer-to-string x) "."))
+            (16 (concatenate 'string "#x" (integer-to-string x radix)))
+            (otherwise (concatenate 'string 
+                                    "#" (integer-to-string radix 10 nil)
+                                    "r" (integer-to-string x radix))))))
+       (t
+        (let ((digits nil))
+          (while (not (zerop x))
+            (push (mod x radix) digits)
+            (setq x (truncate x radix)))
+          (mapconcat (lambda (x) (string (digit-char x radix)))
+                     digits)))))
+   'string))
 
 (defun float-to-string (x)
   #+jscl (float-to-string x)
@@ -143,3 +146,5 @@ accumulated, in the order."
   (or (jscl/cl::find-package package-designator)
       (error "The name `~S' does not designate any package."
              (string package-designator))))
+
+

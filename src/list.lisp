@@ -19,8 +19,8 @@
 ;;; Various list functions
 
 ;;; Compiler primitives
-(defun jscl/cl::cons (x y) (jscl/js::cons x y))
-(defun jscl/cl::consp (x) (jscl/js::consp x))
+#+ () (defun jscl/cl::cons (x y) (jscl/js::cons x y))
+#+ () (defun jscl/cl::consp (x) (jscl/js::consp x))
 
 (defun jscl/cl::listp (x)
   (or (consp x) (null x)))
@@ -40,17 +40,17 @@
 
 ;;; CAR, CDR, and their kin
 
-(defun jscl/cl::car (x)
-  "Return the CAR part of a cons, or NIL if X is null."
-  (jscl/js::car x))
+#+ () (defun jscl/cl::car (x)
+        "Return the CAR part of a cons, or NIL if X is null."
+        (jscl/js::car x))
 
-(defun jscl/cl::cdr (x) (jscl/js::cdr x))
+#+ () (defun jscl/cl::cdr (x) (jscl/js::cdr x))
 
-(defun jscl/cl::rplaca (cons x)
-  (jscl/js::rplaca cons x))
+#+ () (defun jscl/cl::rplaca (cons x)
+        (jscl/js::rplaca cons x))
 
-(defun jscl/cl::rplacd (cons x)
-  (jscl/js::rplacd cons x))
+#+ () (defun jscl/cl::rplacd (cons x)
+        (jscl/js::rplacd cons x))
 
 (defun jscl/cl::first 	(x) (car 	x))
 (defun jscl/cl::second 	(x) (cadr 	x))

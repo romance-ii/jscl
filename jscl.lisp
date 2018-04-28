@@ -37,7 +37,7 @@
   #-(or sbcl clisp ecl lispworks)
   (:use #.(warn "You will probably need to add your Gray Streams ~
  into JSCL/Bootstrap USE list"))
-  (:export #:bootstrap #:bootstrap-core #:load-jscl))
+  (:export #:load-jscl))
 
 (in-package :jscl/bootstrap)
 
@@ -69,7 +69,11 @@ During  bootstrap,  these  forms  are  evaluated  instead  as  calls  to
 
 (defpackage jscl/intermediate-cross-compilation
   (:use :jscl/cl)
-  (:nicknames :jscl/xc))
+  (:nicknames :jscl/xc)
+  (:documentation
+   "When cross-compiling JSCL, this package  provides a “blank space” in
+   which  to recompile  using the  intermediate (faux-JavaScript)  level
+   of code. It uses JSCL/CL but not the host's CL."))
 
 #+sbcl (unless (ignore-errors (find-package :SB-CLTL2))
          (require 'sb-cltl2))
@@ -545,11 +549,11 @@ which occurred within ~r file~:p: ~
          fasl)))))
 
 (defun cross-compile-file (file)
-  (format *trace-output* "~& → cross-compiling ~a" (enough-namestring file))
+  (format *trace-output* "~|~% → cross-compiling ~a" (enough-namestring file))
   (finish-output *trace-output*)
   (multiple-value-bind (js warn fail)
       (let ((*features* (cons :jscl-xc (symbol-value (intern "*FEATURES*" :jscl/cl))))
-            (*package* (find-package :jscl/impl)))
+            (*package* (find-package :jscl)))
         (funcall (intern "COMPILE-FILE" :jscl/cl) file))
     (values
      (when (or warn fail)
@@ -558,6 +562,7 @@ which occurred within ~r file~:p: ~
 
 (defun compile-pass (mode)
   (check-type mode (member :host :target))
+  (stream-clear-output *trace-output*)
   (format *trace-output* "~|~%;;;; Beginning ~a compilation pass" mode)
   (let (fasls failures)
     (do-source (input mode)
@@ -604,7 +609,13 @@ which occurred within ~r file~:p: ~
                                                       (find-package :jscl)))
           jscl::*environment* jscl::*global-environment*)
     (funcall (intern "INIT-BUILT-IN-TYPES%" :jscl))
-    (let ((*package* (find-package :jscl/xc))) (compile-pass :target))))
+    
+    (rename-package :jscl :jscl/hosted nil)
+    (rename-package :jscl/intermediate-cross-compilation :jscl '(:jscl/xc))
+    (unwind-protect
+         (compile-pass :target)
+      (rename-package :jscl :jscl/intermediate-cross-compilation '(:jscl/xc))
+      (rename-package :jscl/hosted :jscl '(:jscl/hosted)))))
 
 (defun jscl/test::run-tests-in-host ()
   "Run the tests in  the host Lisp implementation. It is  a quick way to

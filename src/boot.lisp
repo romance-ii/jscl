@@ -27,18 +27,18 @@
 #+jscl
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (jscl/cl::make-package "KEYWORD"
-                         'jscl::if-exists :ignore)
+                         'jscl/impl::if-exists :ignore)
 
   (jscl/cl::make-package "COMMON-LISP" :nicknames (list "CL")
-                         'jscl::if-exists :ignore)
+                         'jscl/impl::if-exists :ignore)
 
   (jscl/cl::make-package "COMMON-LISP-USER"
                          :use (list :common-lisp)
                          :nicknames (list "CL-USER")
-                         'jscl::if-exists :ignore)
+                         'jscl/impl::if-exists :ignore)
 
   (jscl/cl::make-package "JSCL/IMPL" :use (list :common-lisp)
-                         'jscl::if-exists :ignore))
+                         'jscl/impl::if-exists :ignore))
 
 (progn .
        #.(mapcar
@@ -537,7 +537,7 @@
             #:yes-or-no-p                     	#:zerop)))
 
 ;; not yet available XXX (in-package #-jscl :jscl #+jscl :jscl/impl)
-(setq *package* (find-package :jscl/impl))
+(setq *package* (find-package :jscl))
 
 
 ;;; Special forms treated as macros
@@ -932,7 +932,7 @@ macro cache is so aggressive that it cannot be redefined."
     (t nil)))
 
 (defun jscl/cl::disassemble (function)
-  (write-line (jscl/js::lambda-code (fdefinition function)))
+  (write-line (jscl/js::lambda-code (jscl/cl::fdefinition function)))
   nil)
 
 
@@ -1009,6 +1009,8 @@ This is SETF'able."
       (jscl/js::%setf-symbol-function name function)
       (error "Cannot SETF SYMBOL-FUNCTION of ~s" name)))
 
+;; Made this a builtin … remove?
+#+ (or)
 (defun jscl/cl::fboundp (x)
   (cond ((symbolp x) (jscl/js::fboundp x))
         ((and (listp x)
@@ -1035,6 +1037,8 @@ This is SETF'able."
     (declare (ignore list))
     (error "Don't call this before UTILS has been loaded!")))
 
+;;; Also a builtin rather?
+#+ ()
 (defun jscl/cl::values-list (list)
   (jscl/js::values-array (list-to-vector list)))
 

@@ -73,10 +73,12 @@
   (- x 1))
 
 
+#+ ()
 (defun jscl/cl::floor (x &optional (y 1))
   (declare #+jscl jscl::pure)
   (jscl/js::%floor (/ x y)))
 
+#+ ()
 (defun jscl/cl::ceiling (x &optional (y 1))
   (declare #+jscl jscl::pure)
   (jscl/js::%ceiling (/ x y)))
@@ -85,8 +87,8 @@
   (declare #+jscl jscl::pure)
   (let ((z (/ x y)))
     (if (> z 0)
-        (jscl/js::%floor z)
-        (jscl/js::%ceiling z))))
+        (floor z)
+        (ceiling z))))
 
 (defun jscl/cl::integerp (x)
   (declare #+jscl jscl::pure)

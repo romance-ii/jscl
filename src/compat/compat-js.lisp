@@ -153,9 +153,6 @@
 (defun jscl/js::call (object key &rest args)
   (apply (jscl/ffi:oget object key) args))
 
-(defmacro jscl/js::get (object key)
-  `(jscl/ffi:oget ,object ,key jscl/ffi::undefined))
-
 (defun jscl/js::in (key object)
   (let ((trash (cons 'not 'found)))
     (not (eq trash (jscl/ffi:oget object key trash)))))

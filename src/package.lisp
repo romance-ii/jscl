@@ -71,7 +71,7 @@
     (reverse result)))
 
 (defun jscl/cl::make-package (name &key use nicknames
-                                        ((if-exists if-exists) :error))
+                                        ((jscl/impl::if-exists if-exists) :error))
   (%make-package (string name)
                  (resolve-package-list use)
                  nicknames

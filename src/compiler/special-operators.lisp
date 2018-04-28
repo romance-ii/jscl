@@ -52,6 +52,9 @@
 
 (defun coerce-list-to-function (list)
   (case (car list)
+    (function
+     (assert (= 2 (length list)))
+     (coerce-list-to-function (cadr list)))
     (lambda
         (compile-lambda (cadr list) (cddr list)))
     (jscl/impl::named-lambda
@@ -94,6 +97,8 @@
   "NOTE: It  is probably wrong  in many cases but  we will not  use this
  heavily. Please, do not rely on wrong cases of this implementation."
   ;; TODO: Error checking
+  (unless situations
+    (return-from jscl/cl::eval-when nil))
   (assert (every (lambda (situation)
                    (find situation '(:compile-toplevel :load-toplevel :execute)))
                  situations)
@@ -108,7 +113,7 @@
      ;; evaluated  in the  host compiler,  which  is maybe  not what  we
      ;; usually want.
      (when (find :compile-toplevel situations)
-       (warn "Eval-When Compile-Toplevel: OK, evaluating in compiler (~a) ~a…"
+       (warn "Eval-When Compile-Toplevel: OK, but evaluating in ~a compiler: ~a…"
              (lisp-implementation-type)
              (truncate-string
               (substitute #\space #\newline (princ-to-string body))
@@ -128,7 +133,7 @@
      (warn "Skipping EVAL-WHEN: ~@[not compiling~] ~@[not toplevel~] "
            (not *compiling-file*) (not (zerop *convert-level*))))
     (t
-     (warn "EVAL-WHEN has no valie situation ~s~%(unreachable code ~s)"
+     (warn "EVAL-WHEN has no valid situation ~s~%(unreachable code ~s)"
            situations body)
      (convert nil))))
 
@@ -355,7 +360,7 @@
                   `(jscl/js::catch (,tvar)
                      (jscl/js::= ,tvar (jscl/js::call-internal |js_to_lisp| ,tvar))
                      ,(convert-block body t))))))
-        
+
         (finally-compilation
          (and finally-form
               (destructuring-bind (finally &body body) finally-form
@@ -363,7 +368,7 @@
                   (error "Bad FINALLY clausule `~S'." finally-form))
                 `(finally
                   ,(convert-block body))))))
-    
+
     `(selfcall
       (try (return ,(convert form)))
       ,catch-compilation
@@ -387,17 +392,17 @@
                     (gensym "WHOLE-")))
          (environment (or (lambda-list-environment ll)
                           (gensym "ENVIRONMENT-")))
-         (expander (make-macro-expander-body 
+         (expander (make-macro-expander-body
                     name args whole environment body)))
-    
-    ;; If we are  boostrapping JSCL, we need  to quote the
-    ;; macroexpander, because the  macroexpander will need
-    ;; to be dumped in the final environment somehow.
+
+    ;; If we are boostrapping JSCL,  we need to quote the macroexpander,
+    ;; because the  macroexpander will  need to be  dumped in  the final
+    ;; environment somehow.
     (when (find :jscl-xc *features*)
       (setq expander (list 'quote expander)))
     (%compile-defmacro name expander)
     `(jscl/cl::eval-when (:compile-toplevel :execute)
-       (%compile-defmacro ',name ,expander))))
+                         (%compile-defmacro ',name ,expander))))
 
 (defmacro define-transformation (name args form)
   `(define-compilation ,name ,args
@@ -408,5 +413,3 @@
 
 (define-transformation backquote (form)
   (bq-completely-process form))
-
-

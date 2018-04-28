@@ -679,5 +679,8 @@ unnecessary parentheses."
 
 (defun js (&rest stmts)
   "The entry point to the code generator."
+  (format *trace-output* "…js…")
+  (force-output *trace-output*)
   (mapc #'js-stmt stmts)
+  (terpri *trace-output*)
   nil)

@@ -78,6 +78,7 @@
   (push :node *features*))
 
 (defun :copying ()
+  (stream-clear-output *standard-output*)
   (format t "~&~|
 ~v<~;⸨☕λ⸩~;~>~:*
 ~v<~;𝓙𝓢ℂ𝕃~;~>
@@ -100,6 +101,7 @@ You should  have received a  copy of  the GNU General  Public License
 along with JSCL. If not, see <http://www.gnu.org/licenses/>."
           *print-right-margin*)
   (when (y-or-n-p "Would you like to read the GNU GPL now?")
+    (stream-clear-output *standard-output*)
     (princ #.(with-open-file (s (jscl/bootstrap::source-pathname "COPYING.GPLv3"
                                                                  :directory '(:relative))
                                 :direction :input)
@@ -107,31 +109,50 @@ along with JSCL. If not, see <http://www.gnu.org/licenses/>."
   (values))
 
 (defun :credits ()
-  (format  t "~&~@[This version of ~]~
-JSCL contains contributions by~
-~:[ many people. ~
-~;:~
-:~:*~{~%~a~^~32t	~a~}~]"
-           (jscl/bootstrap::git-credits))
-  (values))
-
-(defun welcome-message ()
+  (stream-clear-output *standard-output*)
   (format t "~&~v<~;⸨☕λ⸩~;~>~:*
 ~v<~;𝓙𝓢ℂ𝕃~;~>
- ~a ~@[(Romance Ⅱ fork) ~]version ~a,
+ ~@[~*(Romance Ⅱ fork)~%~]~
+~a version ~a,
 Git commit ~a; ~a
 
  Copyright © 2012-2014 David Vázquez Púa
  Copyright © 2012 Raimon Grau
+
+~@[This version of ~]~
+JSCL contains contributions by~
+~:[ many people. ~
+~;:~
+:~:*~{~%~a~^~32t	~a~}~]"
+          *print-right-margin*
+          #.(jscl/bootstrap::violet-volts-p) 
+          (lisp-implementation-type)
+          (lisp-implementation-version)
+          #.(jscl/bootstrap::git-commit) 
+          (compilation-notice)
+          (jscl/bootstrap::git-credits))
+  (values))
+
+(defun welcome-message ()
+  (stream-clear-output *standard-output*)
+  (format t "~&~v<~;⸨☕λ⸩~;~>~:*
+~v<~;𝓙𝓢ℂ𝕃~;~>
+ ~@[~*(Romance Ⅱ fork)~%~]~
+~a version ~a,
+Git commit ~a; ~a
+
+ Copyright © 2012-2014 David Vázquez Púa
+ Copyright © 2012 Raimon Grau
+For other contributors, type (:CREDITS)⮰
 
 JSCL  is  a Common  Lisp  implementation  on  Javascript. JSCL  is  Free
 Software: you can redistribute it and/or modify it, but it comes with NO
 warranty. For details, type (:COPYING)⮰.
 "
           *print-right-margin*
-          #.(jscl/bootstrap::violet-volts-p) (lisp-implementation-version)
-          #.(jscl/bootstrap::git-commit)
-          (lisp-implementation-type)
+          #.(jscl/bootstrap::violet-volts-p)
+          (lisp-implementation-type)(lisp-implementation-version)
+          #.(jscl/bootstrap::git-commit) 
           (compilation-notice))
   (if (find :node *features*)
       (format t "For more information, visit the project page at ~

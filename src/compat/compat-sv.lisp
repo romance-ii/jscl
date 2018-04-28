@@ -77,3 +77,4 @@ metadata in it."
     (setf (subseq v (storage-vector-size sv1))
           (storage-vector-underlying-vector sv2))
     sv))
+

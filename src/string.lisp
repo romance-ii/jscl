@@ -124,13 +124,26 @@
   (aset string index value))
 
 
+(defun concatenate-arbitrary-vector (v1 v2) 
+  (check-type v1 vector)
+  (check-type v2 vector) 
+  (let* ((cat (make-array (+ (length v1) (length v2)))))
+    (setf (subseq cat 0 (length v1))
+          v1)
+    (setf (subseq cat (length v1))
+          v2)
+    cat))
+
 (defun concat (&rest strs)
   (flet ((concat-two (object1 object2)
-           (if (and (storage-vector-p object1)
-                    (storage-vector-p object2))
-               (concatenate-storage-vector object1 object2)
-               (error "Unimplemented: JSCL cannot yet concatenate ~s and ~s"
-                      object1 object2))))
+           (cond ((and (storage-vector-p object1)
+                       (storage-vector-p object2))
+                  (concatenate-storage-vector object1 object2))
+                 ((and (vectorp object1)
+                       (vectorp object2))
+                  (concatenate-arbitrary-vector object1 object2))
+                 (t (error "Unimplemented: JSCL cannot yet concatenate ~s and ~s"
+                           object1 object2)))))
     (reduce #'concat-two strs :initial-value "")))
 
 
@@ -146,7 +159,7 @@ handled correctly yet."
   (etypecase target
     (symbol
      (ecase target
-       ((string vector) (apply #'concat objects))
+       ((string vector) (coerce (apply #'concat objects) target))
        ((cons list) (apply #'reduce #'append objects))))
     (cons
      (ecase (car target)

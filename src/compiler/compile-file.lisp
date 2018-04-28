@@ -11,7 +11,8 @@
           (*compile-file-pathname* ,filename)
           (*compile-file-truename* (truename *compile-file-pathname*))
           (*compile-print-toplevels* ,verbosep)
-          (*package* *package*)
+          (cl::*package* *package*)
+          (jscl/cl::*package* *package*)
           (source (jscl/bootstrap::read-whole-file ,filename))
           (in (make-string-input-stream source)))
      ,@body))
@@ -76,7 +77,7 @@ execute BODY. Also binds LAST-FORM and FORM-COUNT."
 (defun compile-file/print-file-header (filename out)
   (format out "~&/** @preserve
  *  ⸨☕λ⸩ Compiled by 𝓙𝓢ℂ𝕃
- * ~@[(Romance Ⅱ fork) ~]version ~a~@[, Git commit ~a~]
+ * ~@[~*(Romance Ⅱ fork) ~]version ~a~@[, Git commit ~a~]
  * Source file: ~a */"
           #.(jscl/bootstrap::violet-volts-p)
           jscl/bootstrap::*version*
