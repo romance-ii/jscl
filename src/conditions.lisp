@@ -116,15 +116,13 @@
     ((condition-p datum)
      datum)
     ((stringp datum)
-     (make-condition
-      :type default
-      :args (cons datum args)))
+     (make-condition default
+                     :args (cons datum args)))
     (t
      (assert (subtypep datum 'condition) (datum)
              "~S does not name a type of condition" datum)
-     (make-condition
-      :type datum
-      :args args))))
+     (make-condition datum
+                     :args args))))
 
 (defun condition-p (object)
   (typep object 'condition))

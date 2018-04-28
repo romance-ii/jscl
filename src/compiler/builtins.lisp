@@ -23,9 +23,14 @@
   " Creates  a new  primitive function `name'  with parameters  args and
  @body.  The body  can access  to  the local  environment through  the
  variable *ENVIRONMENT*."
-  `(setf (gethash ',name *builtins*)
-         (lambda ,args
-           (block ,name ,@body))))
+  (let ((name (intern (symbol-name name) :jscl/cl)))
+    `(progn    
+       #-jscl
+       (defmacro ,name ,args
+         ,@body)
+       (setf (gethash ',name *builtins*)
+             (lambda ,args
+               (block ,name ,@body))))))
 
 (defmacro define-builtin (name args &body body)
   `(define-raw-builtin ,name ,args

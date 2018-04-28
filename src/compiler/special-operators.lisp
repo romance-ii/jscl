@@ -44,15 +44,18 @@
       ,(convert-block body))
     (jscl/js::return ,(convert nil))))
 
+(defun compile-named-lambda-form (form)
+  (destructuring-bind (name ll &rest body) form
+    (compile-lambda ll body
+                    :name (function-namestring name)
+                    :block (function-block-name name))))
+
 (defun coerce-list-to-function (list)
   (case (car list)
     (lambda
         (compile-lambda (cadr list) (cddr list)))
-    (named-lambda
-        (destructuring-bind (name ll &rest body) (cdr list)
-          (compile-lambda ll body
-                          :name (function-namestring name)
-                          :block (function-block-name name))))
+    (jscl/impl::named-lambda
+     (compile-named-lambda-form (cdr list)))
     (setf
      (let ((b (lookup-in-lexenv list *environment* 'function)))
        (if b
@@ -391,10 +394,10 @@
     ;; macroexpander, because the  macroexpander will need
     ;; to be dumped in the final environment somehow.
     (when (find :jscl-xc *features*)
-      (setq expander `(quote ,expander)))
+      (setq expander (list 'quote expander)))
     (%compile-defmacro name expander)
     `(jscl/cl::eval-when (:compile-toplevel :execute)
-                         (%compile-defmacro ',name ,expander))))
+       (%compile-defmacro ',name ,expander))))
 
 (defmacro define-transformation (name args form)
   `(define-compilation ,name ,args

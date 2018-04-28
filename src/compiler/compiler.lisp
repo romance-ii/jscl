@@ -126,8 +126,8 @@
   (reverse *toplevel-compilations*))
 
 (defun %compile-defmacro (name lambda)
-  (let ((binding (make-binding :name name :type 'macro :value lambda)))
-    (warn "Binding global macro ~s" name)
+  (let ((binding (make-binding :name name :type 'macro :value (eval lambda))))
+    (warn "Binding global macro ~s" name) 
     (push-to-lexenv binding *global-environment* 'function))
   name)
 
@@ -1005,17 +1005,35 @@ generate the code which performs the transformation on these variables."
         (values symbol nil))))
 
 (defun macroexpand-1/cons (form &optional (environment *environment*))
-  (if (jscl/cl::special-operator-p (car form))
-      (values form nil)
-      (let ((macrofun (jscl/cl::macro-function (car form) environment)))
-        (cond (macrofun
-               (values (funcall macrofun (cdr form) environment) t))
-              ((macro-function (car form) nil)
-               (break "MACROEXPAND-1 has no macro binding for ~a::~a, ~
+  (let* ((verb (car form))
+         (macrofun (jscl/cl::macro-function verb environment)))
+    (cond ((jscl/cl::special-operator-p verb)
+           (values form nil))
+          
+          (macrofun
+           (values (funcall macrofun form environment) t))
+          
+          ((inline-builtin-p verb)
+           ;; don't complain about macro definitions of builtins
+           (values form nil))
+          
+          ((macro-function verb nil)
+           (break "MACROEXPAND-1/CONS: ~
+There is no macro binding for ~a::~a, ~
 but one exists in the global environment of the host compiler."
-                      (package-name (symbol-package (car form)))
-                      (car form)))
-              (t (values form nil))))))
+                  (package-name (symbol-package verb))
+                  verb))
+
+          ((and (equal "JSCL/COMMON-LISP" (package-name (symbol-package verb)))
+                (let ((cl-sym (find-symbol (symbol-name verb) :common-lisp)))
+                  (and cl-sym (macro-function cl-sym))))
+           (break "MACROEXPAND-1/CONS: ~
+There is no macro binding for ~a::~a, ~
+but COMMON-LISP::~:*~a is a macro."
+                  (package-name (symbol-package verb))
+                  verb))
+
+          (t (values form nil)))))
 
 (defun jscl/cl::macroexpand-1 (form &optional (environment *environment*))
   "If FORM is a macro form or symbol in ENVIRONMENT, expand it.
@@ -1194,7 +1212,7 @@ treated as function call in JSCL"
       ((jscl/cl:macro-function name)
        (cerror "Macroexpand now and continue"
                "Macro ~a encountered in funcall position; ~
-It should be macroexpanded before reaching COMPILE-SEXP"
+It should have been macroexpanded before reaching COMPILE-SEXP"
                name)
        (compile-sexp (jscl/cl:macroexpand sexp)))
       ((and (claimp name 'function 'jscl::pure)
@@ -1418,7 +1436,7 @@ non-primary values.
 If RETURN-P, emit a JavaScript “return” operator on the value."
   (multiple-value-bind (expansion expandedp) (jscl/cl::macroexpand sexp)
     (when expandedp
-      (format *trace-output* "~&Macro-expansion top level…~%~s~%↓~%~s" 
+      (format *trace-output* "~&Macro-expansion top level…~%~s~%↓~%~s"
               sexp expansion)
       (return-from convert-toplevel
         (convert-toplevel expansion multiple-value-p return-p))))
@@ -1501,7 +1519,7 @@ More than ~:d levels of recursion were encountered."
     (lambda (,whole ,environment)
      (let ((*environment* ,environment))
        (block ,name
-         (destructuring-bind ,args ,whole
+         (destructuring-bind ,args (cdr ,whole)
            ,@body))))))
 
 (defmacro jscl/cl::with-compilation-unit (options &body body)

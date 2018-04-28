@@ -599,11 +599,11 @@
 
 (defmacro jscl/cl::when (condition &body body)
   "When CONDITION is true, evaluate BODY as a PROGN"
-  `(cond (,condition ,@body)))
+  `(if ,condition (progn ,@body) nil))
 
 (defmacro jscl/cl::unless (condition &body body)
   "When CONDITION is false, evaluate BODY as a PROGN"
-  `(cond ((not ,condition) ,@body)))
+  `(if ,condition nil (progn ,@body)))
 
 ;;; AND, OR
 
@@ -654,7 +654,7 @@
 (defmacro jscl/cl::defun (name args &rest body)
   ;; Can't  use FUNCTION-NAME-P  here because  we can't  DEFUN it  until
   ;; after DEFUN is defined.
-  (cond ((symbolp name)
+  (cond ((#-jscl jscl::symbolp #+jscl jscl/impl::symbolp name)
          `(progn
             (eval-when (:compile-toplevel :load-toplevel)
               (fn-info ',name :defined t))
@@ -671,6 +671,9 @@
             (fset-setf ',(second name) #'(named-lambda ,name ,args ,@body))
             ',name))
         (t (error "~s cannot be a function name" name))))
+
+(defun jscl/cl::symbolp (object)
+  (#-jscl jscl::symbolp #+jscl jscl/impl::symbolp object))
 
 (defmacro jscl/cl::return (&optional value)
   `(return-from nil ,value))
@@ -816,7 +819,7 @@
 ;;; DO, DO*
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (defun do/do* (do/do* varlist endlist body)
+  (cl:defun do/do* (do/do* varlist endlist body)
     `(block nil
        (,(ecase do/do* (do 'let) (do* 'let*))
          ,(mapcar (lambda (x)
