@@ -520,7 +520,8 @@ which occurred within ~r file~:p: ~
        (warn "In the ~:(~a~) pass, despite warnings in ~r file~:p, ~
  there were no failures; continuing…"
              pass (length file-warnings)))
-      (t (format *trace-output* "~&No warnings or failures from compilation in the ~(~a~) pass."
+      (t (format *trace-output*
+                 "~&No warnings or failures from compilation in the ~(~a~) pass."
                  pass)))))
 
 (defun compile-hosted-file (input)
@@ -603,7 +604,7 @@ which occurred within ~r file~:p: ~
                                                       (find-package :jscl)))
           jscl::*environment* jscl::*global-environment*)
     (funcall (intern "INIT-BUILT-IN-TYPES%" :jscl))
-    (compile-pass :target)))
+    (let ((*package* (find-package :jscl/xc))) (compile-pass :target))))
 
 (defun jscl/test::run-tests-in-host ()
   "Run the tests in  the host Lisp implementation. It is  a quick way to
