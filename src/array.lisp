@@ -1,4 +1,4 @@
-;;; arrays.lisp
+;;; array.lisp
 
 ;; JSCL is free software: you can redistribute it and/or modify it under
 ;; the terms of the GNU General  Public License as published by the Free
@@ -10,121 +10,107 @@
 ;; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
 ;; for more details.
 ;;
-;; You should have received a copy of the GNU General Public License
-;; along with JSCL.  If not, see <http://www.gnu.org/licenses/>.
+;; You should  have received a  copy of  the GNU General  Public License
+;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
 
-(/debug "loading array.lisp!")
+(in-package #-jscl :jscl #+jscl :jscl/impl)
 
-(defun upgraded-array-element-type (typespec &optional environment)
+
+
+(defun jscl/cl:upgraded-array-element-type (typespec &optional environment)
   (declare (ignore environment))
   (if (eq typespec 'character)
       'character
       t))
 
-(defun make-array (dimensions &key element-type initial-element adjustable fill-pointer)
+(defun jscl/cl:array-dimensions (array)
+  (check-type array jscl/cl:array)
+  (third (storage-vector-kind array)))
+
+(defun jscl/cl:adjustable-array-p (array)
+  (check-type array jscl/cl:array)
+  (fourth (storage-vector-kind array)))
+
+(defun jscl/cl:fill-pointer (array)
+  (check-type array jscl/cl:array)
+  (fifth (storage-vector-kind array)))
+
+(defun (setf jscl/cl:fill-pointer) (new-index array)
+  (check-type array jscl/cl:array)
+  (setf (fifth (storage-vector-kind array)) new-index))
+
+(defun jscl/cl:make-array (dimensions
+                            &key element-type initial-element
+                                 adjustable fill-pointer)
   (let* ((dimensions (ensure-list dimensions))
-         (size (!reduce #'* dimensions 1))
-         (array (make-storage-vector size)))
+         (size (reduce #'* dimensions :initial-value 1))
+         (array (make-storage-vector
+                 size
+                 (list 'array element-type dimensions
+                       adjustable fill-pointer))))
     ;; Upgrade type
     (if (eq element-type 'character)
         (progn
-          (oset 1 array "stringp")
-          (setf element-type 'character
+          (setf (jscl/ffi:oget array "stringp") 1
+                element-type 'character
                 initial-element (or initial-element #\space)))
         (setf element-type t))
-
-    (when (and (listp dimensions)
-               (not (null (cdr dimensions)))
-               fill-pointer)
-      (error "FILL-POINTER cannot be specified on multidimensional arrays."))
-
     ;; Initialize array
-    (storage-vector-fill array initial-element)
+    (dotimes (i size)
+      (storage-vector-set array i initial-element))
     ;; Record and return the object
-    (setf (oget array "type") element-type)
-    (setf (oget array "dimensions") dimensions)
-    (setf (oget array "fillpointer") fill-pointer)
     array))
 
 
-(defun arrayp (x)
-  (storage-vector-p x))
+(defun jscl/cl:arrayp (x)
+  (and (storage-vector-p x)
+       (subtypep (storage-vector-kind x) 'array)))
 
-(defun adjustable-array-p (array)
-  (unless (arrayp array)
-    (error "~S is not an array." array))
-  t)
-
-(defun array-element-type (array)
-  (unless (arrayp array)
-    (error "~S is not an array." array))
-  (if (eq (oget array "stringp") 1)
+(defun jscl/cl:array-element-type (array)
+  (check-type array jscl/cl:array)
+  (if (eql 1 (jscl/ffi:oget array "stringp"))
       'character
-      (oget array "type")))
-
-(defun array-dimensions (array)
-  (unless (arrayp array)
-    (error "~S is not an array." array))
-  (oget array "dimensions"))
+      (second (storage-vector-kind array))))
 
 ;; TODO: Error checking
-(defun array-dimension (array axis)
+(defun jscl/cl:array-dimension (array axis)
   (nth axis (array-dimensions array)))
 
-(defun aref (array index)
-  (unless (arrayp array)
-    (error "~S is not an array." array))  
+(defun jscl/cl:aref (array index)
+  (check-type array array)
+  (check-type index (and fixnum (integer 0 *)))
   (storage-vector-ref array index))
 
-(defun aset (array index value)
-  (unless (arrayp array)
-    (error "~S is not an array." array))  
+(defun jscl/cl:aset (array index value)
+  (check-type array jscl/cl:array)
+  (check-type index (and fixnum (integer 0 *)))
   (storage-vector-set array index value))
 
-(define-setf-expander aref (array index)
-  (let ((g!array (gensym))
-        (g!index (gensym))
-        (g!value (gensym)))
-    (values (list g!array g!index)
-            (list array index)
-            (list g!value)
-            `(aset ,g!array ,g!index ,g!value)
-            `(aref ,g!array ,g!index))))
-
-
-(defun array-has-fill-pointer-p (array)
-  (and (oget array "fillpointer") t))
-
-(defun fill-pointer (array)
-  (unless (arrayp array)
-    (error "~S is not an array" array))
-  (unless (array-has-fill-pointer-p array)
-    (error "~S does not have a fill pointer" array))
-  (oget array "fillpointer"))
-
-(defun set-fill-pointer (array new-value)
-  (unless (arrayp array)
-    (error "~S is not an array" array))
-  (unless (array-has-fill-pointer-p array)
-    (error "~S does not have a fill pointer" array))
-  (setf (oget array "fillpointer") new-value))
-
-(defsetf fill-pointer set-fill-pointer)
+(defun (setf jscl/cl:aref) (value array index)
+  (aset array index value))
 
 
 ;;; Vectors
 
-(defun vectorp (x)
-  (and (arrayp x) (null (cdr (array-dimensions x)))))
+(defun jscl/cl:vectorp (x)
+  (and (jscl/cl:arrayp x) (null (cdr (array-dimensions x)))))
 
-(defun vector (&rest objects)
+(defun jscl/cl:vector (&rest objects)
   (list-to-vector objects))
 
-;;; FIXME: should take optional min-extension.
-(defun vector-push-extend (new-element vector)
-  (unless (vectorp vector)
-    (error "~S is not a vector." vector))  
-  ;; Note that JS will automatically grow the array as new elements
-  ;; are assigned, so no need to do `adjust-array` here.
-  (storage-vector-set! vector (fill-pointer vector) new-element)
-  (incf (fill-pointer vector)))
+(defun jscl/cl:vector-push-extend (new vector &key min-extension)
+  (unless (jscl/cl:vectorp vector)
+    (error "~S is not a vector." vector))
+  (let ((pointer (fill-pointer vector))
+        (size (storage-vector-size vector)))
+    (when (>= pointer size)
+      (resize-storage-vector vector (or min-extension
+                                        (max 1 (min #x100
+                                                    (round size 4))))))
+    (aset vector (incf (fill-pointer vector)) new)
+    (progn
+      ;; with   no   fill-pointer,   only  increase   by   one   always.
+      ;; Is that correct?
+      (resize-storage-vector vector (1+ size))
+      (aset vector size new)
+      size)))

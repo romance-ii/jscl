@@ -10,8 +10,9 @@
 ;;
 ;; You should  have received a  copy of  the GNU General  Public License
 ;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
+(in-package :repl-web)
+(read-#j)
 
-(/debug "loading repl-web/repl.lisp!")
 
 (defun %write-string (string &optional (escape t))
   (if #j:jqconsole
@@ -41,22 +42,23 @@
          (case (char string i)
            (#\\
             (incf i))
-           (#\"
+           (#\quotation_mark
             (setq stringp nil)
             (decf depth))))
         (t
          (case (char string i)
-           (#\( (incf depth))
-           (#\) (decf depth))
-           (#\"
+           (#\left_parenthesis (incf depth))
+           (#\right_parenthesis (decf depth))
+           (#\quotation_mark
             (incf depth)
             (setq stringp t)))))
       (incf i))
 
     (if (and (zerop depth))
         nil
-        ;; We should use something  based on DEPTH in order to make edition  nice, but the behaviour
-        ;; is a bit weird with jqconsole.
+        ;; We  should use  something based  on  DEPTH in  order to  make
+        ;; edition   nice,   but   the   behaviour  is   a   bit   weird
+        ;; with jqconsole.
         0)))
 
 
@@ -67,8 +69,8 @@
   (let ((prompt (format nil "~a> " (package-name *package*))))
     (#j:jqconsole:Write prompt "jqconsole-prompt"))
   (flet ((process-input (input)
-           ;; Capture unhandled Javascript exceptions. We evaluate the
-           ;; form and set successp to T. However, if a non-local exit
+           ;; Capture unhandled  Javascript exceptions. We  evaluate the
+           ;; form and set  successp to T. However, if  a non-local exit
            ;; happens, we cancel it, so it is not propagated more.
            (%js-try
 
@@ -85,7 +87,7 @@
 
             (catch (err)
               (#j:console:log err)
-              (let ((message (or (oget err "message") err)))
+              (let ((message (or (jscl/ffi:oget err "message") err)))
                 (#j:jqconsole:Write (format nil "ERROR[!]: ~a~%" message) "jqconsole-error"))))
 
            (save-history)

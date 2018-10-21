@@ -1,6 +1,5 @@
-(async
- (format t "~%Finished. The execution took ~a seconds.~%"
-         (/ (- (get-internal-real-time) *timestamp*) internal-time-units-per-second 1.0))
+(format t "~%Finished. The execution took ~a seconds.~%"
+        (/ (- (get-internal-real-time) *timestamp*) internal-time-units-per-second 1.0))
 
  (if (= *passed-tests* *total-tests*)
      (format t "All the tests (~a) passed successfully.~%" *total-tests*)
@@ -11,20 +10,22 @@
                                  *expected-failures*
                                  *unexpected-passes*))))))
 
- (unless (zerop *expected-failures*)
-   (format t "~a test(s) failed expectedly.~%" *expected-failures*))
+(unless (zerop *expected-failures*)
+  (format t "~a test(s) failed expectedly.~%" *expected-failures*))
 
  (unless (zerop *unexpected-passes*)
    (format t "~a test(s) passed unexpectedly.~%" *unexpected-passes*))
 
  (let (unbound)
-   (dolist (package '(:cl :jscl/ffi :jscl/xhr))
+  (dolist (package '( #-sbcl :cl :jscl/ffi :jscl/xhr))
      (when (find-package package)
        (do-external-symbols (symbol package)
-         (unless (or (boundp symbol) (fboundp symbol))
+        (unless (or (boundp symbol)
+                    (fboundp symbol)
+                    (cl-unboundp symbol))
            (push symbol unbound)))
        (when unbound
-         (format t "~%~%Unbound, exported symbols in JSCL package:~%")
+        (format t "~%~%Unbound, exported symbols in ~a package:~%" package)
          (dolist (symbol unbound)
            (format t " • ~a~%" symbol))
          (format t "~%~%")))))
@@ -45,7 +46,8 @@
  (terpri)
 
  #+jscl
- (when #j:phantom
+(progn
+  (when #j:phantom
     (#j:phantom:exit *failed-tests*))
   (when #j:process
-    (#j:process:exit *failed-tests*))
+    (#j:process:exit *failed-tests*)))
