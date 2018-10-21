@@ -649,9 +649,13 @@ for details.'"
           (skip-whitespaces-and-comments stream)
           (let ((ch (peek-char nil stream nil nil)))
             (cond
-              ((or (null ch) (char= ch #\)))
+              ((null ch)
                (if eof-error-p
                    (error "End of file")
+                   eof-value))
+              ((char= ch #\))
+               (if eof-error-p
+                   (error "unmatched close parenthesis")
                    eof-value))
               ((char= ch #\()
                (read-char stream nil nil)

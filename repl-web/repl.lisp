@@ -76,10 +76,11 @@
 
             ;; Capture unhandled Lisp conditeions.
             (handler-case
-                (let* ((form (read-from-string input))
-                       (results (multiple-value-list (eval-interactive form))))
-                  (dolist (x results)
-                    (#j:jqconsole:Write (format nil "~S~%" x) "jqconsole-return")))
+                (when (> (length input) 0)
+                  (let* ((form (read-from-string input))
+                         (results (multiple-value-list (eval-interactive form))))
+                    (dolist (x results)
+                      (#j:jqconsole:Write (format nil "~S~%" x) "jqconsole-return"))))
               (error (err)
                 (#j:jqconsole:Write "ERROR: " "jqconsole-error")
                 (#j:jqconsole:Write (apply #'format nil (!condition-args err)) "jqconsole-error")
@@ -92,7 +93,7 @@
 
            (save-history)
            (toplevel)))
-    (#j:jqconsole:Prompt t #'process-input #'indent-level)))
+    (#j:jqconsole:Prompt t #'process-input #'%sexpr-complete)))
 
 
 (defun web-init ()

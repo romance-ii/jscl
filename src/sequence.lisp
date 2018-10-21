@@ -395,10 +395,10 @@
 (defun one-args-reduce (function element from-end initial-value initial-value-p)
   (if from-end
       (if initial-value-p
-          (funcall function initial-value element)
+          (funcall function element initial-value)
           element)
       (if initial-value-p
-          (funcall function element initial-value)
+          (funcall function initial-value element)
           element)))
 
 (defun jscl/cl:reduce (function sequence
