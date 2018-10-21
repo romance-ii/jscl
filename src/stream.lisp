@@ -107,6 +107,18 @@
   (assert (eq (car (storage-vector-kind stream)) 'string-output-stream))
   (copy-seq (storage-vector-underlying-vector stream)))
 
+(defmacro with-input-from-string ((var string &key start end index) &body body)
+  ;; TODO: &key start end index
+  (assert (null (or start end index)) ()
+    "Unimplemented: WITH-INPUT-FROM-STRING &KEY START END INDEX")
+  `(let ((,var (make-string-input-stream ,string)))
+     ,@body))
+
+ (defun get-output-stream-string (stream)
+   (prog1 (stream-data stream)
+     (setf (stream-data stream) (make-string 0))))
+
+
 (defmacro jscl/cl:with-output-to-string ((var) &body body)
   `(let ((,var (make-string-output-stream)))
      ,@body
