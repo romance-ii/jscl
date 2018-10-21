@@ -108,10 +108,14 @@
     (while (and ch (whitespacep ch))
       (read-char stream nil nil)
       (setq ch (peek-char nil stream nil nil)))))
+ 
+(defun terminating-character-p (ch)
+  (find ch "(\"`';,)"))
 
 (defun terminalp (ch)
-  (or (null ch) (whitespacep ch)
-      (find ch "(\")")))
+  (or (null ch)
+      (whitespacep ch)
+      (terminating-characer-p ch))
 
 (defun read-until (stream func)
   "Read from STREAM into a string, until the predicate FUNC returns true
