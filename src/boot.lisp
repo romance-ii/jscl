@@ -838,11 +838,6 @@
 (defmacro jscl/cl::do (varlist endlist &body body)
   (do/do* 'do varlist endlist body))
 
-<<<<<<<<< Temporary merge branch 1
-(defmacro declare (&rest declarations)
-  "Early DECLARE ignores everything."
-  nil)
-
 
 
 (defmacro jscl/cl::declare (&rest declarations)
