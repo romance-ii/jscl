@@ -44,11 +44,11 @@
 (defun jscl/cl::get (symbol indicator &optional default)
   (getf (symbol-plist symbol) indicator default))
 
-(define-setf-expander get (symbol indicator &optional default)
+(define-setf-expander jscl/cl::get (symbol indicator &optional default)
   (get-setf-expansion `(getf (symbol-plist ,symbol) ,indicator ,default)))
 
 
-(defun symbol-function (symbol)
+(defun jscl/cl::symbol-function (symbol)
   (symbol-function symbol))
 
-(defsetf symbol-function fset)
+(defsetf jscl/cl::symbol-function fset)
