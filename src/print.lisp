@@ -22,7 +22,7 @@
 ;;; this correctly — TODO this may not work with the new stream handlers
 ;;; with the generic function emulation
 
-(defvar jscl/cl:*standard-output*
+(defvar jscl/cl::*standard-output*
 #+jscl
 (setq jscl/cl::*standard-output*
       (vector 'stream
@@ -137,13 +137,13 @@
         (concat result "|"))
       s))
 
-(defvar jscl/cl:*print-escape* t)
-(defvar jscl/cl:*print-readably* t)
-(defvar jscl/cl:*print-circle* nil)
-(defvar jscl/cl:*print-radix* nil)
-(defvar jscl/cl:*print-base* 10)
+(defvar jscl/cl::*print-escape* t)
+(defvar jscl/cl::*print-readably* t)
+(defvar jscl/cl::*print-circle* nil)
+(defvar jscl/cl::*print-radix* nil)
+(defvar jscl/cl::*print-base* 10)
 
-(defvar jscl/cl:*read-base* 10) ; NB. This file is loaded before read.lisp
+(defvar jscl/cl::*read-base* 10) ; NB. This file is loaded before read.lisp
 
 ;; To support *print-circle*  some objects must be  tracked for sharing:
 ;; conses, arrays  and apparently-uninterned symbols. These  objects are
@@ -322,7 +322,7 @@ format control string ~S." fmt))))
      )
     (t x)))
 
-(defun jscl/cl:write (form &key (stream *standard-output*))
+(defun jscl/cl::write (form &key (stream *standard-output*))
   (let ((stream (output-stream-designator stream)))
     (multiple-value-bind (objs ids)
         (scan-multiple-referenced-objects form)
@@ -334,20 +334,20 @@ format control string ~S." fmt))))
   (with-output-to-string (output)
     (write form :stream output)))
 
-(defmacro jscl/cl:with-input-from-string ((stream string) &body body)
+(defmacro jscl/cl::with-input-from-string ((stream string) &body body)
   `(let ((,stream (cons ,string 0)))
      ,@body))
 
 
-(defun jscl/cl:prin1 (form &optional stream)
+(defun jscl/cl::prin1 (form &optional stream)
     (let ((*print-escape* t))
       (write form :stream stream)))
 
-(defun jscl/cl:prin1-to-string (form)
+(defun jscl/cl::prin1-to-string (form)
     (with-output-to-string (output)
       (prin1 form output)))
 
-(defun jscl/cl:princ (form &optional stream)
+(defun jscl/cl::princ (form &optional stream)
     (let ((*print-escape* nil) (*print-readably* nil))
       (typecase form
         (symbol (write (symbol-name form) :stream stream))
@@ -355,20 +355,20 @@ format control string ~S." fmt))))
         (t (write form :stream stream))))
     form)
 
-(defun jscl/cl:princ-to-string (form)
+(defun jscl/cl::princ-to-string (form)
     (with-output-to-string (output)
       (princ form output)))
 
-(defun jscl/cl:terpri (&optional (stream *standard-output*))
+(defun jscl/cl::terpri (&optional (stream *standard-output*))
     (write-char #\newline stream)
     (values))
 
-(defun jscl/cl:write-line (x)
+(defun jscl/cl::write-line (x)
     (write-string x)
     (terpri)
     x)
 
-(defun jscl/cl:print (x &optional (stream *standard-output*))
+(defun jscl/cl::print (x &optional (stream *standard-output*))
     (prog1 (prin1 x stream)
     (terpri stream)))
 
@@ -652,7 +652,7 @@ emits (1- COUNT)."
   (assert (null (or end-at-p end-colon-p)))
   (assert (= 1 (length captured-substrings)))
   (multiple-value-bind (output new-args)
-      (jscl/cl:format 'values (first captured-substrings) arguments)
+      (jscl/cl::format 'values (first captured-substrings) arguments)
     (values (funcall (cond
                        ((and start-at-p start-colon-p)
                         #'string-upcase)
@@ -772,12 +772,12 @@ emits (1- COUNT)."
       (check-type list-args list)
       (while list-args
         (multiple-value-bind (segment new-args)
-            (jscl/cl:format 'values (first captured-substrings) list-args)
+            (jscl/cl::format 'values (first captured-substrings) list-args)
           (push segment output)
           (setq list-args new-args))
         (when (and list-args (third captured-substrings))
           (multiple-value-bind (segment new-args)
-              (jscl/cl:format 'values (third captured-substrings) list-args)
+              (jscl/cl::format 'values (third captured-substrings) list-args)
             (push segment output)
             (setq list-args new-args)))))
     (values (concatenate 'string (reverse output)) arguments)))
@@ -979,7 +979,7 @@ but wanted ~~~c in format string"
                                   :atp atp :colonp colonp))))))
         (values control-string output arguments)))))
 
-(defun jscl/cl:format (destination control-string &rest format-arguments)
+(defun jscl/cl::format (destination control-string &rest format-arguments)
   ;; docstring c/o SBCL
   "Provides various facilities for formatting output.
 

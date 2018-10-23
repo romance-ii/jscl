@@ -140,6 +140,6 @@ accumulated, in the order."
         (collect element)))))
 
 (defun find-package-or-fail (package-designator)
-  (or (jscl/cl:find-package package-designator)
+  (or (jscl/cl::find-package package-designator)
       (error "The name `~S' does not designate any package."
              (string package-designator))))

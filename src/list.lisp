@@ -19,16 +19,16 @@
 ;;; Various list functions
 
 ;;; Compiler primitives
-(defun jscl/cl:cons (x y) (jscl/js::cons x y))
-(defun jscl/cl:consp (x) (jscl/js::consp x))
+(defun jscl/cl::cons (x y) (jscl/js::cons x y))
+(defun jscl/cl::consp (x) (jscl/js::consp x))
 
-(defun jscl/cl:listp (x)
+(defun jscl/cl::listp (x)
   (or (consp x) (null x)))
 
-(defun jscl/cl:null (x)
+(defun jscl/cl::null (x)
   (eq x nil))
 
-(defun jscl/cl:endp (object)
+(defun jscl/cl::endp (object)
   "It returns true if OBJECT is NIL, false if OBJECT is a CONS, and an error
  for any other type of OBJECT.
 
@@ -40,81 +40,81 @@
 
 ;;; CAR, CDR, and their kin
 
-(defun jscl/cl:car (x)
+(defun jscl/cl::car (x)
   "Return the CAR part of a cons, or NIL if X is null."
   (jscl/js::car x))
 
-(defun jscl/cl:cdr (x) (jscl/js::cdr x))
+(defun jscl/cl::cdr (x) (jscl/js::cdr x))
 
-(defun jscl/cl:rplaca (cons x)
+(defun jscl/cl::rplaca (cons x)
   (jscl/js::rplaca cons x))
 
-(defun jscl/cl:rplacd (cons x)
+(defun jscl/cl::rplacd (cons x)
   (jscl/js::rplacd cons x))
 
-(defun jscl/cl:first 	(x) (car 	x))
-(defun jscl/cl:second 	(x) (cadr 	x))
-(defun jscl/cl:third 	(x) (caddr 	x))
-(defun jscl/cl:fourth 	(x) (cadddr 	x))
-(defun jscl/cl:fifth 	(x) (car 	(cddddr x)))
-(defun jscl/cl:sixth 	(x) (cadr 	(cddddr x)))
-(defun jscl/cl:seventh 	(x) (caddr 	(cddddr x)))
-(defun jscl/cl:eighth 	(x) (cadddr 	(cddddr x)))
-(defun jscl/cl:ninth 	(x) (car 	(cddddr (cddddr x))))
-(defun jscl/cl:tenth 	(x) (cadr 	(cddddr (cddddr x))))
-(defun jscl/cl:rest 	(x) (cdr x))
+(defun jscl/cl::first 	(x) (car 	x))
+(defun jscl/cl::second 	(x) (cadr 	x))
+(defun jscl/cl::third 	(x) (caddr 	x))
+(defun jscl/cl::fourth 	(x) (cadddr 	x))
+(defun jscl/cl::fifth 	(x) (car 	(cddddr x)))
+(defun jscl/cl::sixth 	(x) (cadr 	(cddddr x)))
+(defun jscl/cl::seventh 	(x) (caddr 	(cddddr x)))
+(defun jscl/cl::eighth 	(x) (cadddr 	(cddddr x)))
+(defun jscl/cl::ninth 	(x) (car 	(cddddr (cddddr x))))
+(defun jscl/cl::tenth 	(x) (cadr 	(cddddr (cddddr x))))
+(defun jscl/cl::rest 	(x) (cdr x))
 
-(defun jscl/cl:list-length (list)
+(defun jscl/cl::list-length (list)
   (let ((l 0))
     (while (not (null list))
       (incf l)
       (setq list (cdr list)))
     l))
 
-(defun jscl/cl:nthcdr (n list)
+(defun jscl/cl::nthcdr (n list)
   (while (and (plusp n) list)
     (setq n (1- n))
     (setq list (cdr list)))
   list)
 
-(defun jscl/cl:nth (n list)
+(defun jscl/cl::nth (n list)
   (car (nthcdr n list)))
 
-(defun jscl/cl:caar (x) (car (car x)))
-(defun jscl/cl:cadr (x) (car (cdr x)))
-(defun jscl/cl:cdar (x) (cdr (car x)))
-(defun jscl/cl:cddr (x) (cdr (cdr x)))
+(defun jscl/cl::caar (x) (car (car x)))
+(defun jscl/cl::cadr (x) (car (cdr x)))
+(defun jscl/cl::cdar (x) (cdr (car x)))
+(defun jscl/cl::cddr (x) (cdr (cdr x)))
 
-(defun jscl/cl:caaar (x) (car (caar x)))
-(defun jscl/cl:caadr (x) (car (cadr x)))
-(defun jscl/cl:cadar (x) (car (cdar x)))
-(defun jscl/cl:caddr (x) (car (cddr x)))
-(defun jscl/cl:cdaar (x) (cdr (caar x)))
-(defun jscl/cl:cdadr (x) (cdr (cadr x)))
-(defun jscl/cl:cddar (x) (cdr (cdar x)))
-(defun jscl/cl:cdddr (x) (cdr (cddr x)))
+(defun jscl/cl::caaar (x) (car (caar x)))
+(defun jscl/cl::caadr (x) (car (cadr x)))
+(defun jscl/cl::cadar (x) (car (cdar x)))
+(defun jscl/cl::caddr (x) (car (cddr x)))
+(defun jscl/cl::cdaar (x) (cdr (caar x)))
+(defun jscl/cl::cdadr (x) (cdr (cadr x)))
+(defun jscl/cl::cddar (x) (cdr (cdar x)))
+(defun jscl/cl::cdddr (x) (cdr (cddr x)))
 
-(defun jscl/cl:caaaar (x) (car (caaar x)))
-(defun jscl/cl:caaadr (x) (car (caadr x)))
-(defun jscl/cl:caadar (x) (car (cadar x)))
-(defun jscl/cl:caaddr (x) (car (caddr x)))
-(defun jscl/cl:cadaar (x) (car (cdaar x)))
-(defun jscl/cl:cadadr (x) (car (cdadr x)))
-(defun jscl/cl:caddar (x) (car (cddar x)))
-(defun jscl/cl:cadddr (x) (car (cdddr x)))
-(defun jscl/cl:cdaaar (x) (cdr (caaar x)))
-(defun jscl/cl:cdaadr (x) (cdr (caadr x)))
-(defun jscl/cl:cdadar (x) (cdr (cadar x)))
-(defun jscl/cl:cdaddr (x) (cdr (caddr x)))
-(defun jscl/cl:cddaar (x) (cdr (cdaar x)))
-(defun jscl/cl:cddadr (x) (cdr (cdadr x)))
-(defun jscl/cl:cdddar (x) (cdr (cddar x)))
-(defun jscl/cl:cddddr (x) (cdr (cdddr x)))
+(defun jscl/cl::caaaar (x) (car (caaar x)))
+(defun jscl/cl::caaadr (x) (car (caadr x)))
+(defun jscl/cl::caadar (x) (car (cadar x)))
+(defun jscl/cl::caaddr (x) (car (caddr x)))
+(defun jscl/cl::cadaar (x) (car (cdaar x)))
+(defun jscl/cl::cadadr (x) (car (cdadr x)))
+(defun jscl/cl::caddar (x) (car (cddar x)))
+(defun jscl/cl::cadddr (x) (car (cdddr x)))
+(defun jscl/cl::cdaaar (x) (cdr (caaar x)))
+(defun jscl/cl::cdaadr (x) (cdr (caadr x)))
+(defun jscl/cl::cdadar (x) (cdr (cadar x)))
+(defun jscl/cl::cdaddr (x) (cdr (caddr x)))
+(defun jscl/cl::cddaar (x) (cdr (cdaar x)))
+(defun jscl/cl::cddadr (x) (cdr (cdadr x)))
+(defun jscl/cl::cdddar (x) (cdr (cddar x)))
+(defun jscl/cl::cddddr (x) (cdr (cdddr x)))
 
 
 ;;; Construction
 
-(defun jscl/cl:make-list (size &key (initial-element nil))
+(defun jscl/cl::make-list (size &key (initial-element nil))
   "Create a list of size `size` of `initial-element`s."
   (when (< size 0)
     (error "Size must be non-negative"))
@@ -122,10 +122,10 @@
     (dotimes (i size newlist)
       (push initial-element newlist))))
 
-(defun jscl/cl:list (&rest args)
+(defun jscl/cl::list (&rest args)
   args)
 
-(defun jscl/cl:list* (arg &rest others)
+(defun jscl/cl::list* (arg &rest others)
   (cond ((null others) arg)
         ((null (cdr others)) (cons arg (car others)))
         (t (do ((x others (cdr x)))
@@ -141,16 +141,16 @@
       (cons (car list1)
             (append (cdr list1) list2))))
 
-(defun jscl/cl:append (&rest lists)
+(defun jscl/cl::append (&rest lists)
   (reduce #'append-two lists))
 
-(defun jscl/cl:revappend (list1 list2)
+(defun jscl/cl::revappend (list1 list2)
   (while list1
     (push (car list1) list2)
     (setq list1 (cdr list1)))
   list2)
 
-(defun jscl/cl:sublis (alist tree
+(defun jscl/cl::sublis (alist tree
                         &key key (test #'eql testp) (test-not #'eql test-not-p))
   (when (and testp test-not-p)
     (error "Both test and test-not are set"))
@@ -165,7 +165,7 @@
                    (cons (s (car x)) (s (cdr x)))))))
     (s tree)))
 
-(defun jscl/cl:subst (new old tree
+(defun jscl/cl::subst (new old tree
                        &key key (test #'eql testp) (test-not #'eql test-not-p))
   (labels ((s (x)
              (cond ((satisfies-test-p old x
@@ -181,7 +181,7 @@
                             (cons a b)))))))
     (s tree)))
 
-(defun jscl/cl:copy-list (x)
+(defun jscl/cl::copy-list (x)
   (if (null x)
       nil
       (let* ((new-list (list (car x)))
@@ -195,13 +195,13 @@
 
 ;;; Trees
 
-(defun jscl/cl:copy-tree (tree)
+(defun jscl/cl::copy-tree (tree)
   (if (consp tree)
       (cons (copy-tree (car tree))
             (copy-tree (cdr tree)))
       tree))
 
-(defun jscl/cl:tree-equal (tree1 tree2 &key (test #'eql testp)
+(defun jscl/cl::tree-equal (tree1 tree2 &key (test #'eql testp)
                                     (test-not #'eql test-not-p))
   (when (and testp test-not-p) (error "Both test and test-not are set"))
   (let ((func (if test-not-p (complement test-not) test)))
@@ -216,22 +216,22 @@
 
 ;;; The end
 
-(defun jscl/cl:tailp (object list)
+(defun jscl/cl::tailp (object list)
   (do ((tail list (cdr tail)))
       ((atom tail) (eq object tail))
     (when (eql tail object)
-      (return-from jscl/cl:tailp t))))
+      (return-from jscl/cl::tailp t))))
 
-(defun jscl/cl:last (x)
+(defun jscl/cl::last (x)
   (while (consp (cdr x))
     (setq x (cdr x)))
   x)
 
-(defun jscl/cl:butlast (x &optional (n 1))
+(defun jscl/cl::butlast (x &optional (n 1))
   "Returns x, less the n last elements in the list."
   (nbutlast (copy-list x) n))
 
-(defun jscl/cl:nbutlast (x &optional (n 1))
+(defun jscl/cl::nbutlast (x &optional (n 1))
   "Destructively returns x, less the n last elements in the list."
   (cond
     ((not (and (integerp n) (>= n 0)))
@@ -256,7 +256,7 @@
 
 ;;; Sets
 
-(defun jscl/cl:member (x list
+(defun jscl/cl::member (x list
                         &key key (test #'eql testp) (test-not #'eql test-not-p))
   (while list
     (when (satisfies-test-p x (car list)
@@ -265,7 +265,7 @@
       (return list))
     (setq list (cdr list))))
 
-(defun jscl/cl:intersction (list1 list2 &key (test #'eql) (key #'identity))
+(defun jscl/cl::intersction (list1 list2 &key (test #'eql) (key #'identity))
   (let ((new-list ()))
     (dolist (x list1)
       (when (member (funcall key x) list2 :test test :key key)
@@ -275,7 +275,7 @@
 
 ;;; Associative Lists
 
-(defun jscl/cl:assoc (x alist
+(defun jscl/cl::assoc (x alist
                        &key key (test #'eql testp) (test-not #'eql test-not-p))
   (while alist
     (if (satisfies-test-p x (caar alist)
@@ -285,7 +285,7 @@
         (setq alist (cdr alist))))
   (car alist))
 
-(defun jscl/cl:rassoc (x alist
+(defun jscl/cl::rassoc (x alist
                         &key key (test #'eql testp) (test-not #'eql test-not-p))
   (while alist
     (if (satisfies-test-p x (cdar alist)
@@ -295,17 +295,17 @@
         (setq alist (cdr alist))))
   (car alist))
 
-(defun jscl/cl:acons (key datum alist)
+(defun jscl/cl::acons (key datum alist)
   (cons (cons key datum) alist))
 
-(defun jscl/cl:pairlis (keys data &optional (alist ()))
+(defun jscl/cl::pairlis (keys data &optional (alist ()))
   (while keys
     (setq alist (acons (car keys) (car data) alist))
     (setq keys (cdr keys))
     (setq data (cdr data)))
   alist)
 
-(defun jscl/cl:copy-alist (alist)
+(defun jscl/cl::copy-alist (alist)
   "Return a new association list which is EQUAL to ALIST."
   (with-collect
       (while alist
@@ -315,22 +315,22 @@
 
 ;;; SETFs
 
-(defun (setf jscl/cl:car) (value cell)
+(defun (setf jscl/cl::car) (value cell)
   (rplaca cell value)
   value)
 
-(defun (setf jscl/cl:cdr) (value cell)
+(defun (setf jscl/cl::cdr) (value cell)
   (rplacd cell value)
   value)
 
-(defun (setf jscl/cl:nth) (value n list)
+(defun (setf jscl/cl::nth) (value n list)
   (check-type n (integer 0 *) "a list index")
   (check-type list list)
   (let ((nthcdr (nthcdr n list)))
     (rplaca nthcdr value)))
 
 ;; The NCONC function is based on the SBCL's one.
-(defun jscl/cl:nconc (&rest lists)
+(defun jscl/cl::nconc (&rest lists)
   (flet ((fail (object)
            (error "type-error in nconc (object ~s)" object)))
     (do ((top lists (cdr top)))
@@ -358,14 +358,14 @@
                (return top-of-top))))))))
 
 
-(defun jscl/cl:nreconc (x y)
+(defun jscl/cl::nreconc (x y)
   (do ((1st (cdr x) (if (endp 1st) 1st (cdr 1st)))
        (2nd x 1st)                ; 2nd follows first down the list.
        (3rd y 2nd))               ;3rd follows 2nd down the list.
       ((atom 2nd) 3rd)
     (rplacd 2nd 3rd)))
 
-(defun jscl/cl:adjoin (item list &key (test #'eql) (key #'identity))
+(defun jscl/cl::adjoin (item list &key (test #'eql) (key #'identity))
   (if (member item list :key key :test test)
       list
       (cons item list)))
@@ -373,7 +373,7 @@
 
 ;;; Property lists
 
-(defun jscl/cl:get-properties (plist indicator-list)
+(defun jscl/cl::get-properties (plist indicator-list)
   (do* ((plist plist (cddr plist))
         (cdr (cdr plist) (cdr plist))
         (car (car plist) (car plist)))
@@ -384,7 +384,7 @@
       (when found
         (return (values car (cadr plist) plist))))))
 
-(defun jscl/cl:getf (plist indicator &optional default)
+(defun jscl/cl::getf (plist indicator &optional default)
   (do* ((plist plist (cddr plist))
         (cdr (cdr plist) (cdr plist))
         (car (car plist) (car plist)))
@@ -406,7 +406,7 @@
       (setf (car (cdr tail)) new-value)
       (return tail))))
 
-(define-setf-expander jscl/cl:getf (plist indicator &optional default)
+(define-setf-expander jscl/cl::getf (plist indicator &optional default)
   (multiple-value-bind (dummies vals newval setter getter)
       (get-setf-expansion plist)
     (let ((store (gensym "GETF-STORE-"))
@@ -466,24 +466,24 @@
       (:list (setf (cdr temp) (list res)
                    temp (cdr temp))))))
 
-(defun jscl/cl:mapc (function list &rest more-lists)
+(defun jscl/cl::mapc (function list &rest more-lists)
   "Apply FUNCTION to successive elements of lists. Return the second argument."
   (map1 function (cons list more-lists) nil t))
 
-(defun jscl/cl:mapcar (function list &rest more-lists)
+(defun jscl/cl::mapcar (function list &rest more-lists)
   "Apply FUNCTION to successive elements of LIST. Return list of FUNCTION
  return values."
   (map1 function (cons list more-lists) :list t))
 
-(defun jscl/cl:mapcan (function list &rest more-lists)
+(defun jscl/cl::mapcan (function list &rest more-lists)
   "Apply FUNCTION to successive elements of LIST. Return NCONC of FUNCTION
  results."
   (map1 function (cons list more-lists) :nconc t))
 
-(defun jscl/cl:maplist (function list &rest more-lists)
+(defun jscl/cl::maplist (function list &rest more-lists)
   "Apply FUNCTION to successive CDRs of list. Return list of results."
   (map1 function (cons list more-lists) :list nil))
 
-(defun jscl/cl:mapcon (function list &rest more-lists)
+(defun jscl/cl::mapcon (function list &rest more-lists)
   "Apply FUNCTION to successive CDRs of lists. Return NCONC of results."
   (map1 function (cons list more-lists) :nconc nil))

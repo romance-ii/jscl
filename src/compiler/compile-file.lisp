@@ -109,7 +109,7 @@ forms if PRINT is set."
                    form-count last-form))))
       (format t " Done."))))
 
-(defun jscl/cl:compile-file
+(defun jscl/cl::compile-file
     (input-file &key
                   (output-file
                    (make-pathname :type "js"
