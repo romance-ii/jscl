@@ -17,29 +17,29 @@
 
 
 
-(defun jscl/cl:upgraded-array-element-type (typespec &optional environment)
+(defun jscl/cl::upgraded-array-element-type (typespec &optional environment)
   (declare (ignore environment))
   (if (eq typespec 'character)
       'character
       t))
 
-(defun jscl/cl:array-dimensions (array)
-  (check-type array jscl/cl:array)
+(defun jscl/cl::array-dimensions (array)
+  (check-type array jscl/cl::array)
   (third (storage-vector-kind array)))
 
-(defun jscl/cl:adjustable-array-p (array)
-  (check-type array jscl/cl:array)
+(defun jscl/cl::adjustable-array-p (array)
+  (check-type array jscl/cl::array)
   (fourth (storage-vector-kind array)))
 
-(defun jscl/cl:fill-pointer (array)
-  (check-type array jscl/cl:array)
+(defun jscl/cl::fill-pointer (array)
+  (check-type array jscl/cl::array)
   (fifth (storage-vector-kind array)))
 
-(defun (setf jscl/cl:fill-pointer) (new-index array)
-  (check-type array jscl/cl:array)
+(defun (setf jscl/cl::fill-pointer) (new-index array)
+  (check-type array jscl/cl::array)
   (setf (fifth (storage-vector-kind array)) new-index))
 
-(defun jscl/cl:make-array (dimensions
+(defun jscl/cl::make-array (dimensions
                             &key element-type initial-element
                                  adjustable fill-pointer)
   (let* ((dimensions (ensure-list dimensions))
@@ -62,44 +62,44 @@
     array))
 
 
-(defun jscl/cl:arrayp (x)
+(defun jscl/cl::arrayp (x)
   (and (storage-vector-p x)
        (subtypep (storage-vector-kind x) 'array)))
 
-(defun jscl/cl:array-element-type (array)
-  (check-type array jscl/cl:array)
+(defun jscl/cl::array-element-type (array)
+  (check-type array jscl/cl::array)
   (if (eql 1 (jscl/ffi:oget array "stringp"))
       'character
       (second (storage-vector-kind array))))
 
 ;; TODO: Error checking
-(defun jscl/cl:array-dimension (array axis)
+(defun jscl/cl::array-dimension (array axis)
   (nth axis (array-dimensions array)))
 
-(defun jscl/cl:aref (array index)
+(defun jscl/cl::aref (array index)
   (check-type array array)
   (check-type index (and fixnum (integer 0 *)))
   (storage-vector-ref array index))
 
-(defun jscl/cl:aset (array index value)
-  (check-type array jscl/cl:array)
+(defun jscl/cl::aset (array index value)
+  (check-type array jscl/cl::array)
   (check-type index (and fixnum (integer 0 *)))
   (storage-vector-set array index value))
 
-(defun (setf jscl/cl:aref) (value array index)
+(defun (setf jscl/cl::aref) (value array index)
   (aset array index value))
 
 
 ;;; Vectors
 
-(defun jscl/cl:vectorp (x)
-  (and (jscl/cl:arrayp x) (null (cdr (array-dimensions x)))))
+(defun jscl/cl::vectorp (x)
+  (and (jscl/cl::arrayp x) (null (cdr (array-dimensions x)))))
 
-(defun jscl/cl:vector (&rest objects)
+(defun jscl/cl::vector (&rest objects)
   (list-to-vector objects))
 
-(defun jscl/cl:vector-push-extend (new vector &key min-extension)
-  (unless (jscl/cl:vectorp vector)
+(defun jscl/cl::vector-push-extend (new vector &key min-extension)
+  (unless (jscl/cl::vectorp vector)
     (error "~S is not a vector." vector))
   (let ((pointer (fill-pointer vector))
         (size (storage-vector-size vector)))

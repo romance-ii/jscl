@@ -29,7 +29,7 @@
 
 
 
-(defmacro jscl/cl:deftype (name lambda-list &body body)
+(defmacro jscl/cl::deftype (name lambda-list &body body)
   `(push-to-lexenv (make-binding
                     :name ',name
                     :type 'type
