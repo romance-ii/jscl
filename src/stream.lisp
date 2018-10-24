@@ -84,6 +84,10 @@
   (assert (jscl/cl::output-stream-p stream))
   (funcall (stream-generic-method stream 'write-char) char stream))
 
+(defun jscl/cl::write-string (string &optional (stream *standard-output*))
+  (assert (jscl/cl::output-stream-p stream))
+  (funcall (stream-generic-method stream 'write-string) string stream))
+
 (defun jscl/cl::force-output (char &optional (stream *standard-output*))
   (assert (jscl/cl::output-stream-p stream))
   (funcall (stream-generic-method stream 'force-output) char stream))
@@ -93,9 +97,9 @@
   (assert (jscl/cl::output-stream-p stream))
   (funcall (stream-generic-method stream 'force-output) char stream))
 
-(defun jscl/cl::write-string (string &optional (stream *standard-output*))
-  (assert (jscl/cl::output-stream-p stream))
-  (funcall (stream-generic-method stream 'write-string) string stream))
+
+
+;;; String Streams
 
 (defun jscl/cl::make-string-output-stream ()
   (make-storage-vector 0 '(string-output-stream)))
@@ -109,17 +113,14 @@
 
 (defmacro jscl/cl::with-input-from-string ((var string &key start end index) &body body)
   ;; TODO: &key start end index
-  (assert (null (or start end index)) ()
-    "Unimplemented: WITH-INPUT-FROM-STRING &KEY START END INDEX")
-  `(let ((,var (make-string-input-stream ,string)))
+  (assert (and (null (or end index))
+               (or (null start)
+                   (zerop start))) ()
+                   "Unimplemented features: WITH-INPUT-FROM-STRING &KEY START END INDEX")
+  `(jscl/cl::let ((,var (jscl/cl::make-string-input-stream ,string)))
      ,@body))
 
- (defun jscl/cl::get-output-stream-string (stream)
-   (prog1 (stream-data stream)
-     (setf (stream-data stream) (make-string 0))))
-
-
 (defmacro jscl/cl::with-output-to-string ((var) &body body)
-  `(let ((,var (make-string-output-stream)))
+  `(jscl/cl::let ((,var (jscl/cl::make-string-output-stream)))
      ,@body
-     (get-output-stream-string ,var)))
+     (jscl/cl::get-output-stream-string ,var)))

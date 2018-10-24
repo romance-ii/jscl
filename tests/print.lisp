@@ -137,9 +137,17 @@
 ;; (test (equal (format nil "~5,,':,2d" 400)  " 4:00")) — this goes into
 ;; infinite loop
 
+
+
 ;;; Internal unit tests
 (test (equal (jscl::group-digits #\, 3 "1234") "1,234"))
 (test (equal (jscl::group-digits #\, 3 "123") "123"))
 (test (equal (jscl::group-digits #\: 2 "F00FC7C8") "F0:0F:C7:C8"))
 (test (equal (jscl::group-digits #\, 3 "-1234") "-1,234"))
 (test (equal (jscl::format-pad-to-right "4" 5 #\:) "::::4"))
+
+(test (notany #'potential-number-p
+              '("1b5000" "777777q" "1.7J" "-3/4+6.7J" "12/25/83" "27^19"
+                "3^4/5" "6//7" "3.1.2.6" "^-43^" "3.141_592_653_589_793_238_4"
+                "-3.7+2.6i-6.17j+19.6k"
+                "/" "/5" "+" "1+" "1-" "foo+" "ab.cd" "_" "^" "^/-")))

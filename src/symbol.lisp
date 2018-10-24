@@ -48,7 +48,3 @@
   (get-setf-expansion `(getf (symbol-plist ,symbol) ,indicator ,default)))
 
 
-(defun jscl/cl::symbol-function (symbol)
-  (symbol-function symbol))
-
-(defsetf jscl/cl::symbol-function fset)

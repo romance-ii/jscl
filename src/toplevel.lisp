@@ -18,12 +18,12 @@
 
 (in-package #-jscl :jscl #+jscl :jscl/impl)
 
-
+
 
 (defun jscl/cl::eval (x)
   #+jscl
   (js-eval (with-compilation-environment
-             (compile-toplevel x t t)))
+               (compile-toplevel x t t)))
   #-jscl
   (eval x))
 
@@ -137,18 +137,26 @@ Git commit ~a; ~a
 
 JSCL  is  a Common  Lisp  implementation  on  Javascript. JSCL  is  Free
 Software: you can redistribute it and/or modify it, but it comes with NO
-warranty. For details, type (:COPYING)⮰.
+warranty. For details, type: (:COPYING)⮰.
 "
           *print-right-margin*
-          #.(jscl/bootstrap::violet-volts-p) (lisp-implementation-version)
+          #.(jscl/bootstrap::romance-ii-fork-p) (lisp-implementation-version)
           #.(jscl/bootstrap::git-commit)
           (lisp-implementation-type)
           (compilation-notice))
-  (if (find :node *features*)
-      (format t "For more information, visit the project page at ~
+  (if (jscl/bootstrap::romance-ii-fork-p)
+      
+      (if (find :node *features*)
+          (format t "For more information, visit the project page at ~
+https://github.com/romance-ii/jscl.~%~%")
+          (format t "For more information, visit the project page on ~
+ <a href=\"https://github.com/romance-ii/jscl\">GitHub</a>.~%~%"))
+      
+      (if (find :node *features*)
+          (format t "For more information, visit the project page at ~
 https://github.com/jscl-project/jscl.~%~%")
-      (format t "For more information, visit the project page on ~
- <a href=\"https://github.com/jscl-project/jscl\">GitHub</a>.~%~%")))
+          (format t "For more information, visit the project page on ~
+ <a href=\"https://github.com/jscl-project/jscl\">GitHub</a>.~%~%"))))
 
 ;;; Basic *standard-output*  stream. This  will usually be  overriden by
 ;;; web or node REPL.

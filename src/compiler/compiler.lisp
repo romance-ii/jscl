@@ -568,13 +568,13 @@ is NIL."
 (defvar *literal-counter*)
 
 (locally
-    (declare (sb-ext:muffle-conditions sb-kernel::function-redefinition-warning)
-             (jscl:muffle-conditions jscl:function-redefinition-warning))
-(defun limit-string-length (string length)
-  (and string
-       (let ((string (princ-to-string string)))
-         (if (> (length string) length)
-             (subseq string 0 length)
+    (declare #+sbcl (sb-ext:muffle-conditions sb-kernel::function-redefinition-warning)
+             #+jscl (jscl:muffle-conditions jscl:function-redefinition-warning))
+  (defun limit-string-length (string length)
+    (and string
+         (let ((string (princ-to-string string)))
+           (if (> (length string) length)
+               (subseq string 0 length)
                string)))))
 
 (defun genlit (&optional name)
