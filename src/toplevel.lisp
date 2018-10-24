@@ -18,48 +18,48 @@
 
 (in-package #-jscl :jscl #+jscl :jscl/impl)
 
+
 
-
-(defun jscl/cl:eval (x)
+(defun jscl/cl::eval (x)
   #+jscl
   (js-eval (with-compilation-environment
-             (compile-toplevel x t t)))
+               (compile-toplevel x t t)))
   #-jscl
   (eval x))
 
-(defvar jscl/cl:* nil)
-(defvar jscl/cl:** nil)
-(defvar jscl/cl:*** nil)
-(defvar jscl/cl:/ nil)
-(defvar jscl/cl:// nil)
-(defvar jscl/cl:/// nil)
-(defvar jscl/cl:+ nil)
-(defvar jscl/cl:++ nil)
-(defvar jscl/cl:+++ nil)
-(defvar jscl/cl:- nil)
+(defvar jscl/cl::* nil)
+(defvar jscl/cl::** nil)
+(defvar jscl/cl::*** nil)
+(defvar jscl/cl::/ nil)
+(defvar jscl/cl::// nil)
+(defvar jscl/cl::/// nil)
+(defvar jscl/cl::+ nil)
+(defvar jscl/cl::++ nil)
+(defvar jscl/cl::+++ nil)
+(defvar jscl/cl::- nil)
 
 (defun eval-interactive (x)
-  (setf jscl/cl:- x)
+  (setf jscl/cl::- x)
   (handler-case
   (let ((results (multiple-value-list (eval x))))
-        (setf jscl/cl:/// jscl/cl://
-              jscl/cl:// jscl/cl:/
-              jscl/cl:/ results
-              jscl/cl:*** jscl/cl:**
-              jscl/cl:** jscl/cl:*
-              jscl/cl:* (car results)))
+        (setf jscl/cl::/// jscl/cl:://
+              jscl/cl::// jscl/cl::/
+              jscl/cl::/ results
+              jscl/cl::*** jscl/cl::**
+              jscl/cl::** jscl/cl::*
+              jscl/cl::* (car results)))
     (serious-condition (c)
       (format *terminal-io* "~a~%~10t(Condition of type ~:(~a~)"
               c (type-of c))
       (return-from eval-interactive nil)))
-  (unless (boundp 'jscl/cl:*)
-    (setf jscl/cl:* nil))
-  (setf jscl/cl:+++ jscl/cl:++
-        jscl/cl:++ jscl/cl:+
-        jscl/cl:+ jscl/cl:-)
-  (values-list jscl/cl:/))
+  (unless (boundp 'jscl/cl::*)
+    (setf jscl/cl::* nil))
+  (setf jscl/cl::+++ jscl/cl::++
+        jscl/cl::++ jscl/cl::+
+        jscl/cl::+ jscl/cl::-)
+  (values-list jscl/cl::/))
 
-(setq jscl/cl:*package* *user-package*)
+(setq jscl/cl::*package* *user-package*)
 
 (defun compilation-notice ()
   #.(let ((build-time
@@ -137,22 +137,30 @@ Git commit ~a; ~a
 
 JSCL  is  a Common  Lisp  implementation  on  Javascript. JSCL  is  Free
 Software: you can redistribute it and/or modify it, but it comes with NO
-warranty. For details, type (:COPYING)⮰.
+warranty. For details, type: (:COPYING)⮰.
 "
           *print-right-margin*
-          #.(jscl/bootstrap::violet-volts-p) (lisp-implementation-version)
+          #.(jscl/bootstrap::romance-ii-fork-p) (lisp-implementation-version)
           #.(jscl/bootstrap::git-commit)
           (lisp-implementation-type)
           (compilation-notice))
-  (if (find :node *features*)
-      (format t "For more information, visit the project page at ~
+  (if (jscl/bootstrap::romance-ii-fork-p)
+      
+      (if (find :node *features*)
+          (format t "For more information, visit the project page at ~
+https://github.com/romance-ii/jscl.~%~%")
+          (format t "For more information, visit the project page on ~
+ <a href=\"https://github.com/romance-ii/jscl\">GitHub</a>.~%~%"))
+      
+      (if (find :node *features*)
+          (format t "For more information, visit the project page at ~
 https://github.com/jscl-project/jscl.~%~%")
-      (format t "For more information, visit the project page on ~
- <a href=\"https://github.com/jscl-project/jscl\">GitHub</a>.~%~%")))
+          (format t "For more information, visit the project page on ~
+ <a href=\"https://github.com/jscl-project/jscl\">GitHub</a>.~%~%"))))
 
 ;;; Basic *standard-output*  stream. This  will usually be  overriden by
 ;;; web or node REPL.
-(setq jscl/cl:*standard-output* (make-web-console-output-stream))
+(setq jscl/cl::*standard-output* (make-web-console-output-stream))
 
 #+jscl
 (if (find :node *features*)

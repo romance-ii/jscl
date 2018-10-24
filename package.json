@@ -1,7 +1,7 @@
 {
-  "name": "jscl",
+  "name": "jscl-tootsville",
   "version": "0.6.1",
-  "description": "A Common Lisp implementation for Javascript",
+  "description": "A Common Lisp implementation for Javascript; Tootsville fork",
   "main": "jscl.js",
   "files": [
     "jscl.js",

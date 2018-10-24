@@ -34,15 +34,15 @@
                            intermix)))
     (<= a-wins b-wins)))
 
-(defun jscl/cl:add-method (generic-function method)
+(defun jscl/cl::add-method (generic-function method)
   (setf (generic-function-methods generic-function)
         (sort (generic-function-methods generic-function)
               #'most-specific-method%)))
 
-(defmacro jscl/cl:defmethod (name &rest _)
+(defmacro jscl/cl::defmethod (name &rest _)
   (error "unimplemented"))
 
-(defmacro jscl/cl:defgeneric (name lambda-list &body options)
+(defmacro jscl/cl::defgeneric (name lambda-list &body options)
   (let ((generic (make-generic-function
                   :name name
                   :lambda-list lambda-list

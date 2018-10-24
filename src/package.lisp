@@ -19,24 +19,24 @@
 
 (defvar *package-table* (jscl/js::%js-vref "packages"))
 
-(defun jscl/cl:list-all-packages ()
+(defun jscl/cl::list-all-packages ()
   (let ((packages nil))
     (jscl/js::map-for-in
      (lambda (name) (pushnew name packages))
                 *package-table*)
     packages))
 
-(defun jscl/cl:packagep (x)
+(defun jscl/cl::packagep (x)
   (and (jscl/js::objectp x) (jscl/js::in "symbols" x)))
 
-(defun jscl/cl:find-package (package-designator)
-  (if (jscl/cl:packagep package-designator)
+(defun jscl/cl::find-package (package-designator)
+  (if (jscl/cl::packagep package-designator)
       package-designator
       (jscl/ffi:oget *package-table* (string package-designator))))
 
-(defvar jscl/cl:*package* (jscl/cl:find-package "CL-USER"))
+(defvar jscl/cl::*package* (jscl/cl::find-package "CL-USER"))
 
-(defun jscl/cl:delete-package (package-designator)
+(defun jscl/cl::delete-package (package-designator)
   ;; TODO:  Signal a  correctable error  in case  the package-designator
   ;; does not name a package.
  ;;;
@@ -47,12 +47,12 @@
 
 (defun %make-package
     (name use &optional nicknames (if-exists :error))
-  (when (jscl/cl:find-package name)
+  (when (jscl/cl::find-package name)
     (ecase if-exists
       (:error (cerror "IGNORE" "A package named `~a' already exists." name))
       (:ignore (warn "A package named `~a' already exists (ignoring MAKE-PACKAGE)"
                      name)
-               (return-from %make-package (values nil (jscl/cl:find-package name))))))
+               (return-from %make-package (values nil (jscl/cl::find-package name))))))
   (let ((package (jscl/js::new)))
     (setf (jscl/ffi:oget package "packageName") name
           (jscl/ffi:oget package "symbols") (jscl/js::new)
@@ -70,14 +70,14 @@
       (pushnew package result :test #'eq))
     (reverse result)))
 
-(defun jscl/cl:make-package (name &key use nicknames
+(defun jscl/cl::make-package (name &key use nicknames
                                         ((if-exists if-exists) :error))
   (%make-package (string name)
                  (resolve-package-list use)
                  nicknames
                  if-exists))
 
-(defun jscl/cl:package-name (package-designator)
+(defun jscl/cl::package-name (package-designator)
   (let ((package (find-package-or-fail package-designator)))
     (jscl/ffi:oget package "packageName")))
 
@@ -85,7 +85,7 @@
   (let ((package (find-package-or-fail package-designator)))
     (jscl/ffi:oget package "symbols")))
 
-(defun jscl/cl:package-use-list (package-designator)
+(defun jscl/cl::package-use-list (package-designator)
   (let ((package (find-package-or-fail package-designator)))
     (jscl/ffi:oget package "use")))
 
@@ -103,10 +103,10 @@
   (or (find-package "KEYWORD")
       (make-package "KEYWORD")))
 
-(defun jscl/cl:keywordp (x)
+(defun jscl/cl::keywordp (x)
   (and (symbolp x) (eq (symbol-package x) *keyword-package*)))
 
-(defmacro jscl/cl:in-package (string-designator)
+(defmacro jscl/cl::in-package (string-designator)
   `(eval-when (:compile-toplevel :load-toplevel :execute)
      (setq *package* (find-package-or-fail ',string-designator))))
 
@@ -144,10 +144,10 @@
                    (export (intern (symbol-name symbol) package)))
                  exports))))
 
-(defmacro jscl/cl:defpackage (package &rest options)
+(defmacro jscl/cl::defpackage (package &rest options)
   (defpackage-real% package options))
 
-(defun jscl/cl:redefine-package (package use &optional nicknames)
+(defun jscl/cl::redefine-package (package use &optional nicknames)
   (setf (jscl/ffi:oget package "use")
         (remove-duplicates (append (jscl/ffi:oget package "use") use)
                            :test #'equal))
@@ -163,10 +163,10 @@
   (let ((package (find-package name))
         (use (resolve-package-list use)))
     (if package
-        (jscl/cl:redefine-package package use)
+        (jscl/cl::redefine-package package use)
         (make-package name :use use :nicknames nicknames))))
 
-(defun jscl/cl:find-symbol (name &optional (package *package*))
+(defun jscl/cl::find-symbol (name &optional (package *package*))
   (let* ((package (find-package-or-fail package))
          (externals (%package-external-symbols package))
          (symbols (%package-symbols package)))
@@ -185,7 +185,7 @@
   "It is a function to call when  a symbol is interned. The function is
 invoked with the already-interned symbol as argument.")
 
-(defun jscl/cl:intern (name &optional (package *package*))
+(defun jscl/cl::intern (name &optional (package *package*))
   (let ((package (find-package-or-fail package)))
     (multiple-value-bind (symbol foundp)
         (find-symbol name package)
@@ -203,12 +203,12 @@ invoked with the already-interned symbol as argument.")
               (setf (jscl/ffi:oget symbols name) symbol)
               (values symbol nil)))))))
 
-(defun jscl/cl:symbol-package (symbol)
+(defun jscl/cl::symbol-package (symbol)
   (unless (symbolp symbol)
     (error "`~S' is not a symbol." symbol))
   (jscl/ffi:oget symbol "package"))
 
-(defun jscl/cl:export (symbols &optional (package *package*))
+(defun jscl/cl::export (symbols &optional (package *package*))
   (let ((exports (%package-external-symbols package)))
     (dolist (symb symbols t)
       (setf (jscl/ffi:oget exports (symbol-name symb)) symb))))
@@ -231,7 +231,7 @@ invoked with the already-interned symbol as argument.")
                          (jscl/js::map-for-in function (%package-external-symbols package)))
               *package-table*))
 
-(defmacro jscl/cl:do-symbols ((var &optional (package '*package*) result-form)
+(defmacro jscl/cl::do-symbols ((var &optional (package '*package*) result-form)
                       &body body)
   `(block nil
      (%map-symbols
@@ -239,7 +239,7 @@ invoked with the already-interned symbol as argument.")
       (find-package ,package))
      ,result-form))
 
-(defmacro jscl/cl:do-external-symbols ((var &optional (package '*package*)
+(defmacro jscl/cl::do-external-symbols ((var &optional (package '*package*)
                                     result-form)
                                &body body)
   `(block nil
@@ -248,13 +248,13 @@ invoked with the already-interned symbol as argument.")
       (find-package ,package))
      ,result-form))
 
-(defmacro jscl/cl:do-all-symbols ((var &optional result-form) &body body)
+(defmacro jscl/cl::do-all-symbols ((var &optional result-form) &body body)
   `(block nil (%map-all-symbols (lambda (,var) ,@body)) ,result-form))
 
 (defmacro do-all-external-symbols ((var &optional result-form) &body body)
   `(block nil (%map-all-external-symbols (lambda (,var) ,@body)) ,result-form))
 
-(defun jscl/cl:find-all-symbols (string &optional external-only)
+(defun jscl/cl::find-all-symbols (string &optional external-only)
   (let (symbols)
     (jscl/js::map-for-in (lambda (package)
                   (multiple-value-bind (symbol status) (find-symbol string package)

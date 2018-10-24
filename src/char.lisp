@@ -5,18 +5,18 @@
 ;; These comparison  functions heavily borrowed from  SBCL/CMUCL (public
 ;; domain).
 
-(defun jscl/cl:char= (character &rest more-characters)
+(defun jscl/cl::char= (character &rest more-characters)
   (dolist (c more-characters t)
     (unless (eql c character) (return nil))))
 
-(defun jscl/cl:char/= (character &rest more-characters)
+(defun jscl/cl::char/= (character &rest more-characters)
   (do* ((head character (car list))
         (list more-characters (cdr list)))
        ((null list) t)
     (dolist (c list)
-      (when (eql head c) (return-from jscl/cl:char/= nil)))))
+      (when (eql head c) (return-from jscl/cl::char/= nil)))))
 
-(defun jscl/cl:char< (character &rest more-characters)
+(defun jscl/cl::char< (character &rest more-characters)
   (do* ((c character (car list))
         (list more-characters (cdr list)))
        ((null list) t)
@@ -24,7 +24,7 @@
                (char-int (car list)))
       (return nil))))
 
-(defun jscl/cl:char> (character &rest more-characters)
+(defun jscl/cl::char> (character &rest more-characters)
   (do* ((c character (car list))
         (list more-characters (cdr list)))
        ((null list) t)
@@ -32,7 +32,7 @@
                (char-int (car list)))
       (return nil))))
 
-(defun jscl/cl:char<= (character &rest more-characters)
+(defun jscl/cl::char<= (character &rest more-characters)
   (do* ((c character (car list))
         (list more-characters (cdr list)))
        ((null list) t)
@@ -40,7 +40,7 @@
                 (char-int (car list)))
       (return nil))))
 
-(defun jscl/cl:char>= (character &rest more-characters)
+(defun jscl/cl::char>= (character &rest more-characters)
   (do* ((c character (car list))
         (list more-characters (cdr list)))
        ((null list) t)
@@ -54,14 +54,14 @@
 (defun two-arg-char-equal (c1 c2)
   (= (equal-char-code c1) (equal-char-code c2)))
 
-(defun jscl/cl:char-equal (character &rest more-characters)
+(defun jscl/cl::char-equal (character &rest more-characters)
   (check-type character character)
   (do ((clist more-characters (cdr clist)))
       ((null clist) t)
     (unless (two-arg-char-equal (car clist) character)
       (return nil))))
 
-(defun jscl/cl:char-not-equal (character &rest more-characters)
+(defun jscl/cl::char-not-equal (character &rest more-characters)
   (do* ((head character (car list))
         (list more-characters (cdr list)))
        ((null list) t)
@@ -74,7 +74,7 @@
 (defun two-arg-char-lessp (c1 c2)
   (< (equal-char-code c1) (equal-char-code c2)))
 
-(defun jscl/cl:char-lessp (character &rest more-characters)
+(defun jscl/cl::char-lessp (character &rest more-characters)
   (do* ((c character (car list))
         (list more-characters (cdr list)))
        ((null list) t)
@@ -84,7 +84,7 @@
 (defun two-arg-char-greaterp (c1 c2)
   (> (equal-char-code c1) (equal-char-code c2)))
 
-(defun jscl/cl:char-greaterp (character &rest more-characters)
+(defun jscl/cl::char-greaterp (character &rest more-characters)
   (do* ((c character (car list))
         (list more-characters (cdr list)))
        ((null list) t)
@@ -94,7 +94,7 @@
 (defun two-arg-char-not-greaterp (c1 c2)
   (<= (equal-char-code c1) (equal-char-code c2)))
 
-(defun jscl/cl:char-not-greaterp (character &rest more-characters)
+(defun jscl/cl::char-not-greaterp (character &rest more-characters)
   (do* ((c character (car list))
         (list more-characters (cdr list)))
        ((null list) t)
@@ -104,14 +104,14 @@
 (defun two-arg-char-not-lessp (c1 c2)
   (>= (equal-char-code c1) (equal-char-code c2)))
 
-(defun jscl/cl:char-not-lessp (character &rest more-characters)
+(defun jscl/cl::char-not-lessp (character &rest more-characters)
   (do* ((c character (car list))
         (list more-characters (cdr list)))
        ((null list) t)
     (unless (two-arg-char-not-lessp c (car list))
       (return nil))))
 
-(defun jscl/cl:character (character)
+(defun jscl/cl::character (character)
   (cond ((characterp character)
          character)
         ((and (stringp character)
@@ -123,12 +123,12 @@
         (t
          (error "not a valid character designator"))))
 
-(defun jscl/cl:alphanumericp (char)
+(defun jscl/cl::alphanumericp (char)
   ;; from the hyperspec:
   (or (alpha-char-p char)
       (not (null (digit-char-p char)))))
 
-(defun jscl/cl:graphic-char-p (char)
+(defun jscl/cl::graphic-char-p (char)
   ;; from Wikipedia's Unicode article.
   (let ((n (char-code char)))
     (cond
@@ -145,28 +145,28 @@
       ((< n #x10ffff) t)           ; upper range of allowable characters
       (:else nil))))
 
-(defun jscl/cl:standard-char-p (char)
+(defun jscl/cl::standard-char-p (char)
   ;; from SBCL/CMUCL:
   (and (let ((n (char-code char)))
          (or (< 31 n 127)
              (= n 10)))))
 
-(defun jscl/cl:upper-case-p (character)
+(defun jscl/cl::upper-case-p (character)
   (char/= character (char-downcase character)))
 
-(defun jscl/cl:lower-case-p (character)
+(defun jscl/cl::lower-case-p (character)
   (char/= character (char-upcase character)))
 
-(defun jscl/cl:both-case-p (character)
+(defun jscl/cl::both-case-p (character)
   (or (upper-case-p character) (lower-case-p character)))
 
-(defun jscl/cl:char-int (character)
+(defun jscl/cl::char-int (character)
   ;; no implementation-defined character attributes
   (char-code character))
 
 ;; TODO:  review, pretty  sure this  is max  code +  1; UCS  3 allocates
 ;; (sparsely) through #x10ffff so this gets set to #x110000
-(defconstant jscl/cl:char-code-limit #x110000)
+(defconstant jscl/cl::char-code-limit #x110000)
 
 (defvar +ascii-names+
   #("Null" "Start_Of_Heading" "Start_Of_Text" "End_Of_Text"
@@ -212,7 +212,7 @@ For the first 32 characters ('C0 controls'), the first
 ;; I hope  being slightly different from  SBCL doesn't bite me  down the
 ;; road. I'll figure out a good way to add the other 21701 names later.
 
-(defun jscl/cl:char-name (char)
+(defun jscl/cl::char-name (char)
   "For consistency, I'm  using the SBCL convention of  the Unicode name,
  with spaces as underscores, for  ASCII; or their \"U+xxxx\" convention
  for names I don't know."
@@ -221,7 +221,7 @@ For the first 32 characters ('C0 controls'), the first
         (aref +ascii-names+ code)
         (format nil "U+~4,'0x" code))))
 
-(defun jscl/cl:name-char (name)
+(defun jscl/cl::name-char (name)
   (let ((name (string name)))
     (if (and (<= 3 (length name))
              (char-equal #\U (char name 0))
@@ -232,5 +232,5 @@ For the first 32 characters ('C0 controls'), the first
 
         (progn (dotimes (i (length +ascii-names+))
                  (when (string-equal name (aref +ascii-names+ i))
-                   (return-from jscl/cl:name-char (code-char i))))
+                   (return-from jscl/cl::name-char (code-char i))))
                nil))))

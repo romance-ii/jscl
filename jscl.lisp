@@ -354,7 +354,7 @@ permissions on FILENAME, if we  know how in the current implementation."
   #- (or sbcl ecl)
   (warn "You'll need to set executable permissions yourself"))
 
-(defun violet-volts-p ()
+(defun romance-ii-fork-p ()
   (search "romance-ii/jscl"
           (run-program-compile-time "/usr/bin/git"
                                     '("remote" "-v"))))
@@ -441,9 +441,9 @@ permissions on FILENAME, if we  know how in the current implementation."
     ("toplevel" 	:both))
   "List of  all the source files  that need to be  compiled, and whether
 they are  to be compiled  just by  the host, by  the target JSCL,  or by
-both.  All files  have a  `.lisp' extension,  and are  relative to  src/
+both. All  files have  a “.lisp”  extension, and  are relative  to src/.
 Subdirectories  are indicated  by the  presence  of a  list rather  than
-a keyword  in the second  element of the  list.
+a keyword in the second element of the list.
 
 For example,  this list:
 

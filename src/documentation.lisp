@@ -5,7 +5,7 @@
 
 
 ;;; Documentation.
-(defun jscl/cl:documentation (x type)
+(defun jscl/cl::documentation (x type)
   "Return  the documentation  of X.  TYPE  must be  the symbol  VARIABLE
 or FUNCTION."
   (ecase type
@@ -32,7 +32,7 @@ or FUNCTION."
             (do-all-external-symbols (symbol) (handle-symbol symbol))
             (do-all-symbols (symbol) (handle-symbol symbol))))))
 
-(defun jscl/cl:apropos-list (string &optional package external-only)
+(defun jscl/cl::apropos-list (string &optional package external-only)
   (let (symbols)
     (map-apropos-symbols
      (lambda (symbol)
@@ -40,7 +40,7 @@ or FUNCTION."
      string package external-only)
     symbols))
 
-(defun jscl/cl:apropos (string &optional package external-only)
+(defun jscl/cl::apropos (string &optional package external-only)
   (map-apropos-symbols
    (lambda (symbol)
      (format t "~S" symbol)
@@ -65,17 +65,17 @@ or FUNCTION."
     (let ((value (symbol-value object)))
       (format stream "~&Its current value is ~A" value)
       (when value
-        (jscl/cl:describe value stream))))
-  (when (jscl/cl:special-operator-p object)
+        (jscl/cl::describe value stream))))
+  (when (jscl/cl::special-operator-p object)
     (format stream "~&~A names a special operator" object))
-  (cond ((jscl/cl:macro-function object)
+  (cond ((jscl/cl::macro-function object)
          (format stream "~&~A names a macro-function" object)
-         (jscl/cl:describe (macro-function object) stream))
-        ((jscl/cl:fboundp object)
+         (jscl/cl::describe (macro-function object) stream))
+        ((jscl/cl::fboundp object)
          (format stream "~&~A names a function" object)
-         (jscl/cl:describe (fdefinition object) stream))))
+         (jscl/cl::describe (fdefinition object) stream))))
 
-(defun jscl/cl:describe (object &optional (stream t))
+(defun jscl/cl::describe (object &optional (stream t))
   (let ((column-2 (floor *print-right-margin* 2)))
     (format stream "~&~S~vT ~s"
             object column-2 (type-of object))

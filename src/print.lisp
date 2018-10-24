@@ -15,22 +15,22 @@
 
 (in-package #-jscl :jscl #+jscl :jscl/impl)
 
-
+
 
 
 ;;; HACK HACK — if an error  occurs during startup before toplevel binds
 ;;; this correctly — TODO this may not work with the new stream handlers
 ;;; with the generic function emulation
 
-(defvar jscl/cl:*standard-output*
-#+jscl
-(setq jscl/cl::*standard-output*
-      (vector 'stream
-              (lambda (ch)
-            ((jscl/ffi::oget (%js-vref "global") "console" "error") (string ch)))
-              (lambda (string)
-            ((jscl/ffi::oget (%js-vref "global") "console" "error") string)))
-  #-jscl cl::*standard-output*)
+(defvar jscl/cl::*standard-output*
+  #+jscl
+  (setq jscl/cl::*standard-output*
+        (vector 'stream
+                (lambda (ch)
+                  ((jscl/ffi::oget (%js-vref "global") "console" "error") (string ch)))
+                (lambda (string)
+                  ((jscl/ffi::oget (%js-vref "global") "console" "error") string)))
+        #-jscl cl::*standard-output*))
 
 ;;; Printer
 
@@ -57,20 +57,21 @@
   "Does  S  contains characters  which  need to  be escaped to print the symbol name?"
   (when (every (lambda (ch) (char= #\. ch)) s)
     (return-from escape-symbol-name-p t))
-    (dotimes (i (length s))
-      (let ((ch (char s i)))
-        (when (or (terminalp ch)
-                  (char= ch #\:)
-                  (char= ch #\\)
-                  (not (char= ch (char-upcase ch)))
+  (dotimes (i (length s))
+    (let ((ch (char s i)))
+      (when (or (terminalp ch)
+                (char= ch #\:)
+                (char= ch #\\)
+                (not (char= ch (char-upcase ch)))
                 (char= ch #\vertical_line))
-          (return-from escape-symbol-name-p t))))
+        (return-from escape-symbol-name-p t))))
   (potential-number-p s))
 
 (defun potential-number-p (string)
-  " Return T  if the specified  string can be read  as a number  In case
- such a string is the name of a symbol then escaping is required when
- printing to ensure correct reading."
+  "Can the specified string can be read as a number?
+  
+In case such a string is the  name of a symbol then escaping is required
+ when printing to ensure correct reading."
   ;; The  four rules  for  being  a potential  number  are described  in
   ;; 2.3.1.1 Potential Numbers as Token
   ;;
@@ -109,17 +110,6 @@
    ;; Fourth rule
    (not (find (char string (1- (length string))) "+-)"))))
 
-#+nil
-;;; TODO test suite
-(mapcar #'potential-number-p
-        '("1b5000" "777777q" "1.7J" "-3/4+6.7J" "12/25/83" "27^19"
-          "3^4/5" "6//7" "3.1.2.6" "^-43^" "3.141_592_653_589_793_238_4"
-          "-3.7+2.6i-6.17j+19.6k"))
-
-#+nil
-;;; TODO test suite
-(mapcar #'potential-number-p '("/" "/5" "+" "1+" "1-" "foo+" "ab.cd" "_" "^" "^/-"))
-
 (defun escape-token-p (string)
   (or (potential-number-p string)
       (escape-symbol-name-p string)))
@@ -137,13 +127,13 @@
         (concat result "|"))
       s))
 
-(defvar jscl/cl:*print-escape* t)
-(defvar jscl/cl:*print-readably* t)
-(defvar jscl/cl:*print-circle* nil)
-(defvar jscl/cl:*print-radix* nil)
-(defvar jscl/cl:*print-base* 10)
+(defvar jscl/cl::*print-escape* t)
+(defvar jscl/cl::*print-readably* t)
+(defvar jscl/cl::*print-circle* nil)
+(defvar jscl/cl::*print-radix* nil)
+(defvar jscl/cl::*print-base* 10)
 
-(defvar jscl/cl:*read-base* 10) ; NB. This file is loaded before read.lisp
+(defvar jscl/cl::*read-base* 10) ; NB. This file is loaded before read.lisp
 
 ;; To support *print-circle*  some objects must be  tracked for sharing:
 ;; conses, arrays  and apparently-uninterned symbols. These  objects are
@@ -322,7 +312,7 @@ format control string ~S." fmt))))
      )
     (t x)))
 
-(defun jscl/cl:write (form &key (stream *standard-output*))
+(defun jscl/cl::write (form &key (stream *standard-output*))
   (let ((stream (output-stream-designator stream)))
     (multiple-value-bind (objs ids)
         (scan-multiple-referenced-objects form)
@@ -334,42 +324,42 @@ format control string ~S." fmt))))
   (with-output-to-string (output)
     (write form :stream output)))
 
-(defmacro jscl/cl:with-input-from-string ((stream string) &body body)
+(defmacro jscl/cl::with-input-from-string ((stream string) &body body)
   `(let ((,stream (cons ,string 0)))
      ,@body))
 
 
-(defun jscl/cl:prin1 (form &optional stream)
-    (let ((*print-escape* t))
-      (write form :stream stream)))
+(defun jscl/cl::prin1 (form &optional stream)
+  (let ((*print-escape* t))
+    (write form :stream stream)))
 
-(defun jscl/cl:prin1-to-string (form)
-    (with-output-to-string (output)
-      (prin1 form output)))
+(defun jscl/cl::prin1-to-string (form)
+  (with-output-to-string (output)
+    (prin1 form output)))
 
-(defun jscl/cl:princ (form &optional stream)
-    (let ((*print-escape* nil) (*print-readably* nil))
-      (typecase form
-        (symbol (write (symbol-name form) :stream stream))
-        (character (write-char form stream))
-        (t (write form :stream stream))))
-    form)
+(defun jscl/cl::princ (form &optional stream)
+  (let ((*print-escape* nil) (*print-readably* nil))
+    (typecase form
+      (symbol (write (symbol-name form) :stream stream))
+      (character (write-char form stream))
+      (t (write form :stream stream))))
+  form)
 
-(defun jscl/cl:princ-to-string (form)
-    (with-output-to-string (output)
-      (princ form output)))
+(defun jscl/cl::princ-to-string (form)
+  (with-output-to-string (output)
+    (princ form output)))
 
-(defun jscl/cl:terpri (&optional (stream *standard-output*))
-    (write-char #\newline stream)
-    (values))
+(defun jscl/cl::terpri (&optional (stream *standard-output*))
+  (write-char #\newline stream)
+  (values))
 
-(defun jscl/cl:write-line (x)
-    (write-string x)
-    (terpri)
-    x)
+(defun jscl/cl::write-line (x)
+  (write-string x)
+  (terpri)
+  x)
 
-(defun jscl/cl:print (x &optional (stream *standard-output*))
-    (prog1 (prin1 x stream)
+(defun jscl/cl::print (x &optional (stream *standard-output*))
+  (prog1 (prin1 x stream)
     (terpri stream)))
 
 
@@ -430,7 +420,7 @@ If the length of STRING is known, passing it in can save a few cycles."
 (defun format-numeric (number colonp atp
                        &optional
                          (min-column 1) (pad-char #\space)
-                                                   (group-comma #\,) (group-length 3))
+                         (group-comma #\,) (group-length 3))
   "Format NUMBER to  a string in *PRINT-BASE* radix.  Pads to MIN-COLUMN
 with PAD-CHAR.  When COLONP,  it groups  into GROUP-LENGTH  digit groups
 with  a GROUP-COMMA  delimiter.  When ATP,  it prints  a  leading +  for
@@ -450,7 +440,7 @@ bound accordingly."
 (defun format-hex (arg colonp atp
                    &optional
                      (min-column 1) (pad-char #\space)
-                                            (comma-char #\,) (comma-interval 3))
+                     (comma-char #\,) (comma-interval 3))
   "FORMAT ~x handler."
   (let ((*print-escape* nil)
         (*print-base* 16)
@@ -652,7 +642,7 @@ emits (1- COUNT)."
   (assert (null (or end-at-p end-colon-p)))
   (assert (= 1 (length captured-substrings)))
   (multiple-value-bind (output new-args)
-      (jscl/cl:format 'values (first captured-substrings) arguments)
+      (jscl/cl::format 'values (first captured-substrings) arguments)
     (values (funcall (cond
                        ((and start-at-p start-colon-p)
                         #'string-upcase)
@@ -772,12 +762,12 @@ emits (1- COUNT)."
       (check-type list-args list)
       (while list-args
         (multiple-value-bind (segment new-args)
-            (jscl/cl:format 'values (first captured-substrings) list-args)
+            (jscl/cl::format 'values (first captured-substrings) list-args)
           (push segment output)
           (setq list-args new-args))
         (when (and list-args (third captured-substrings))
           (multiple-value-bind (segment new-args)
-              (jscl/cl:format 'values (third captured-substrings) list-args)
+              (jscl/cl::format 'values (third captured-substrings) list-args)
             (push segment output)
             (setq list-args new-args)))))
     (values (concatenate 'string (reverse output)) arguments)))
@@ -850,36 +840,36 @@ but wanted ~~~c in format string"
              (prog1
                  (char control-string 0)
                (setf control-string (subseq control-string 1)))))
-            (let (params atp colonp)
-              (tagbody
-               read-control
+      (let (params atp colonp)
+        (tagbody
+         read-control
            (need-more "~ at end of format")
            (let ((next (pop-char)))
-                   (cond
+             (cond
                ((digit-char-p next)     ; Digits
-                      (multiple-value-bind (param ending)
+                (multiple-value-bind (param ending)
                     (parse-integer control-string
                                    :junk-allowed t)
-                        (push param params)
+                  (push param params)
                   (setq control-string (subseq control-string
                                                (1+ ending))))
                 (need-more "~numbers at end of format")
                 (when (char= (char control-string 0) #\,)
                   (pop-char))
-                      (go read-control))
+                (go read-control))
 
                ((char= #\apostrophe next) ; Quoted char
                 (need-more "~' at end of format")
                 (push (pop-char) params)
                 (need-more "~'char at end of format")
-                      (go read-control))
+                (go read-control))
 
                ((char= #\, next)        ; Comma without param
-                      (push nil params)
-                      (go read-control))
+                (push nil params)
+                (go read-control))
 
                ((char-equal #\V next)   ; Variable param
-                      (push (pop arguments) params))
+                (push (pop arguments) params))
 
                ((char= #\# next)
                 (push (length arguments) params))
@@ -891,23 +881,23 @@ but wanted ~~~c in format string"
                   (pop-char)))
 
                ((char= #\: next)        ; Colon modifier
-                      (setf colonp t)
-                      (go read-control))
+                (setf colonp t)
+                (go read-control))
 
                ((char= #\@ next)        ; At-sign modifier
-                      (setf atp t)
-                      (go read-control))
+                (setf atp t)
+                (go read-control))
 
                ((char-equal #\T next)   ; Tabulation
                 (concatf output
-                  (make-string (min 1
-                                    (or (last params)
-                                        1))
-                               :initial-element #\space)))
+                         (make-string (min 1
+                                           (or (last params)
+                                               1))
+                                      :initial-element #\space)))
 
                ((char-equal #\P next)   ; English plurals
                 (let ((peek (pop arguments)))
-                      (when colonp
+                  (when colonp
                     (push peek arguments))
                   (concatf output (cond
                                     ((and atp (/= 1 peek)) "ies")
@@ -916,24 +906,24 @@ but wanted ~~~c in format string"
                                     (t "")))))
 
                ((char= #\tilde next)        ; ~~ → ~
-                      (concatf output "~"))
+                (concatf output "~"))
                ((char= #\vertical_line next)        ; Page break
                 (concatf output #(#\Page)))
                ((char= #\% next)        ; Terminate Print (Newline)
                 (concatf output
-                  (apply #'format-terpri (reverse params))))
+                         (apply #'format-terpri (reverse params))))
                ((char= #\& next)        ; Fresh line
                 (concatf output
-                  (apply #'format-fresh-line (reverse params))))
+                         (apply #'format-fresh-line (reverse params))))
 
                ((char= #\* next)        ; Adjust argument pointer
-                      (let ((delta (* (or (and params (first params))
-                                          1)
+                (let ((delta (* (or (and params (first params))
+                                    1)
                                 ;; sign inverted for - below
                                 (if colonp 1 -1))))
                   (setf arguments
                         (nthcdr (- (length orig-arguments)
-                                                   (length arguments)
+                                   (length arguments)
                                    delta)
                                 orig-arguments))))
                ((find next ";^")        ; Operate on grouping
@@ -974,12 +964,12 @@ but wanted ~~~c in format string"
                      colonp atp (reverse params)))))
                (t                    ; “Normal” format special operators
                 (concatf output
-                  (format-special next (pop arguments)
-                                  (reverse params)
-                                  :atp atp :colonp colonp))))))
+                         (format-special next (pop arguments)
+                                         (reverse params)
+                                         :atp atp :colonp colonp))))))
         (values control-string output arguments)))))
 
-(defun jscl/cl:format (destination control-string &rest format-arguments)
+(defun jscl/cl::format (destination control-string &rest format-arguments)
   ;; docstring c/o SBCL
   "Provides various facilities for formatting output.
 
