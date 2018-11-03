@@ -61,7 +61,9 @@
         ;; with jqconsole.
         0)))
 
-
+ (if (<= depth 0)
+            nil
+           0)))
 
 (defun toplevel ()
   (#j:jqconsole:RegisterMatching "(" ")" "parens")
