@@ -291,7 +291,7 @@
 
 (defun compile-lambda-optional (ll)
   (let* ((optional-arguments (ll-optional-arguments-canonical ll))
-	 (n-required-arguments (length (ll-required-arguments ll)))
+         (n-required-arguments (length (ll-required-arguments ll)))
          (n-optional-arguments (length optional-arguments))
          (svars (remove nil (mapcar #'third optional-arguments))))
 
@@ -303,16 +303,16 @@
                                         (convert t)))
                                 svars)))
          (switch (nargs)
-               ,@(with-collect
-                  (dotimes (idx n-optional-arguments)
-                    (let ((arg (nth idx optional-arguments)))
-                      (collect `(case ,(+ idx n-required-arguments)))
-                      (collect `(= ,(translate-variable (car arg))
-                                   ,(convert (cadr arg))))
-                      (collect (when (third arg)
-                                 `(= ,(translate-variable (third arg))
-                                     ,(convert nil))))))
-                  (collect 'default)
+                 ,@(with-collect
+                    (dotimes (idx n-optional-arguments)
+                      (let ((arg (nth idx optional-arguments)))
+                        (collect `(case ,(+ idx n-required-arguments)))
+                        (collect `(= ,(translate-variable (car arg))
+                                     ,(convert (cadr arg))))
+                        (collect (when (third arg)
+                                   `(= ,(translate-variable (third arg))
+                                       ,(convert nil))))))
+                    (collect 'default)
                     (collect '(break))))))))
 
 (defun compile-lambda-rest (ll)
@@ -457,20 +457,20 @@
         (lambda-name/docstring-wrapper name documentation
          `(named-function ,(jsize-symbol name 'jscl_user_)
                           (|values| ,@(mapcar (lambda (x)
-					  (translate-variable x))
-					(append required-arguments optional-arguments)))
-                     ;; Check number of arguments
-                    ,(lambda-check-argument-count n-required-arguments
-                                                  n-optional-arguments
-                                                  (or rest-argument keyword-arguments))
-                    ,(compile-lambda-optional ll)
-                    ,(compile-lambda-rest ll)
-                    ,(compile-lambda-parse-keywords ll)
-                    ,(bind-this)
-                    ,(let ((*multiple-value-p* t))
-                          (if block
-                              (convert-block `((block ,block ,@body)) t)
-                              (convert-block body t)))))))))
+                                                (translate-variable x))
+                                              (append required-arguments optional-arguments)))
+                          ;; Check number of arguments
+                          ,(lambda-check-argument-count n-required-arguments
+                                                        n-optional-arguments
+                                                        (or rest-argument keyword-arguments))
+                          ,(compile-lambda-optional ll)
+                          ,(compile-lambda-rest ll)
+                          ,(compile-lambda-parse-keywords ll)
+                          ,(bind-this)
+                          ,(let ((*multiple-value-p* t))
+                             (if block
+                                 (convert-block `((block ,block ,@body)) t)
+                                 (convert-block body t)))))))))
 
 
 (defun setq-pair (var val)
@@ -669,15 +669,12 @@
     ((and *compiling-file* (zerop *convert-level*))
      ;; If the situation `compile-toplevel' is given. The form is
      ;; evaluated at compilation-time.
-     (when (or (find :compile-toplevel situations)
-               (find 'compile situations))
+     (when (find :compile-toplevel situations)
        (eval (cons 'progn body)))
      ;; `load-toplevel' is given, then just compile the subforms as usual.
-     (when (or (find :load-toplevel situations)
-               (find 'load situations))
+     (when (find :load-toplevel situations)
        (convert-toplevel `(progn ,@body) *multiple-value-p*)))
-    ((or (find :execute situations)
-         (find 'eval situations))
+    ((find :execute situations)
      (convert `(progn ,@body) *multiple-value-p*))
     (t
      (convert nil))))
@@ -845,9 +842,9 @@
           postlude-target)
 
     (let ((body
-    `(progn
+           `(progn
               ,@(reverse prelude-target)
-                   ,(convert-block body t t))))
+              ,(convert-block body t t))))
       
       (if (find-if #'special-variable-p bindings :key #'first)
           `(selfcall
@@ -1132,16 +1129,55 @@
   (convert-to-bool `(== (typeof ,x) "number")))
 
 (define-builtin %floor (x)
-  `(method-call |Math| "floor" ,x))
+  `(method-call |Math| "floor" ,x))     ;Should return two values
 
 (define-builtin %ceiling (x)
-  `(method-call |Math| "ceil" ,x))
+  `(method-call |Math| "ceil" ,x))      ;Should return two values
+
+(define-builtin acos (x)
+  `(method-call |Math| "acos" ,x))
+
+(define-builtin acosh (x)
+  `(method-call |Math| "acosh" ,x))
+
+(define-builtin asin (x)
+  `(method-call |Math| "asin" ,x))
+
+(define-builtin asinh (x)
+  `(method-call |Math| "asinh" ,x))
+
+(define-builtin atan (x)
+  `(method-call |Math| "atan" ,x))
+
+(define-builtin atanh (x)
+  `(method-call |Math| "atanh" ,x))
+
+(define-builtin cos (x)
+  `(method-call |Math| "cos" ,x))
+
+(define-builtin cosh (x)
+  `(method-call |Math| "cosh" ,x))
 
 (define-builtin expt (x y)
   `(method-call |Math| "pow" ,x ,y))
 
+(define-builtin log (x)
+  `(method-call |Math| "log" ,x))
+
+(define-builtin sin (x)
+  `(method-call |Math| "sin" ,x))
+
+(define-builtin sinh (x)
+  `(method-call |Math| "sinh" ,x))
+
 (define-builtin sqrt (x)
   `(method-call |Math| "sqrt" ,x))
+
+(define-builtin tan (x)
+  `(method-call |Math| "tan" ,x))
+
+(define-builtin tanh (x)
+  `(method-call |Math| "tanh" ,x))
 
 (define-builtin float-to-string (x)
   `(call-internal |make_lisp_string| (method-call ,x |toString|)))
@@ -1317,12 +1353,6 @@
         (throw "Out of range."))
     (return (= (property x i) ,value))))
 
-(define-builtin storage-vector-set! (vector n value)
-  `(= (property ,vector ,n) ,value))
-
-(define-builtin storage-vector-fill (vector value)
-  `(method-call ,vector "fill" ,value))
-
 (define-builtin concatenate-storage-vector (sv1 sv2)
   `(selfcall
      (var (sv1 ,sv1))
@@ -1348,10 +1378,6 @@
 
 (define-builtin new ()
   '(object))
-
-(define-raw-builtin make-new (constructor-function &rest constructor-args)
-  `(selfcall 
-    (return (new (call ,constructor-function  ,@(mapcar #'convert constructor-args))))))
 
 (define-raw-builtin oget* (object key &rest keys)
   `(selfcall
@@ -1528,18 +1554,18 @@
 
 (defun !macroexpand-1 (form &optional env)
   (let ((*environment* (or env *environment*)))
-  (cond
-    ((symbolp form)
-     (let ((b (lookup-in-lexenv form *environment* 'variable)))
-       (if (and b (eq (binding-type b) 'macro))
-           (values (binding-value b) t)
-           (values form nil))))
-    ((and (consp form) (symbolp (car form)))
-     (let ((macrofun (!macro-function (car form))))
-       (if macrofun
-           (values (funcall macrofun (cdr form)) t)
-           (values form nil))))
-    (t
+    (cond
+      ((symbolp form)
+       (let ((b (lookup-in-lexenv form *environment* 'variable)))
+         (if (and b (eq (binding-type b) 'macro))
+             (values (binding-value b) t)
+             (values form nil))))
+      ((and (consp form) (symbolp (car form)))
+       (let ((macrofun (!macro-function (car form))))
+         (if macrofun
+             (values (funcall macrofun (cdr form)) t)
+             (values form nil))))
+      (t
        (values form nil)))))
 
 #+jscl
