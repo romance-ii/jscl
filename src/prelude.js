@@ -46,7 +46,7 @@ internals.globalEval = function(code){
 };
 
 internals.pv = function(x) {
-  return x==undefined? nil: x;
+    return (x == undefined) ? nil : x;
 };
 
 internals.mv = function(){
@@ -85,11 +85,11 @@ internals.newInstance = function(values, ct){
 var values = internals.mv;
 
 internals.checkArgsAtLeast = function(args, n){
-  if (args < n) throw 'too few arguments';
+    if (args < n) throw new Error('too few arguments; needed at least ' + n + ' but got only ' + args);
 };
 
 internals.checkArgsAtMost = function(args, n){
-  if (args > n) throw 'too many arguments';
+    if (args > n) throw new Error ('too many arguments; needed at most ' + n + ' but got ' + args);
 };
 
 internals.checkArgs = function(args, n){
@@ -112,7 +112,7 @@ internals.car = function(x){
     return x.car;
   else {
     console.log(x);
-    throw new Error('CAR called on non-list argument');
+        throw new Error('CAR called on non-list argument ' + x);
   }
 };
 
@@ -122,7 +122,7 @@ internals.cdr = function(x){
   else if (x instanceof internals.Cons)
     return x.cdr;
   else
-    throw new Error('CDR called on non-list argument');
+        throw new Error('CDR called on non-list argument ' + x);
 };
 
 // Improper list constructor (like LIST*)
@@ -145,7 +145,7 @@ internals.QIList = function(){
 // Arithmetic
 
 internals.handled_division = function (x, y) {
-  if (y == 0) throw "Division by zero";
+    if (y == 0) throw new Error("Division (of " + x + ") by zero");
   return x/y;
 };
 
@@ -169,9 +169,15 @@ internals.char_to_codepoint = function(ch) {
   if (ch.length == 1) {
     return ch.charCodeAt(0);
   } else {
+        if (ch.length == 2 &&
+            ch.charCodeAt(0) >= 0xD800 && ch.charCodeAt(0) < 0xDC00 &&
+            ch.charCodeAt(1) >= 0xDC00 && ch.charCodeAt(0) < 0xDF00) {
     var xh = ch.charCodeAt(0) - 0xD800;
     var xl = ch.charCodeAt(1) - 0xDC00;
     return 0x10000 + (xh << 10) + (xl);
+        } else {
+            throw new Error ("Not a character: " + ch + " is a " + (typeof ch));
+        }
   }
 };
 
@@ -188,12 +194,16 @@ internals.char_from_codepoint = function(x) {
 
 // if a char (JS string) has the same number of codepoints after .toUpperCase(), return that, else the original.
 internals.safe_char_upcase = function(x) {
+    try {
   var xu = x.toUpperCase();
   if (codepoints(xu).length == 1) {
     return xu;
   } else {
     return x;
   }
+    } catch (e) {
+        throw new Error ("Probably not a character? : " + x + " (type=" + (typeof x) + ")");
+    }
 };
 internals.safe_char_downcase = function(x) {
   var xl = x.toLowerCase();
@@ -205,9 +215,7 @@ internals.safe_char_downcase = function(x) {
 };
 
 internals.xstring = function(x){
-  const hasFillPointer = typeof x.fillpointer === 'number'
-  const activechars = hasFillPointer? x.slice(0, x.fillpointer): x
-  return activechars.join('');
+  return x.join('');
 };
 
 
@@ -220,16 +228,12 @@ internals.lisp_to_js = function (x) {
     return false;
   else if (typeof x == 'function'){
     // Trampoline calling the Lisp function
-    if("jscl_original" in x) {
-        return x.jscl_original
-    } else {
-        return( function(){
-            var args = Array.prototype.slice.call(arguments);
-            for (var i in args)
-                args[i] = internals.js_to_lisp(args[i]);
-            return internals.lisp_to_js(x.apply(this, [internals.pv].concat(args)));
-        });
-    }
+    return (function(){
+      var args = Array.prototype.slice.call(arguments);
+      for (var i in args)
+        args[i] = internals.js_to_lisp(args[i]);
+      return internals.lisp_to_js(x.apply(this, [internals.pv].concat(args)));
+    });
   }
   else return x;
 };
@@ -243,7 +247,7 @@ internals.js_to_lisp = function (x) {
     return nil;
   else if (typeof x == 'function'){
     // Trampoline calling the JS function
-    var trampoline = function(values){
+        var trampoline = function(values){
       var args = Array.prototype.slice.call(arguments, 1);
       for (var i in args)
         args[i] = internals.lisp_to_js(args[i]);
@@ -251,7 +255,7 @@ internals.js_to_lisp = function (x) {
     };
     trampoline.jscl_original = x;
     return trampoline;
-  } else
+  } else 
     return x;
 };
 
@@ -284,19 +288,19 @@ internals.isNLX = function(x){
 
 // Packages & Symbols
 
-var packages = jscl.packages = Object.create(null);
+var packages = jscl.packages = {};
 
 packages.JSCL = {
   packageName: 'JSCL',
-  symbols: Object.create(null),
-  exports: Object.create(null),
+  symbols: {},
+  exports: {},
   use: nil
 };
 
 packages.CL = {
   packageName: 'CL',
-  symbols: Object.create(null),
-  exports: Object.create(null),
+  symbols: {},
+  exports: {},
   use: nil
 };
 
@@ -304,8 +308,8 @@ packages['COMMON-LISP'] = packages.CL;
 
 packages.KEYWORD = {
   packageName: 'KEYWORD',
-  symbols: Object.create(null),
-  exports: Object.create(null),
+  symbols: {},
+  exports: {},
   use: nil
 };
 
@@ -314,19 +318,29 @@ jscl.CL = packages.CL.exports;
 internals.unboundFunction = function () {
   throw new Error("Function '" + this.name + "' undefined");
 };
-
+internals.unboundSetFFunction = function () {
+    throw new Error("Function SetF '" + this.name + "' undefined");
+};
 internals.Symbol = function(name, package_name){
   this.name = name;
-  this.package = package_name;
+    this["package"] = package_name;
+    if (package_name == 'KEYWORD') {
+        this.value = this;
+    } else {
   this.value = undefined;
-  this.fvalue = internals.unboundFunction;
-  this.stack = [];
+    }
+    this.fvalue = internals.unboundFunction;
+    this.setfValue = internals.unboundSetFFunction;
+    this.stack = [];
 };
 
 internals.symbolValue = function (symbol){
+    if (symbol === undefined) {
+        throw new Error("Trying to take the value of «undefined» as a symbol");
+    }
   var value = symbol.value;
   if (value === undefined){
-    throw new Error("Variable " + symbol.name + " is unbound.");
+        throw new Error("Variable " + ((symbol !== undefined) ? symbol.name || "(unnamed symbol)" : "(undefined symbol)") + " is unbound.");
   } else {
     return value;
   }
@@ -334,11 +348,34 @@ internals.symbolValue = function (symbol){
 
 internals.symbolFunction = function (symbol){
   var fn = symbol.fvalue;
-  if (fn === internals.unboundFunction)
+    if (fn === internals.unboundFunction)
     symbol.fvalue();
   return fn;
 };
 
+internals.setSymbolFunction = function (symbol, fn) {
+    symbol.fvalue = fn;
+    return fn;
+};
+
+internals.fMakUnbound = function (symbol) {
+    symbol.fvalue = internals.unboundFunction;
+}
+
+internals.fDefinitionSetF = function (symbol) {
+    var fn = symbol.setfValue;
+    if (fn === internals.unboundSetFFunction) fn();
+    return fn;
+};
+
+internals.setFDefinitionSetF = function (symbol, fn) {
+    symbol.setfValue = fn;
+    return fn;
+};
+
+internals.fMakUnboundSetF = function (symbol) {
+    symbol.fvalue = internals.unboundSetFFunction;
+}
 
 internals.bindSpecialBindings = function (symbols, values, callback){
   try {
@@ -359,15 +396,17 @@ internals.intern = function (name, package_name){
   package_name = package_name || "JSCL";
   var lisp_package = packages[package_name];
   if (!lisp_package)
-    throw "No package " + package_name;
+        throw new Error ("No package " + package_name);
 
   var symbol = lisp_package.symbols[name];
   if (!symbol)
     symbol = lisp_package.symbols[name] = new internals.Symbol(name, lisp_package);
 
-  // Auto-export symbol if it is the KEYWORD package.
-  if (lisp_package === packages.KEYWORD)
+    // Auto-export  symbol if  it is  the KEYWORD  package, and  set the
+    // symbol-value to be recursive.
+    if (lisp_package === packages.KEYWORD) {
     lisp_package.exports[name] = symbol;
+    }
 
   return symbol;
 };
@@ -380,7 +419,7 @@ if (typeof window !== 'undefined' && window && window.addEventListener) {
     window.addEventListener('DOMContentLoaded', function () {
         return runCommonLispScripts();
     }, false);
-}
+	  }
 
 function runCommonLispScripts() {
 
@@ -398,7 +437,7 @@ function runCommonLispScripts() {
                 eval_in_lisp('(progn ' + script.text + ')');
             } else if (!script.loaded && !script.error) {
                 break;
-            }
+	}
         }
     }
 
@@ -445,18 +484,7 @@ function runCommonLispScripts() {
                 }, function errorCallback(error) {
                     script.error = true;
                     progressivelyRunScripts();
-                });
-        } else {
-            scripts.push({
-                executed: false,
-                error: false,
-                text: documentScripts[i].innerHTML,
-                loaded: true,
-                url: null
-            });
-        }
-    }
-    progressivelyRunScripts();
+  });
 }
 
 // Node Readline

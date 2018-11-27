@@ -28,7 +28,7 @@
 (test (not (oddp  2)))
 (test (not (oddp  0)))
 
-;;; +, -, *, /
+;;;; +, -, *, /
 ;;; The builtin definition of these is variadic, but the function definition
 ;;; should be as well. So, test it using MAPCAR
 (let* ((a '(1 2))
@@ -38,9 +38,10 @@
   (test (equal (mapcar #'- a b c) '(-1 -2)))
   (test (equal (mapcar #'* a b c) '( 1  8)))
   ;; This test will need to be changed when rationals are introduced
-  (test (equal (mapcar #'/ a b c) '( 1  0.5))))
+  (test (or (equal (mapcar #'/ a b c) '( 1  0.5))
+            #-jscl (equal (mapcar #'/ a b c) '( 1  1/2)))))
 
-;;; >, >=, =, <, <=, /=
+;;;; >, >=, =, <, <=, /=
 ;;; As above, we need to make sure the function is called, not the builtin
 (let ((a '(1 3 1 2 1))
       (b '(2 2 2 2 1))
@@ -59,10 +60,9 @@
 
 ;;; FLOATP
 
-;; It is a known bug. Javascript does not distinguish between floats
-;; and integers, and we represent both numbers in the same way. So 1
-;; == 1.0 and integer and float types are not disjoint.
-(expected-failure (floatp 1.0)) 
+;; It is a known bug. Javascript does not  distinguish between floats and integers, and we represent
+;; both numbers in the same way. So 1 == 1.0 and integer and float types are not disjoint.
+(expected-failure (floatp 1.0))
 
 (test             (floatp    1.1))
 (test             (floatp    pi))

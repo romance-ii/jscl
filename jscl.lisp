@@ -1,36 +1,203 @@
-;;; jscl.lisp ---
+;;; jscl.lisp— JavaScript from Common Lisp
 
-;; Copyright (C) 2012, 2013 David Vazquez
-;; Copyright (C) 2012 Raimon Grau
+;; Copyright © 2012, 2013 David Vazquez
+;;; Copyright © 2012 Raimon Grau
 
-;; JSCL is free software: you can redistribute it and/or
-;; modify it under the terms of the GNU General Public License as
-;; published by the Free Software Foundation, either version 3 of the
-;; License, or (at your option) any later version.
+;; JSCL is free software: you can redistribute it and/or modify it under
+;; the terms of the GNU General  Public License as published by the Free
+;; Software Foundation,  either version  3 of the  License, or  (at your
+;; option) any later version.
 ;;
-;; JSCL is distributed in the hope that it will be useful, but
-;; WITHOUT ANY WARRANTY; without even the implied warranty of
-;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-;; General Public License for more details.
+;; JSCL is distributed  in the hope that it will  be useful, but WITHOUT
+;; ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+;; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+;; for more details.
 ;;
 ;; You should have received a copy of the GNU General Public License
 ;; along with JSCL.  If not, see <http://www.gnu.org/licenses/>.
 
-(defpackage :jscl
+(cl:in-package :common-lisp-user)
+(declaim (optimize (speed 0) (debug 3)
+                   (space 0) (safety 3)
+                   (compilation-speed 0)))
+
+(defpackage jscl/bootstrap
   (:use :cl)
-  (:export #:bootstrap #:compile-application #:run-tests-in-host))
+  #+sbcl (:use :sb-gray)
+  #+clisp (:use :gray)
+  #+ecl (:shadowing-import-from :gray
+                                #:stream-element-type
+                                #:open-stream-p
+                                #:output-stream-p
+                                #:input-stream-p
+                                #:streamp
+                                #:close)
+  #+ecl (:use :gray)
+  #+lispworks (:use :gray)
+  #-(or sbcl clisp ecl lispworks)
+  (:use #.(warn "You will probably need to add your Gray Streams ~
+ into JSCL/Bootstrap USE list"))
+  (:export #:bootstrap #:bootstrap-core #:load-jscl))
 
-(in-package :jscl)
+(in-package :jscl/bootstrap)
 
-(defvar *base-directory*
-  (if #.*load-pathname*
-      (make-pathname :name nil :type nil :defaults #.*load-pathname*)
-      *default-pathname-defaults*))
+(defpackage jscl/common-lisp
+  (:use) ; Nothing. (Clozure tries to stuff CCL in by default)
+  (:nicknames :jscl/cl)
+  (:documentation
+   "The  COMMON-LISP  package  contains   the  symbols  defined  in  the
+ ANSI standard."))
 
-(defvar *version*
-  ;; Read the version from the package.json file. We could have used a
-  ;; json library to parse this, but that would introduce a dependency
-  ;; and we are not using ASDF yet.
+(defpackage jscl/javascript-low-level
+  (:use) ; nothing
+  (:nicknames :jscl/js)
+  (:documentation
+   "The JSCL  compiler generates forms  that represent JavaScript  in an
+ abstract  syntax tree,  which are  interned in  this package.  The code
+ generator then operates on that tree to create JavaScript source code.
+
+During  bootstrap,  these  forms  are  evaluated  instead  as  calls  to
+“compatibility” functions loaded into the host compiler."))
+
+(defpackage jscl/intermediate-cross-compilation
+  (:use :jscl/cl)
+  (:nicknames :jscl/xc))
+
+#+sbcl (unless (ignore-errors (find-package :SB-CLTL2))
+         (require 'sb-cltl2))
+
+(defpackage jscl
+  (:use :cl)
+  #+sbcl (:use :sb-gray :sb-mop :sb-cltl2)
+  #+clisp (:use :gray :mop)
+  #+ecl (:use :clos)
+  #+ecl (:shadowing-import-from :gray
+                                #:stream-element-type
+                                #:open-stream-p
+                                #:output-stream-p
+                                #:input-stream-p
+                                #:streamp
+                                #:close)
+  #+ecl (:use :gray)
+  #+lispworks (:use :gray :clos)
+  #-(or sbcl clisp ecl lispworks)
+  (:use #.(warn "You will probably need to add your Gray Streams ~
+and MOP into JSCL USE list"))
+  (:export #:run-tests-in-host #:with-sharp-j #:read-#j
+           #:write-javascript-for-files #:compile-application)
+  (:nicknames :jscl/hosted)
+  (:documentation "JavaScript  from Common  Lisp. This  package contains
+ the   internals   and   exports    some   utility   functions   needed
+ for compilation.
+
+When  you  build JSCL,  you'll  invoke  JSCL:Boostrap-Core in  the  host
+compiler (probably SBCL) to build the  system. Once you're “in” the JSCL
+implementation, you may never need to access this package directly."))
+
+(defvar jscl::*environment*)
+(defvar jscl::*global-environment*)
+
+(defpackage jscl/ffi
+  (:use :cl :jscl)
+  (:export #:oget #:oget* #:make-new #:new #:*root*
+           #:oset #:oset*)
+  (:documentation
+   "Foreign Function Interface to JavaScript functions."))
+
+(defpackage jscl/cltl2
+  (:use :cl :jscl)
+  #+jscl (:nicknames :cltl2)
+  (:export #:declaration-information)
+  (:documentation  "Functions  defined  in Common  Lisp:  The  Language,
+Second Edition  (CLtL2) which are  unique to that  book (ie, not  in the
+Common-Lisp package).
+
+Very little of this set is  implemented; but this package exists to make
+identifying them (and their provenance) easier."))
+
+(defpackage jscl/gray
+  (:use :cl :jscl)
+  #+jscl (:nicknames :gray)
+  (:export )
+  (:documentation   "Functions   defined  as   a   part   of  the   Gray
+ Streams protocol.
+
+Very little of this set is  implemented; but this package exists to make
+identifying them (and their provenance) easier."))
+
+(defpackage jscl/mop
+  (:use :cl :jscl)
+  #+jscl (:nicknames :mop)
+  (:export #:eql-specializer-object #:eql-specializer-p)
+  (:documentation  "Functions  defined in  the  Art  of the  Meta-Object
+ Protocol (MOP) which are unique to that manuscript.
+
+Very  few of  these are  implemented, but  this package  exists to  make
+identifying them (and their provenance) easier."))
+
+(defpackage jscl/implementation
+  (:use :jscl/cl :jscl/gray :jscl/mop :jscl/cltl2)
+  (:nicknames :jscl/impl)
+  (:documentation "JavaScript from  Common Lisp. Internal implementation
+ details (when self-hosting)."))
+
+(defun quicklisp-quickload-system (system)
+  (funcall (intern "QUICKLOAD" (find-package :quicklisp)) system))
+
+(defun load-system (system)
+  (if (find-package :quicklisp)
+      (quicklisp-quickload-system system)
+      (let ((quicklisp/setup.lisp
+             (merge-pathnames
+              (make-pathname :name "setup"
+                             :type "lisp"
+                             :directory '(:relative "quicklisp"))
+              (user-homedir-pathname))))
+        (cond
+          ((probe-file quicklisp/setup.lisp)
+           (format t "Loading Quicklisp from ~a to load package ~:(~a~)…"
+                   quicklisp/setup.lisp system)
+           (load quicklisp/setup.lisp)
+           (quicklisp-quickload-system system))
+          (t (cerror
+              "I have loaded it; continue"
+              "System ~:(~a~) is not available, but is needed, and ~
+Quicklisp is not available. Use whatever method you like to load ~
+~:(~:*~a~) -OR- Quicklisp (https://quicklisp.org/), then continue."
+              system))))))
+
+(unless (find-package :bordeaux-threads)
+  (load-system :bordeaux-threads))
+
+(defpackage jscl/test
+  (:use :cl #-jscl :bordeaux-threads)
+  (:export #:run)
+  (:documentation "This package contains  the test running architecture,
+ and is used as the active package for most of the tests as well."))
+
+(defpackage repl-web
+  (:use :cl :jscl :jscl/ffi))
+
+(defpackage repl-node
+  (:use :cl :jscl :jscl/ffi))
+
+
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defun not-tmp (pathname)
+    "To keep compile-time actions from  assuming that SRC-DIR is /tmp when
+using Slime."
+    (when (and pathname
+               (not (equal #p"/tmp/" (truename pathname))))
+      pathname))
+
+  (defparameter *base-directory* (make-pathname
+                            :directory
+                            (pathname-directory
+                             (or (not-tmp *load-pathname*)
+                                 (not-tmp *compile-file-pathname*)
+                                 *default-pathname-defaults*))))
+
+  (defun extract-version-from-package.json ()
   (with-open-file (in (merge-pathnames "package.json" *base-directory*))
     (loop
        for line = (read-line in nil)
@@ -38,45 +205,203 @@
        when (search "\"version\":" line)
        do (let ((colon (position #\: line))
                 (comma (position #\, line)))
-            (return (string-trim '(#\newline #\" #\tab #\space)
-                                 (subseq line (1+ colon) comma)))))))
+               (return (string-trim '(#\newline #\quotation_mark #\tab #\space)
+                                    (subseq line (1+ colon) comma))))))))
 
+(unless (boundp '*base-directory*)
+  (break "What part of EVAL-WHEN did you not understand? ~
+*BASE-DIRECTORY* should be bound by now."))
 
+(defparameter *version*
+  (extract-version-from-package.json)
+  "Read  the version  from the  package.json  file. We  could have  used
+ a JSON library  to parse this, but that would  introduce a dependency
+ and we are not using ASDF yet.")
 
-;;; List of all the source files that need to be compiled, and whether they
-;;; are to be compiled just by the host, by the target JSCL, or by both.
-;;; All files have a `.lisp' extension, and
-;;; are relative to src/
-;;; Subdirectories are indicated by the presence of a list rather than a
-;;; keyword in the second element of the list. For example, this list:
-;;;  (("foo"    :target)
-;;;   ("bar"
-;;;     ("baz"  :host)
-;;;     ("quux" :both)))
-;;; Means that src/foo.lisp and src/bar/quux.lisp need to be compiled in the
-;;; target, and that src/bar/baz.lisp and src/bar/quux.lisp need to be
-;;; compiled in the host
-(defvar *source*
-  '(("boot"          :target)
-    ("compat"        :host)
-    ("setf"          :target)
+(defun read-fully (stream)
+  (loop with buffer = (make-array #x400
+                                  :element-type 'character
+                                  :adjustable t
+                                  :fill-pointer 0)
+        for char = (read-char stream nil nil)
+        while char
+        do (vector-push-extend char buffer #x400)
+        finally (progn
+                  (adjust-array buffer (fill-pointer buffer))
+                  (return buffer))))
+
+(defun run-program-compile-time (bin args)
+  #+sbcl
+  (sb-posix:chdir *base-directory*)
+  (or #+asdf
+      (uiop:run-program (cons bin args) :output :string
+                                        :ignore-error-status t)
+      #+sbcl
+      (ignore-errors
+       (read-fully
+        (sb-ext:process-output
+         (sb-ext:run-program bin args
+                             :wait t
+                             :output :stream))))
+      nil))
+
+(defun read-whole-file (filename)
+  (with-open-file (in filename)
+    ;; FILE-LENGTH is  in bytes,  not characters. UTF-8  characters will
+    ;; yield  a shorter  read,  with trailing  #\NULL  bytes, unless  we
+    ;; initialize to spaces. It's a hack, but it's a cheap enough one.
+    (let ((seq (make-string (file-length in)
+                            :initial-element #\Space)))
+      (read-sequence seq in)
+      seq)))
+
+(defun git-commit ()
+  (or (remove #\Newline
+              (run-program-compile-time
+               "/usr/bin/git"
+               '("rev-parse" "--short" "HEAD")))
+      "(unknown)"))
+
+(defun latinize (string)
+  "This makes  an effort to  let names  written in non-Latin  scripts be
+alphabetized more-or-less phonetically, in many cases."
+  (let ((greek
+          "αa βb γg δd εe ζz ηeeθthιi κk λl μm νn ξksοo πp ρr ΢s σs τt υu φphχchψpsωoo")
+        (cyrillic
+          "аa бb вv гg дd еe жj зz иiiйi кk лl мm нn оo пp рr сs тt уu фf хkhцtsчchшshщscъy ыy ьy эe юyuяya"))
+    (reduce (lambda (s1 s2)
+              (concatenate 'string s1 s2))
+            (loop
+              for i from 0 below (length string)
+              for char = (char-downcase (char string i))
+
+              for hellenic = (position char greek)
+              for russian = (position char cyrillic)
+              for char-name = (string-downcase (char-name char))
+              for digit-value = (digit-char-p char)
+              for roman = (search "roman_numeral_" char-name)
+              for syllable = (search "syllable_" char-name)
+              for hiragana = (search "hiragana_letter" char-name)
+
+              collect
+              (cond
+                ((and hellenic (zerop (mod hellenic 3)))
+                 (remove #\Space
+                         (subseq greek (+ 1 hellenic)
+                                 (+ 3 hellenic))))
+                ((and russian (zerop (mod russian 3)))
+                 (remove #\Space
+                         (subseq cyrillic (+ 1 russian)
+                                 (+ 3 russian))))
+                (hiragana
+                 (subseq char-name (1+ (position #\_ char-name
+                                                 :from-end t))))
+                (roman
+                 (subseq char-name (1+ (position #\_ char-name
+                                                 :from-end t))))
+                (syllable
+                 (subseq char-name (+ 9 syllable)
+                         (position #\_ char-name
+                                   :start (+ 9 syllable))))
+                (digit-value
+                 (format nil "~r" digit-value))
+                (t (string char))))
+            :initial-value "")))
+
+(defun git-credits ()
+  (with-input-from-string (everyone
+                           (run-program-compile-time
+                            "/usr/bin/git"
+                            '("log" "--format=%aN")))
+    (sort (remove-duplicates (loop for name = (read-line everyone nil nil)
+                                   while name collect name)
+                             :test #'string-equal)
+          #'string-lessp
+          :key (lambda (name)
+                 (latinize
+                  (subseq name (or (position #\Space name)
+                                   0)))))))
+(defun file-set-execute-permission (filename)
+  "This is  a bit  implementation-specific, but  it will  try to  set +x
+permissions on FILENAME, if we  know how in the current implementation."
+  #+sbcl
+  (sb-posix:chmod filename #o755)
+  #+ecl
+  (ext:chmod filename #o755)
+  #- (or sbcl ecl)
+  (warn "You'll need to set executable permissions yourself"))
+
+(defun violet-volts-p ()
+  (search "romance-ii/jscl"
+          (run-program-compile-time "/usr/bin/git"
+                                    '("remote" "-v"))))
+
+
+;;; Clearing the output buffer. These  definitions only really matter on
+;;; the host. (Until we port CLIM…)
+
+(unless (find-method #'stream-clear-output nil '(t) nil)
+  (defmethod stream-clear-output ((stream t)) nil))
+
+(defun teletype-p (stream)
+  #+sbcl
+  (/= 0 (sb-unix:unix-isatty (sb-sys:fd-stream-fd stream)))
+  #+ecl
+  (interactive-stream-p stream)
+  #- (or ecl sbcl)
+  nil)
+
+#+ecl
+(defmethod stream-clear-output ((stream si:file-stream))
+  (if (teletype-p stream)
+      (dolist (char '(#\Esc #\[ #\H #\Esc #\[ #\2 #\J))
+        (write-char char stream))
+      (call-next-method)))
+
+#+sbcl
+(defmethod stream-clear-output ((stream sb-sys:fd-stream))
+  (if (teletype-p stream)
+      (dolist (char '(#\Esc #\[ #\H #\Esc #\[ #\2 #\J))
+        (write-char char stream))
+      (call-next-method)))
+
+#+swank
+(defmethod stream-clear-output
+    ((stream swank/gray::slime-output-stream))
+  (swank:eval-in-emacs '(progn
+                         (slime-repl)
+                         (slime-repl-clear-buffer)
+                         (form-feed-mode t))))
+
+(defmethod stream-clear-output ((stream two-way-stream))
+  (stream-clear-output (two-way-stream-output-stream stream)))
+
+
+(defparameter *source*
+  '(("compat"
+     ("compat-misc"	:host)
+     ("compat-sv"	:host)
+     ("compat-ffi"	:host)
+     ("compat-js"	:host))
+    ("boot"          :both)
+    ("early-char" 	:both)
+    ("setf"          :both)
     ("utils"         :both)
     ("defstruct"     :both)
+    ("types"	:both)
     ("lambda-list"   :both)
+    ("numbers"       :both)
+    ("char"          :both)
+    ("list"          :both)
+    ("array"         :both)
+    ("string"        :both)
+    ("sequence"      :both)
+    ("stream"        :both)
+    ("hash-table"    :both)
+    ("print"         :both)
     ("ffi"           :target)
-    ("numbers"       :target)
-    ("char"          :target)
-    ("list"          :target)
-    ("array"         :target)
-    ("string"        :target)
-    ("sequence"      :target)
-    ("stream"        :target)
-    ("hash-table"    :target)
-    ("print"         :target)
-    ("format"        :target)
-    ("misc"          :target)
-    ("symbol"        :target)
-    ("package"       :target)
+    ("symbol"        :both)
+    ("package"       :both)
     ("ansiloop"
      ("ansi-loop"    :both))
     ("read"          :both)
@@ -84,16 +409,35 @@
     ("backquote"     :both)
     ("compiler"
      ("codegen"      :both)
-     ("compiler"     :both))
-    ("documentation" :target)
-    ("worker"        :target)))
+     ("builtins"	 :both)
+     ("special-operators"	:both)
+     ("compiler"     :both)
+     ("compile-file"	:both))
+    ("documentation" :both)
+    ("misc"          :both)
+    ("toplevel" 	:both))
+  "List of  all the source files  that need to be  compiled, and whether
+they are  to be compiled  just by  the host, by  the target JSCL,  or by
+both.  All files  have a  `.lisp' extension,  and are  relative to  src/
+Subdirectories  are indicated  by the  presence  of a  list rather  than
+a keyword  in the second  element of the  list.
 
+For example,  this list:
 
-(defun source-pathname (filename &key (directory '(:relative "src")) (type nil) (defaults filename))
+\((\"foo\" :target) \(\"bar\" (\"baz\"  :host) \(\"quux\" :both)))
+
+Means that src/foo.lisp and src/bar/quux.lisp need to be compiled in the
+target,  and  that src/bar/baz.lisp  and  src/bar/quux.lisp  need to  be
+compiled in the host.")
+
+(defun source-pathname (filename
+                        &key (directory '(:relative "src"))
+                             (type nil)
+                             (defaults *base-directory*))
   (merge-pathnames
    (if type
-       (make-pathname :type type :directory directory :defaults defaults)
-       (make-pathname            :directory directory :defaults defaults))
+       (make-pathname :name filename :type type :directory directory :defaults defaults)
+       (make-pathname :name filename           :directory directory :defaults defaults))
    *base-directory*))
 
 (defun get-files (file-list type dir)
@@ -113,135 +457,152 @@
       (t
        (get-files (cdr file-list) type dir)))))
 
-(defmacro do-source (name type &body body)
+(defmacro do-source ((name type) &body body)
   "Iterate over all the source files that need to be compiled in the host or
    the target, depending on the TYPE argument."
-  (unless (member type '(:host :target))
-    (error "TYPE must be one of :HOST or :TARGET, not ~S" type))
-  `(dolist (,name (get-files *source* ,type '(:relative "src")))
-     ,@body))
+  (let ((type$ (gensym "SOURCE-TYPE-"))
+        (counter$ (gensym "FILE-INDEX-"))
+        (file-list$ (gensym "FILE-LIST-"))
+        (files-count$ (gensym "FILE-COUNT-")))
+    `(let ((,type$ ,type))
+       (unless (member ,type$ '(:host :target))
+         (error "TYPE must be one of :HOST or :TARGET, not ~S" ,type$))
+       (let* ((,file-list$ (get-files *source* ,type$ '(:relative "src")))
+              (,files-count$ (length ,file-list$))
+              (,counter$ 0))
+         (dolist (,name ,file-list$)
+           (format *trace-output* ";;; File ~:d of ~:d (~d%) is ~a"
+                   (incf ,counter$)
+                   ,files-count$
+                   (round (* 100 (/ ,counter$ ,files-count$)))
+                   ,name)
+           (force-output *trace-output*)
+           ,@body)))))
 
 ;;; Compile and load jscl into the host
-(with-compilation-unit ()
-  (do-source input :host
+
+(defun review-failures (pass failures)
+  (let ((file-warnings ())
+        (file-failures ())
+        (files 0))
+    (dolist (fail failures)
+      (incf files)
+      (destructuring-bind (file warned failed) fail
+        (declare (ignore warned))
+        (cond
+          (failed
+           (format *error-output* "~& ⚠ Failed to compile ~a" file)
+           (push (enough-namestring file) file-failures))
+          (t
+           (format *error-output* "~& ⚠ Warning(s) from compiling ~a" file)
+           (push (enough-namestring file) file-warnings)))))
+    (cond
+      (file-failures
+       (cerror "Try anyway"
+               "In the ~:(~a~) pass, there were ~
+ ~[~:;~:*~r file~:p with warnings, and~] ~
+ ~[no files~:;~:*~r file~:p~] which failed, ~
+which occurred within ~r file~:p: ~
+~@[~%Warning on ~{~a~^, ~}~] ~
+~@[~%Failed on ~{~a~^, ~}~]"
+               pass
+               (length file-warnings) (length file-failures) files
+               file-warnings file-failures))
+      (file-warnings
+       (warn "In the ~:(~a~) pass, despite warnings in ~r file~:p, ~
+ there were no failures; continuing…"
+             pass (length file-warnings)))
+      (t (format *trace-output* "~&No warnings or failures from compilation in the ~(~a~) pass."
+                 pass)))))
+
+(defun compile-hosted-file (input)
+  (locally
+      ;; I make  the assumption that  re-loading the files  under Swank,
+      ;; you don't care  about these redefinitions … but if  we get them
+      ;; running    top-level   (eg,    from    a   Makefile)    they're
+      ;; more interesting.
+      (declare #+(and swank sbcl) (sb-ext:muffle-conditions
+                                   sb-kernel::function-redefinition-warning))
     (multiple-value-bind (fasl warn fail) (compile-file input)
-      (declare (ignore warn))
-      (when fail
-        (error "Compilation of ~A failed." input))
-      (load fasl))))
+      ;; It's only interesting to see if  there were failures at the end
+      ;; of the compilation unit, since  undefined functions in one file
+      ;; may be  defined in  another. This gets  particularly convoluted
+      ;; due to the circularity of the type system and object systems.
+      (values
+       (when (or warn fail)
+         (list (enough-namestring input) warn fail))
+       (when fasl
+         (load fasl)
+         fasl)))))
 
-(defun read-whole-file (filename)
-  (with-open-file (in filename)
-    (let ((seq (make-array (file-length in) :element-type 'character)))
-      (read-sequence seq in)
-      seq)))
+(defun cross-compile-file (file)
+  (format *trace-output* "~& → cross-compiling ~a" (enough-namestring file))
+  (finish-output *trace-output*)
+  (multiple-value-bind (js warn fail)
+      (let ((*features* (symbol-value (intern "*FEATURES*" :jscl/cl))))
+        (funcall (intern "COMPILE-FILE" :jscl/cl) file))
+    (values
+     (when (or warn fail)
+       (list (enough-namestring file) warn fail))
+     js)))
 
-(defun !compile-file (filename out &key print)
-  (let ((*compiling-file* t)
-        (*compile-print-toplevels* print)
-        (*package* *package*))
-    (let* ((source (read-whole-file filename))
-           (in (make-string-input-stream source)))
-      (format t "Compiling ~a...~%" (enough-namestring filename))
-      (loop
-         with eof-mark = (gensym)
-         for x = (ls-read in nil eof-mark)
-         until (eq x eof-mark)
-         do (let ((compilation (compile-toplevel x)))
-              (when (plusp (length compilation))
-                (write-string compilation out)))))))
+(defun compile-pass (mode)
+  (check-type mode (member :host :target))
+  (format *trace-output* "~|~%;;;; Beginning ~a compilation pass" mode)
+  (let (fasls failures)
+    (do-source (input mode)
+      (multiple-value-bind (fails fasl)
+          (funcall (ecase mode
+                     (:host #'compile-hosted-file)
+                     (:target #'cross-compile-file))
+                   input)
+        (format *trace-output* "~2&;;;; Finished ~a compilation pass~%~|" mode)
+        (when fails
+          (check-type fails list "a list mentioning warnings or failures")
+          (push fails failures))
+        (when fasl
+          (check-type fasl (or string pathname) "a fast load pathname")
+          (push fasl fasls))))
+    (when failures
+      (review-failures mode failures))
+    fasls))
 
-(defun dump-global-environment (stream)
-  (flet ((late-compile (form)
-           (let ((*standard-output* stream))
-             (write-string (compile-toplevel form)))))
-    ;; We assume that environments have a friendly list representation
-    ;; for the compiler and it can be dumped.
-    (dolist (b (lexenv-function *environment*))
-      (when (eq (binding-type b) 'macro)
-        (setf (binding-value b) `(,*magic-unquote-marker* ,(binding-value b)))))
-    (late-compile `(setq *environment* ',*environment*))
-    ;; Set some counter variable properly, so user compiled code will
-    ;; not collide with the compiler itself.
-    (late-compile
-     `(progn
-        (setq *variable-counter* ,*variable-counter*)
-        (setq *gensym-counter* ,*gensym-counter*)))
-    (late-compile `(setq *literal-counter* ,*literal-counter*))))
+(defmacro doforms ((var stream) &body body)
+  (let ((eof (gensym "EOF-")))
+    `(loop
+        with ,eof = (gensym "EOF-")
+        for ,var = (read ,stream nil ,eof)
+        until (eq ,var ,eof)
+        do (progn ,@body))))
 
+(defun load-jscl ()
+  "Load the cross-compiling JSCL into the host implementation."
+  (with-compilation-unit ()
+    (when *load-pathname*    
+      ;; Prevent this file from becoming that one stale FASL …
+      (compile-file *load-pathname*)))
+  (with-compilation-unit ()
+    (let ((fasls (compile-pass :host)))
+      (dolist (fasl fasls)
+        (locally
+            ;; These  occur because  we  reload from  FASL the  compiled
+            ;; versions
+            (declare #+sbcl (sb-ext:muffle-conditions
+                             sb-kernel::function-redefinition-warning))
+          (load fasl))))
+    (setf jscl::*global-environment* (funcall (intern "MAKE-LEXENV"
+                                                      (find-package :jscl)))
+          jscl::*environment* jscl::*global-environment*)
+    (funcall (intern "INIT-BUILT-IN-TYPES%" :jscl))
+    (compile-pass :target)))
 
-
-(defun compile-application (files output &key shebang)
-  (with-compilation-environment
-      (with-open-file (out output :direction :output :if-exists :supersede)
-        (when shebang
-          (format out "#!/usr/bin/env node~%"))
-        (format out "(function(jscl){~%")
-        (format out "'use strict';~%")
-        (format out "(function(values, internals){~%")
-        (dolist (input files)
-          (!compile-file input out))
-        (format out "})(jscl.internals.pv, jscl.internals);~%")
-        (format out "})( typeof require !== 'undefined'? require('./jscl'): window.jscl )~%"))))
-
-
-
-(defun bootstrap (&optional verbose)
-  (let ((*features* (list* :jscl :jscl-xc *features*))
-        (*package* (find-package "JSCL"))
-        (*default-pathname-defaults* *base-directory*))
-    (setq *environment* (make-lexenv))
-    (with-compilation-environment
-      (with-open-file (out (merge-pathnames "jscl.js" *base-directory*)
-                           :direction :output
-                           :if-exists :supersede)
-        (format out "(function(){~%")
-        (format out "'use strict';~%")
-        (write-string (read-whole-file (source-pathname "prelude.js")) out)
-        (do-source input :target
-          (!compile-file input out :print verbose))
-        (dump-global-environment out)
-
-        ;; NOTE: Thie file must be compiled after the global
-        ;; environment. Because some web worker code may do some
-        ;; blocking, like starting a REPL, we need to ensure that
-        ;; *environment* and other critical special variables are
-        ;; initialized before we do this.
-        (!compile-file "src/toplevel.lisp" out :print verbose)
-        
-        (format out "})();~%")))
-
-    (report-undefined-functions)
-
-    ;; Tests
-    (compile-application
-     `(,(source-pathname "tests.lisp" :directory nil)
-        ,@(directory (source-pathname "*" :directory '(:relative "tests") :type "lisp"))
-        ;; Loop tests
-        ,(source-pathname "validate.lisp" :directory '(:relative "tests" "loop") :type "lisp")
-        ,(source-pathname "base-tests.lisp" :directory '(:relative "tests" "loop") :type "lisp")
-        
-        ,(source-pathname "tests-report.lisp" :directory nil))
-     (merge-pathnames "tests.js" *base-directory*))
-
-    ;; Web REPL
-    (compile-application (list (source-pathname "repl.lisp" :directory '(:relative "repl-web")))
-                         (merge-pathnames "repl-web.js" *base-directory*))
-
-    ;; Node REPL
-    (compile-application (list (source-pathname "repl.lisp" :directory '(:relative "repl-node")))
-                         (merge-pathnames "repl-node.js" *base-directory*)
-                         :shebang t)))
-
-
-;;; Run the tests in the host Lisp implementation. It is a quick way
-;;; to improve the level of trust of the tests.
-(defun run-tests-in-host ()
+(defun jscl/test::run-tests-in-host ()
+  "Run the tests in  the host Lisp implementation. It is  a quick way to
+improve the level of trust of the tests."
   (let ((*package* (find-package "JSCL"))
         (*default-pathname-defaults* *base-directory*))
     (load (source-pathname "tests.lisp" :directory nil))
     (let ((*use-html-output-p* nil))
       (declare (special *use-html-output-p*))
-      (dolist (input (directory "tests/*.lisp"))
-        (load input)))
+      (mapc #'load (funcall (intern "TEST-FILES" :jscl))))
     (load "tests-report.lisp")))

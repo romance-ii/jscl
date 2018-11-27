@@ -1,35 +1,38 @@
-;;; compiler-codege.lisp --- Naive Javascript unparser
+;;;; compiler/codegen.lisp — Naïve Javascript unparser
 
-;; Copyright (C) 2013, 2014 David Vazquez
+;; Copyright © 2013, 2014 David Vazquez
 
-;; JSCL is free software: you can redistribute it and/or
-;; modify it under the terms of the GNU General Public License as
-;; published by the Free Software Foundation, either version 3 of the
-;; License, or (at your option) any later version.
+;; JSCL is free software: you can redistribute it and/or modify it under
+;; the terms of the GNU General  Public License as published by the Free
+;; Software Foundation,  either version  3 of the  License, or  (at your
+;; option) any later version.
 ;;
-;; JSCL is distributed in the hope that it will be useful, but
-;; WITHOUT ANY WARRANTY; without even the implied warranty of
-;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-;; General Public License for more details.
+;; JSCL is distributed  in the hope that it will  be useful, but WITHOUT
+;; ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+;; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+;; for more details.
 ;;
-;; You should have received a copy of the GNU General Public License
-;; along with JSCL.  If not, see <http://www.gnu.org/licenses/>.
+;; You should  have received a  copy of  the GNU General  Public License
+;; along with JSCL. If not, see <http://www.gnu.org/licenses/>.
 
 
-;;; This code generator takes as input a S-expression representation
-;;; of the Javascript AST and generates Javascript code without
-;;; redundant syntax constructions like extra parenthesis.
+;;; This code generator takes as  input a S-expression representation of
+;;; the Javascript  AST and generates Javascript  code without redundant
+;;; syntax constructions like extra parenthesis.
 ;;;
-;;; It is intended to be used with the new compiler. However, it is
+;;; It is  intended to  be used  with the new  compiler. However,  it is
 ;;; quite independent so it has been integrated early in JSCL.
 
-(/debug "loading compiler-codegen.lisp!")
+(in-package #-jscl :jscl #+jscl :jscl/impl)
 
 
 (defvar *js-macros* nil)
+
 (defmacro define-js-macro (name lambda-list &body body)
-  (let ((form (gensym)))
-    `(push (cons ',name
+  "Define a macro for emitting JavaScript code from the JavaScript AST."
+  (let ((form (gensym "FORM-")))
+    `(push (cons ',(intern (symbol-name name)
+                           :jscl/js)
                  (lambda (,form)
                    (block ,name
                      (destructuring-bind ,lambda-list ,form
@@ -46,90 +49,194 @@
               (js-macroexpand expansion))))
       js))
 
+(defconstant no-comma 12)               ; ?? ☠
+;; NO-COMMA  is  passed as  an  argument  for precedence  in  expression
+;; generation, but  I (BRFP) don't  understand precisely how  it's being
+;; used  or what  the  particular magical  value of  “12”  might be,  in
+;; this context.
 
-(defconstant no-comma 12)
+(defvar *js-output* t
+  "When generating  code, this  is the stream  to which  JavaScript will
+  be emitted.")
 
-(defvar *js-output* t)
+(defvar *js-pretty-print* t
+  "When true, generated JavaScript code  will attempt to pretty-print to
+  a degree.")
 
-(defvar *js-pretty-print* t)
 
-;;; Two seperate functions are needed for escaping strings:
-;;;  One for producing JavaScript string literals (which are singly or
-;;;   doubly quoted)
-;;;  And one for producing Lisp strings (which are only doubly quoted)
+
+;;; Two  separate functions  are needed  for escaping  strings: One  for
+;;;  producing JavaScript  string literals  (which are singly  or doubly
+;;;  quoted) And one  for producing Lisp strings (which  are only doubly
+;;;  quoted)
 ;;;
 ;;; The same function would suffice for both, but for javascript string
 ;;; literals it is neater to use either depending on the context, e.g:
-;;;  foo's => "foo's"
-;;;  "foo" => '"foo"'
-;;; which avoids having to escape quotes where possible
+;;; foo's → "foo's" "foo" → '"foo"' which avoids having to escape quotes
+;;; where possible
 (defun js-escape-string (string)
-  (let ((index 0)
-        (size (length string))
-        (seen-single-quote nil)
-        (seen-double-quote nil))
+  (let ((size (length string)))
     (flet ((%js-escape-string (string escape-single-quote-p)
              (let ((output "")
                    (index 0))
+               (labels
+                   ((add (stuff)
+                      (setq output (concat output
+                                           (etypecase stuff
+                                             (character (string stuff))
+                                             (vector stuff)))))
+                    (backslash (char)
+                      (add (vector #\\ char))))
                (while (< index size)
                  (let ((ch (char string index)))
-                   (when (char= ch #\\)
-                     (setq output (concat output "\\")))
-                   (when (and escape-single-quote-p (char= ch #\'))
-                     (setq output (concat output "\\")))
-                   (when (char= ch #\newline)
-                     (setq output (concat output "\\"))
-                     (setq ch #\n))
-                   (setq output (concat output (string ch))))
-                 (incf index))
+                     (case ch
+                       (#\apostrophe
+                        (if escape-single-quote-p
+                            (backslash #\apostrophe)
+                            (add #\apostrophe)))
+                       (#\\      	(backslash #\\))
+                       (#\newline 	(backslash #\n))
+                       (#\return 	(backslash #\r))
+                       (#\tab 	(backslash #\t))
+                       (#\page 	(backslash #\f))
+                       (#\backspace 	(backslash #\b))
+                       (#\null 	(backslash #\0))
+                       (otherwise
+                   (cond
+                          ((<= 1 (char-code ch) 26)
+                           (add "\\c")
+                           (add (code-char (+ (char-code #\A)
+                                              -1
+                                              (char-code ch)))))
+                     ((<= 27 (char-code ch) 31)
+                           (add "\\x")
+                           (add (integer-to-string (char-code ch) 16)))
+                     ((<= 127 (char-code ch) 159)
+                      (let ((s (integer-to-string (char-code ch) 16)))
+                             (add "\\u")
+                             (add (make-string (- 4 (length s))
+                                               :initial-element #\0))
+                             (add s)))
+                          (t (add ch))))))
+                   (incf index)))
                output)))
       ;; First, scan the string for single/double quotes
-      (while (< index size)
-        (let ((ch (char string index)))
-          (when (char= ch #\')
-            (setq seen-single-quote t))
-          (when (char= ch #\")
-            (setq seen-double-quote t)))
-        (incf index))
-      ;; Then pick the appropriate way to escape the quotes
       (cond
-        ((not seen-single-quote)
-         (concat "'"   (%js-escape-string string nil) "'"))
-        ((not seen-double-quote)
-         (concat "\""  (%js-escape-string string nil) "\""))
-        (t (concat "'" (%js-escape-string string t)   "'"))))))
-
+        ((not (find #\apostrophe string))
+         (concat #(#\apostrophe)
+                 (%js-escape-string string nil)
+                 #(#\apostrophe)))
+        ((not (find #\quotation_mark string))
+         (concat #(#\quotation_mark)
+                 (%js-escape-string string nil)
+                 #(#\quotation_mark)))
+        (t
+         (concat #(#\apostrophe)
+                 (%js-escape-string string t)
+                 #(#\apostrophe)))))))
 
 (defun js-format (fmt &rest args)
   (apply #'format *js-output* fmt args))
 
-;;; Check if STRING-DESIGNATOR is valid as a Javascript identifier. It
-;;; returns a couple of values. The identifier itself as a string and
-;;; a boolean value with the result of this check.
-(defun valid-js-identifier (string-designator)
+
+(defvar +javascript-reserved-keywords+
+  '(
+    "abstract"
+    "await"
+    "boolean"
+    "break"
+    "byte"
+    "case"
+    "catch"
+    "char"
+    "class"
+    "const"
+    "continue"
+    "debugger"
+    "default"
+    "delete"
+    "do"
+    "double"
+    "else"
+    "enum"
+    "export"
+    "extends"
+    "false"
+    "final"
+    "finally"
+    "float"
+    "for"
+    "function"
+    "goto"
+    "if"
+    "implements"
+    "import"
+    "in"
+    "instanceof"
+    "int"
+    "interface"
+    "let"
+    "long"
+    "native"
+    "new"
+    "new"
+    "null"
+    "package"
+    "private"
+    "protected"
+    "public"
+    "return"
+    "short"
+    "static"
+    "super"
+    "switch"
+    "synchronized"
+    "this"
+    "throw"
+    "throws"
+    "transient"
+    "true"
+    "try"
+    "typeof"
+    "var"
+    "void"
+    "volatile"
+    "while"
+    "with"
+    "yield")
+  "These  keywords  are not  permitted  to  be  used as  identifiers  in
+JavaScript.  This  is  a  union  of  all  the  reserved  word  lists  in
+https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Lexical_grammar")
+
+(defun valid-js-identifier-p (string-designator)
+  "Check  if  STRING-DESIGNATOR is  valid  as  a Javascript  identifier.
+ It returns  a couple of values:  the identifier itself as  a string (if
+ valid), and a boolean value with the result of this check."
   (let ((string (typecase string-designator
                   (symbol (symbol-name string-designator))
                   (string string-designator)
                   (t
-                   (return-from valid-js-identifier (values nil nil))))))
+                   (return-from valid-js-identifier-p (values nil nil))))))
     (flet ((constitutentp (ch)
              (or (alphanumericp ch) (member ch '(#\$ #\_)))))
       (if (and (every #'constitutentp string)
                (if (plusp (length string))
                    (not (digit-char-p (char string 0)))
-                   t))
+                   t)
+               (not (member string +javascript-reserved-keywords+
+                            :test #'string=)))
           (values string t)
           (values nil nil)))))
 
 
 ;;; Expression generators
 ;;;
-;;; `js-expr' and the following auxiliary functions are the
-;;; responsible for generating Javascript expression.
+;;; `js-expr' and the following  auxiliary functions are the responsible
+;;; for generating Javascript expression.
 
 (defun js-identifier (string-designator)
   (multiple-value-bind (string valid)
-      (valid-js-identifier string-designator)
+      (valid-js-identifier-p string-designator)
     (unless valid
       (error "~S is not a valid Javascript identifier." string-designator))
     (js-format "~a" string)))
@@ -174,7 +281,7 @@
        ((null tail))
     (let ((key (car tail))
           (value (cadr tail)))
-      (multiple-value-bind (identifier identifier-p) (valid-js-identifier key)
+      (multiple-value-bind (identifier identifier-p) (valid-js-identifier-p key)
         (declare (ignore identifier))
         (if identifier-p
             (js-identifier key)
@@ -203,7 +310,7 @@
 
 (defun check-lvalue (x)
   (unless (or (symbolp x)
-              (nth-value 1 (valid-js-identifier x))
+              (nth-value 1 (valid-js-identifier-p x))
               (and (consp x)
                    (member (car x) '(get = property))))
     (error "Bad Javascript lvalue ~S" x)))
@@ -217,6 +324,8 @@
 
     (if (consp form)
         (case (car form)
+          ((logand logior logxor)
+           (reduce-expr (car form)))
           (+
            (case (length (cdr form))
              (1 `(unary+ ,(cadr form)))
@@ -237,11 +346,11 @@
            (js-macroexpand form)))
         form)))
 
-;;; It is the more complicated function of the generator. It takes a
-;;; operator expression and generate Javascript for it. It will
-;;; consider associativity and precedence in order not to generate
-;;; unnecessary parenthesis.
 (defun js-operator-expression (op args precedence associativity operand-order)
+  "This is the  most complicated function of the generator.  It takes an
+operator expression  and generates JavaScript  for it. It  will consider
+associativity    and   precedence    in    order    to   not    generate
+unnecessary parentheses."
   (let ((op1 (car args))
         (op2 (cadr args)))
     (case op
@@ -253,7 +362,7 @@
        (js-format "]"))
       (get
        (multiple-value-bind (accessor accessorp)
-           (valid-js-identifier (cadr args))
+           (valid-js-identifier-p (cadr args))
          (unless accessorp
            (error "Invalid accessor ~S" (cadr args)))
          (js-expr (car args) 0)
@@ -261,7 +370,11 @@
          (js-identifier accessor)))
       ;; Function call
       (call
-       (js-expr (car args) 1)
+       (js-expr (if (and (consp (car args))
+                         (eql (caar args) 'lambda))
+                    (compile-lambda (second (car args)) (cddr (car args)))
+                    (car args))
+                1)
        (js-format "(")
        (when (cdr args)
          (js-expr (cadr args) no-comma)
@@ -323,9 +436,9 @@
            (unary-op post--      "--"            2    right :lvalue t :post t)
            (unary-op not         "!"             2    right)
            (unary-op bit-not     "~"             2    right)
-           ;; Note that the leading space is necessary because it
-           ;; could break with post++, for example. TODO: Avoid
-           ;; leading space when it's possible.
+           ;; Note that the leading space  is necessary because it could
+           ;; break with post++, for  example. TODO: Avoid leading space
+           ;; when it's possible.
            (unary-op unary+      " +"            2    right)
            (unary-op unary-      " -"            2    right)
            (unary-op delete      "delete "       2    right)
@@ -352,9 +465,9 @@
            (binary-op !=         "!="            7    left)
            (binary-op ===        "==="           7    left)
            (binary-op !==        "!=="           7    left)
-           (binary-op bit-and    "&"             8    left)
-           (binary-op bit-xor    "^"             9    left)
-           (binary-op bit-or     "|"            10    left)
+           (binary-op logand     "&"             8    left)
+           (binary-op logxor     "^"             9    left)
+           (binary-op logior     "|"            10    left)
            (binary-op and        "&&"           11    left)
            (binary-op or         "||"           12    left)
            (binary-op =          "="            13    right :lvalue t)
@@ -364,9 +477,9 @@
            (binary-op decf       "-="           13    right :lvalue t)
            (binary-op *=         "*="           13    right :lvalue t)
            (binary-op /=         "*="           13    right :lvalue t)
-           (binary-op bit-xor=   "^="           13    right :lvalue t)
-           (binary-op bit-and=   "&="           13    right :lvalue t)
-           (binary-op bit-or=    "|="           13    right :lvalue t)
+           (binary-op logxor=    "^="           13    right :lvalue t)
+           (binary-op logand=    "&="           13    right :lvalue t)
+           (binary-op logior=    "|="           13    right :lvalue t)
            (binary-op <<=        "<<="          13    right :lvalue t)
            (binary-op >>=        ">>="          13    right :lvalue t)
            (binary-op >>>=       ">>>="         13    right :lvalue t)
@@ -389,13 +502,19 @@
 (defun js-expr (form &optional (precedence 1000) associativity operand-order)
   (let ((form (js-expand-expr form)))
     (cond
+      ((pathnamep form)
+       (js-primary-expr (concatenate 'string
+                                     "file://"
+                                     (host-namestring form)
+                                     (namestring form))))
       ((or (symbolp form) (numberp form) (stringp form))
        (js-primary-expr form))
       ((vectorp form)
        (js-vector-initializer form))
-      (t
-       (js-operator-expression (car form) (cdr form) precedence associativity operand-order)))))
-
+      ((consp form)
+       (js-operator-expression (car form) (cdr form)
+                               precedence associativity operand-order))
+      (t (error  "unreachable?")))))
 
 
 ;;; Statements generators
@@ -403,8 +522,6 @@
 ;;; `js-stmt' generates code for Javascript statements. A form is
 ;;; provided to label statements. Remember that in particular,
 ;;; expressions can be used as statements (semicolon suffixed).
-;;;
-
 (defun js-expand-stmt (form)
   (cond
     ((and (consp form) (eq (car form) 'progn))
@@ -558,7 +675,7 @@
             (js-end-stmt))))))))
 
 
-;;; It is intended to be the entry point to the code generator.
 (defun js (&rest stmts)
+  "The entry point to the code generator."
   (mapc #'js-stmt stmts)
   nil)
