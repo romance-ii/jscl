@@ -1,94 +1,126 @@
-;;; stream.lisp ---
+;;; stream.lisp — Gray Streams, eventually.
 
-;; copyright (C) 2012, 2013 David Vazquez
-;; Copyright (C) 2012 Raimon Grau
+;; Copyright © 2012, 2013 David Vazquez
+;;; Copyright © 2012 Raimon Grau
 
-;; JSCL is free software: you can redistribute it and/or
-;; modify it under the terms of the GNU General Public License as
-;; published by the Free Software Foundation, either version 3 of the
-;; License, or (at your option) any later version.
+;; JSCL is free software: you can redistribute it and/or modify it under
+;; the terms of the GNU General  Public License as published by the Free
+;; Software Foundation,  either version  3 of the  License, or  (at your
+;; option) any later version.
 ;;
-;; JSCL is distributed in the hope that it will be useful, but
-;; WITHOUT ANY WARRANTY; without even the implied warranty of
-;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-;; General Public License for more details.
+;; JSCL is distributed  in the hope that it will  be useful, but WITHOUT
+;; ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+;; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+;; for more details.
 ;;
 ;; You should have received a copy of the GNU General Public License
 ;; along with JSCL.  If not, see <http://www.gnu.org/licenses/>.
 
-;;; TODO: Use structures to represent streams, but we would need
-;;; inheritance.
+(in-package #-jscl :jscl #+jscl :jscl/impl)
 
-(/debug "loading stream.lisp!")
-
-(defvar *standard-output*)
-(defvar *standard-input*)
-
-(def!struct (stream (:predicate streamp))
-  write-fn
-  read-char-fn
-  peek-char-fn
-  kind
-  data)
+;;; TODO:   Use  structures   to   represent  streams,   but  we   would
+;;; need inheritance.
 
 
-;;; Input streams
 
-(defun make-string-input-stream (string)
-  (let ((index 0))
-    (flet ((peek (eof-error-p)
-             (cond
-               ((< index (length string))
-                (char string index))
-               (eof-error-p
-                (error "End of file"))
-               (t
-                nil))))
+(defvar jscl/cl::*standard-output*)
 
-      (make-stream
-       :read-char-fn (lambda (eof-error-p)
-                       (prog1 (peek eof-error-p)
-                         (incf index)))
+(defun jscl/cl::streamp (x)
+  (and (storage-vector-p x)
+       (subtypep (car (storage-vector-kind x)) 'stream)))
 
-       :peek-char-fn (lambda (eof-error-p)
-                       (peek eof-error-p))))))
+(defun jscl/cl::output-stream-p (x)
+  (and (streamp x)
+       (subtypep (car (storage-vector-kind x)) 'output-stream)))
 
-(defun peek-char (&optional type (stream *standard-input*) (eof-error-p t))
-  (unless (null type)
-    (error "peek-char with non-null TYPE is not implemented."))
-  (funcall (stream-peek-char-fn stream) eof-error-p))
+(defun console-log ()
+  (jscl/ffi:oget* jscl/ffi:*root* "console" "log"))
 
-(defun read-char (&optional (stream *standard-input*) (eof-error-p t))
-  (funcall (stream-read-char-fn stream) eof-error-p))
+(defvar *stream-generic-functions*
+  (list 'string-output-stream
+        (list 'force-output
+              (lambda (stream)
+                (declare (ignore stream)))
+              'write-char
+              (lambda (char stream)
+                (vector-push-extend char (storage-vector-underlying-vector
+                                          stream)))
+              'write-string
+              (lambda (string stream)
+                (dotimes (i (length string))
+                  (vector-push-extend (aref string i)
+                                      (storage-vector-underlying-vector
+                                       stream)))))
+        'web-console-output-stream
+        (list 'force-output
+              (lambda (stream)
+                (funcall (console-log) (storage-vector-underlying-vector
+                                        stream))
+                (setf (storage-vector-underlying-vector stream) ""))
+              'write-char
+              (lambda (stream char)
+                (vector-push-extend char (storage-vector-underlying-vector
+                                          stream))
+                (when (member char '(#\newline #\return #\page))
+                  (jscl/cl::force-output stream)))
+              'write-string
+              (lambda (stream string)
+                (jscl/cl::force-output stream)
+                (funcall (console-log) string)))))
+
+;; FIXME:   Define  web-console-output-stream   to  be   a  subtype   of
+;; output-stream
+
+(defun stream-generic-method (stream method)
+  (or (getf (or (getf *stream-generic-functions*
+                      (car (storage-vector-kind stream)))
+                (error "Stream class ~s has no methods"
+                       (car (storage-vector-kind stream))))
+            method)
+      (error "Stream class ~s has no method ~s"
+             (car (storage-vector-kind stream)) method)))
+
+(defun jscl/cl::write-char (char &optional (stream *standard-output*))
+  (assert (jscl/cl::output-stream-p stream))
+  (funcall (stream-generic-method stream 'write-char) char stream))
+
+(defun jscl/cl::write-string (string &optional (stream *standard-output*))
+  (assert (jscl/cl::output-stream-p stream))
+  (funcall (stream-generic-method stream 'write-string) string stream))
+
+(defun jscl/cl::force-output (char &optional (stream *standard-output*))
+  (assert (jscl/cl::output-stream-p stream))
+  (funcall (stream-generic-method stream 'force-output) char stream))
+
+(defun jscl/cl::finish-output (char &optional (stream *standard-output*))
+  "Just calls FORCE-OUTPUT for now. We're not CLIM yet ☹"
+  (assert (jscl/cl::output-stream-p stream))
+  (funcall (stream-generic-method stream 'force-output) char stream))
 
 
-;;; Ouptut streams
 
-(defun write-char (char &optional (stream *standard-output*))
-  (funcall (stream-write-fn stream) (string char)))
+;;; String Streams
 
-(defun write-string (string &optional (stream *standard-output*))
-  (funcall (stream-write-fn stream) string))
+(defun jscl/cl::make-string-output-stream ()
+  (make-storage-vector 0 '(string-output-stream)))
 
-(defun make-string-output-stream ()
-  (let ((buffer (make-array 0 :element-type 'character :fill-pointer 0)))
-    (make-stream
-     :write-fn (lambda (string)
-       (dotimes (i (length string))
-         (vector-push-extend (aref string i) buffer)))
-     :kind 'string-stream
-     :data buffer)))
+(defun make-web-console-output-stream ()
+  (make-storage-vector 0 '(web-console-output-stream)))
 
-(defmacro with-input-from-string ((var string) &body body)
+(defun jscl/cl::get-output-stream-string (stream)
+  (assert (eq (car (storage-vector-kind stream)) 'string-output-stream))
+  (copy-seq (storage-vector-underlying-vector stream)))
+
+(defmacro jscl/cl::with-input-from-string ((var string &key start end index) &body body)
   ;; TODO: &key start end index
-  `(let ((,var (make-string-input-stream ,string)))
+  (assert (and (null (or end index))
+               (or (null start)
+                   (zerop start))) ()
+                   "Unimplemented features: WITH-INPUT-FROM-STRING &KEY START END INDEX")
+  `(jscl/cl::let ((,var (jscl/cl::make-string-input-stream ,string)))
      ,@body))
 
-(defun get-output-stream-string (stream)
-  (prog1 (stream-data stream)
-    (setf (stream-data stream) (make-string 0))))
-
-(defmacro with-output-to-string ((var) &body body)
-  `(let ((,var (make-string-output-stream)))
+(defmacro jscl/cl::with-output-to-string ((var) &body body)
+  `(jscl/cl::let ((,var (jscl/cl::make-string-output-stream)))
      ,@body
-     (get-output-stream-string ,var)))
+     (jscl/cl::get-output-stream-string ,var)))

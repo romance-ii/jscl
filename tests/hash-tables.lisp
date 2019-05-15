@@ -44,8 +44,8 @@
       (count 0))
   (setf (gethash :x ht) 10)
   (maphash (lambda (key value)
-	     (setq count (1+ count)))
-	   ht)
+             (setq count (1+ count)))
+           ht)
   (test (= count 1)))
 
 (let ((ht (make-hash-table)))

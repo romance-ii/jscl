@@ -1,5 +1,6 @@
 language: lisp
 sudo: required
+dist: trusty
 
 env:
   matrix:
@@ -9,5 +10,8 @@ install:
   - curl -L https://github.com/luismbo/cl-travis/raw/master/install.sh | sh
 
 script:
-  - ./make.sh
-  - ./run-tests.sh
+  - make
+  - make test
+
+addons:
+  srcclr: true

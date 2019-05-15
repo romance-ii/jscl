@@ -1,13 +1,41 @@
+# Backup/editor temp files
 *~
+*#
+.#*
+
+# FASL files (various flavours)
 *.fasl
 *.fas
 *.lx64fsl
 *.wx64fsl
+
+# Generated files
+/jscl.js
+/tests.js
+/jscl-repl
+/repl-web.js
+doc/*
+
+# Log files
+*.log
+
+# ??
 *.lib
 \#*
 jscl.js
 tests.js
 .tmp/
 
+# Git/patch junk files
+*.orig
+
+# Emacs files
+.emacs.desktop
+TAGS
+
+# “flag” file for Make
+.ansi-patched
+
+# Output REPL scripts
 /repl-node.js
 /repl-web.js

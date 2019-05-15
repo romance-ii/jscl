@@ -1,18 +1,21 @@
-;;; documentation.lisp --- Accessing DOCUMENTATION
+;;; documentation.lisp — Accessing DOCUMENTATION
 
-(/debug "loading documentation.lisp!")
+(in-package #-jscl :jscl #+jscl :jscl/impl)
+
+
 
 ;;; Documentation.
-(defun documentation (x type)
-  "Return the documentation of X. TYPE must be the symbol VARIABLE or FUNCTION."
+(defun jscl/cl::documentation (x type)
+  "Return  the documentation  of X.  TYPE  must be  the symbol  VARIABLE
+or FUNCTION."
   (ecase type
     (function
      (let ((func (fdefinition x)))
-       (oget func "docstring")))
+       (jscl/ffi:oget func "docstring")))
     (variable
      (unless (symbolp x)
        (error "The type of documentation `~S' is not a symbol." type))
-     (oget x "vardoc"))))
+     (jscl/ffi:oget x "vardoc"))))
 
 
 ;;; APROPOS and friends
@@ -29,7 +32,7 @@
             (do-all-external-symbols (symbol) (handle-symbol symbol))
             (do-all-symbols (symbol) (handle-symbol symbol))))))
 
-(defun apropos-list (string &optional package external-only)
+(defun jscl/cl::apropos-list (string &optional package external-only)
   (let (symbols)
     (map-apropos-symbols
      (lambda (symbol)
@@ -37,7 +40,7 @@
      string package external-only)
     symbols))
 
-(defun apropos (string &optional package external-only)
+(defun jscl/cl::apropos (string &optional package external-only)
   (map-apropos-symbols
    (lambda (symbol)
      (format t "~S" symbol)
@@ -51,39 +54,43 @@
 ;;; DESCRIBE
 
 ;; TODO: this needs DESCRIBE-OBJECT as generic method
-;; TODO: indentation for nested paragraphs
-(defun describe (object &optional stream)
-  (declare (ignore stream))
-  (typecase object
-    (cons
-     (format t "~S~%  [cons]~%" object))
-    (integer
-     (format t "~S~%  [integer]~%" object))
-    (symbol
-     (format t "~S~%  [symbol]~%" object)
+;;; TODO: indentation for nested paragraphs
+(defun describe-symbol (object stream)
      (when (boundp object)
-       (format t "~%~A names a special variable:~%  Value: ~A~%"
+    (format stream "~&~A names a special variable:~%  Value: ~A"
                object (symbol-value object))
        (let ((documentation (documentation object 'variable)))
          (when documentation
-           (format t "  Documentation:~%~A~%" documentation))))
-     (when (fboundp object)
-       (format t "~%~A names a function:~%" object)
-       (let ((documentation (documentation object 'function)))
-         (when documentation
-           (format t "  Documentation:~%~A~%" documentation)))))
+        (format stream "~&  Documentation:~%~A" documentation)))
+    (let ((value (symbol-value object)))
+      (format stream "~&Its current value is ~A" value)
+      (when value
+        (jscl/cl::describe value stream))))
+  (when (jscl/cl::special-operator-p object)
+    (format stream "~&~A names a special operator" object))
+  (cond ((jscl/cl::macro-function object)
+         (format stream "~&~A names a macro-function" object)
+         (jscl/cl::describe (macro-function object) stream))
+        ((jscl/cl::fboundp object)
+         (format stream "~&~A names a function" object)
+         (jscl/cl::describe (fdefinition object) stream))))
+
+(defun jscl/cl::describe (object &optional (stream t))
+  (let ((column-2 (floor *print-right-margin* 2)))
+    (format stream "~&~S~vT ~s"
+            object column-2 (type-of object))
+    (typecase object
+      (symbol
+       (describe-symbol object stream)
+       (when (ignore-errors (find-type-definition object))
+         (format stream "~&~A names a Type" object))
+       (when (ignore-errors (find-class object))
+         (format stream "~&~A names a Class" object)))
     (string
-     (format t "~S~%  [string]~%~%Length: ~D~%"
-             object (length object)))
-    (float
-     (format t "~S~%  [float]~%" object))
-    (array
-     (format t "~S~%  [array]~%" object))
+       (format stream "~%Length: ~:D"
+               (length object)))
     (function
-     (format t "~S~%  [function]~%" object)
      (let ((documentation (documentation object 'function)))
        (when documentation
-         (format t "  Documentation:~%~A~%" documentation))))
-    (T
-     (warn "~A not implemented yet for ~A" 'describe object)))
+           (format stream "~&  Documentation:~%~A" documentation))))))
   (values))

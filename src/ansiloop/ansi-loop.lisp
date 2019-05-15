@@ -1,139 +1,125 @@
-;;;   -*- Mode: LISP; Syntax: Common-lisp; Base: 10; Lowercase:T -*-
-;;;>
-;;;> Portions of LOOP are Copyright (c) 1986 by the Massachusetts Institute of Technology.
-;;;> All Rights Reserved.
-;;;> 
-;;;> Permission to use, copy, modify and distribute this software and its
-;;;> documentation for any purpose and without fee is hereby granted,
-;;;> provided that the M.I.T. copyright notice appear in all copies and that
-;;;> both that copyright notice and this permission notice appear in
-;;;> supporting documentation.  The names "M.I.T." and "Massachusetts
-;;;> Institute of Technology" may not be used in advertising or publicity
-;;;> pertaining to distribution of the software without specific, written
-;;;> prior permission.  Notice must be given in supporting documentation that
-;;;> copying distribution is by permission of M.I.T.  M.I.T. makes no
-;;;> representations about the suitability of this software for any purpose.
-;;;> It is provided "as is" without express or implied warranty.
-;;;> 
-;;;>      Massachusetts Institute of Technology
-;;;>      77 Massachusetts Avenue
-;;;>      Cambridge, Massachusetts  02139
-;;;>      United States of America
-;;;>      +1-617-253-1000
-;;;>
-;;;> Portions of LOOP are Copyright (c) 1989, 1990, 1991, 1992 by Symbolics, Inc.
-;;;> All Rights Reserved.
-;;;> 
-;;;> Permission to use, copy, modify and distribute this software and its
-;;;> documentation for any purpose and without fee is hereby granted,
-;;;> provided that the Symbolics copyright notice appear in all copies and
-;;;> that both that copyright notice and this permission notice appear in
-;;;> supporting documentation.  The name "Symbolics" may not be used in
-;;;> advertising or publicity pertaining to distribution of the software
-;;;> without specific, written prior permission.  Notice must be given in
-;;;> supporting documentation that copying distribution is by permission of
-;;;> Symbolics.  Symbolics makes no representations about the suitability of
-;;;> this software for any purpose.  It is provided "as is" without express
-;;;> or implied warranty.
-;;;> 
-;;;> Symbolics, CLOE Runtime, and Minima are trademarks, and CLOE, Genera,
-;;;> and Zetalisp are registered trademarks of Symbolics, Inc.
-;;;>
-;;;>      Symbolics, Inc.
-;;;>      8 New England Executive Park, East
-;;;>      Burlington, Massachusetts  01803
-;;;>      United States of America
-;;;>      +1-617-221-1000
+;;;   -*- Mode: Lisp; Syntax: Common-lisp; Base: 10; Lowercase:T -*-
+;;
+;; Portions of LOOP are Copyright  © 1986 by the Massachusetts Institute
+;; of Technology. All Rights Reserved.
+;;
+;; Permission to use, copy, modify  and distribute this software and its
+;; documentation  for any  purpose and  without fee  is hereby  granted,
+;; provided that  the M.I.T. copyright  notice appear in all  copies and
+;; that both that copyright notice  and this permission notice appear in
+;; supporting  documentation.  The  names  "M.I.T."  and  "Massachusetts
+;; Institute of Technology" may not  be used in advertising or publicity
+;; pertaining to distribution of  the software without specific, written
+;; prior permission.  Notice must  be given in  supporting documentation
+;; that copying distribution is by  permission of M.I.T. M.I.T. makes no
+;; representations  about  the  suitability  of this  software  for  any
+;; purpose. It is provided "as is" without express or implied warranty.
+;;
+;;      Massachusetts Institute of Technology
+;;;     77 Massachusetts Avenue
+;;      Cambridge, Massachusetts 02139
+;;;     United States of America
+;;      +1-617-253-1000
+;;
+;; Portions of LOOP are Copyright © 1989, 1990, 1991, 1992 by Symbolics,
+;; Inc. All Rights Reserved.
+;;
+;; Permission to use, copy, modify  and distribute this software and its
+;; documentation  for any  purpose and  without fee  is hereby  granted,
+;; provided that the Symbolics copyright notice appear in all copies and
+;; that both that copyright notice  and this permission notice appear in
+;; supporting documentation.  The name  "Symbolics" may  not be  used in
+;; advertising or  publicity pertaining to distribution  of the software
+;; without specific, written  prior permission. Notice must  be given in
+;; supporting documentation  that copying distribution is  by permission
+;; of   Symbolics.  Symbolics   makes  no   representations  about   the
+;; suitability of this software for any  purpose. It is provided "as is"
+;; without express or implied warranty.
+;;
+;; Symbolics, CLOE Runtime, and Minima are trademarks, and CLOE, Genera,
+;; and Zetalisp are registered trademarks of Symbolics, Inc.
+;;
+;;      Symbolics, Inc.
+;;;     8 New England Executive Park,
+;;      East Burlington, Massachusetts 01803
+;;;     United States of America
+;;      +1-617-221-1000
 
-;; $aclHeader: loop.cl,v 1.5 91/12/04 01:13:48 cox acl4_1 $
 
-;;;; LOOP Iteration Macro
+;;; LOOP Iteration Macro
 
-#-jscl
 (defpackage :jscl/loop
-  (:use :common-lisp))
-#+jscl
-(eval-when (:load-toplevel :execute)
-  (make-package "JSCL/LOOP" :use (list(find-package "CL"))))
+  (:use :common-lisp)
+  #+jscl (:shadowing-import-from :jscl/cltl2 :declaration-information)
+  #+sbcl (:shadowing-import-from :sb-cltl2 :declaration-information))
 
 (in-package :jscl/loop)
 
+(unless (fboundp 'declaration-information)
+  (defun declaration-information (type &optional environment)
+    (declare (ignore type environment))
+    (warn "No DECLARATION-INFORMATION available")))
 
-;;; Technology.
+;; This is a  bug in the JS bootstrap process  where somehow the package
+;; isn't getting  set correctly  at read-time.  Flagging the  error here
+;; shouldn't be necessary forever, but it's been helpful for now.
+#.(assert (equal (package-name *package*)
+                 (string :jscl/loop))
+          (*package*)
+          "Bitten by the IN-PACKAGE bug … ~
+should be in :JSCL/LOOP but ended up in ~a"
+          (package-name *package*))
+
+;; Technology.
+;;
+;; The  LOOP iteration  macro  is one  of  a number  of  pieces of  code
+;; originally  developed at  MIT for  which free  distribution has  been
+;; permitted, as long as the code is not sold for profit, and as long as
+;; notification of MIT's interest in the code is preserved.
+;;
+;; This  version of  LOOP, which  is almost  entirely rewritten  both as
+;; clean-up and  to conform  with the ANSI  Lisp LOOP  standard, started
+;; life as MIT LOOP version 829 (which was a part of NIL, possibly never
+;; released).
+;;
+;;A  "light  revision"  was  performed  by me  (Glenn  Burke)  while  at
+;;Palladian Software in April 1986, to make the code run in Common Lisp.
+;;This revision  was informally distributed  to a number of  people, and
+;;was sort of the "MIT" version of LOOP for running in Common Lisp.
 ;;;
-;;; The LOOP iteration macro is one of a number of pieces of code
-;;; originally developed at MIT for which free distribution has been
-;;; permitted, as long as the code is not sold for profit, and as long
-;;; as notification of MIT's interest in the code is preserved.
+;;A  later more  drastic  revision was  performed  at Palladian  perhaps
+;;a year later.  This version was more thoroughly Common  Lisp in style,
+;;with a few miscellaneous internal  improvements and extensions. I have
+;;lost track of this source, apparently never having moved it to the MIT
+;;distribution point. I do not remember if it was ever distributed.
 ;;;
-;;; This version of LOOP, which is almost entirely rewritten both as
-;;; clean-up and to conform with the ANSI Lisp LOOP standard, started
-;;; life as MIT LOOP version 829 (which was a part of NIL, possibly
-;;; never released).
-;;;
-;;; A "light revision" was performed by me (Glenn Burke) while at
-;;; Palladian Software in April 1986, to make the code run in Common
-;;; Lisp.  This revision was informally distributed to a number of
-;;; people, and was sort of the "MIT" version of LOOP for running in
-;;; Common Lisp.
-;;;
-;;; A later more drastic revision was performed at Palladian perhaps a
-;;; year later.  This version was more thoroughly Common Lisp in style,
-;;; with a few miscellaneous internal improvements and extensions.  I
-;;; have lost track of this source, apparently never having moved it to
-;;; the MIT distribution point.  I do not remember if it was ever
-;;; distributed.
-;;;
-;;; This revision for the ANSI standard is based on the code of my April
-;;; 1986 version, with almost everything redesigned and/or rewritten.
+;;This revision for the  ANSI standard is based on the  code of my April
+;;1986 version, with almost everything redesigned and/or rewritten.
 
 
-;;; The design of this LOOP is intended to permit, using mostly the same
-;;; kernel of code, up to three different "loop" macros:
-;;; 
-;;; (1) The unextended, unextensible ANSI standard LOOP;
-;;;
-;;; (2) A clean "superset" extension of the ANSI LOOP which provides
-;;; functionality similar to that of the old LOOP, but "in the style of"
-;;; the ANSI LOOP.  For instance, user-definable iteration paths, with a
-;;; somewhat cleaned-up interface.
-;;;
-;;; (3) Extensions provided in another file which can make this LOOP
-;;; kernel behave largely compatibly with the Genera-vintage LOOP macro,
-;;; with only a small addition of code (instead of two whole, separate,
-;;; LOOP macros).
-;;;
-;;; Each of the above three LOOP variations can coexist in the same LISP
-;;; environment.
-;;; 
-
+;; The design of this LOOP is  intended to permit, using mostly the same
+;; kernel of code, up to three different "loop" macros:
+;;
+;; (1) The unextended, unextensible ANSI standard LOOP;
+;;
+;; (2)  A clean  "superset" extension  of the  ANSI LOOP  which provides
+;; functionality similar to that of the  old LOOP, but "in the style of"
+;; the  ANSI LOOP.  For instance,  user-definable iteration  paths, with
+;; a somewhat cleaned-up interface.
+;;
+;; (3)  Extensions provided  in another  file which  can make  this LOOP
+;; kernel behave largely compatibly  with the Genera-vintage LOOP macro,
+;; with only a  small addition of code (instead of  two whole, separate,
+;; LOOP macros).
+;;
+;; Each  of the  above three  LOOP variations  can coexist  in the  same
+;; Lisp environment.
+;;
+;; This version has been “doctored” to  work well with JSCL. This mostly
+;; means  that  it no  longer  is  likely  to  work on  pre-ANSI  Common
+;; Lisp implementations.
 
 ;;;; Miscellaneous Environment Things
-
-
-
-;;;@@@@The LOOP-Prefer-POP feature makes LOOP generate code which "prefers" to use POP or
-;;; its obvious expansion (prog1 (car x) (setq x (cdr x))).  Usually this involves
-;;; shifting fenceposts in an iteration or series of carcdr operations.  This is
-;;; primarily recognized in the list iterators (FOR .. {IN,ON}), and LOOP's
-;;; destructuring setq code.
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  #+(or Genera Minima) (pushnew :LOOP-Prefer-POP *features*)
-  )
-
-
-;;; The uses of this macro are retained in the CL version of loop, in
-;;; case they are needed in a particular implementation.  Originally
-;;; dating from the use of the Zetalisp COPYLIST* function, this is used
-;;; in situations where, were cdr-coding in use, having cdr-NIL at the
-;;; end of the list might be suboptimal because the end of the list will
-;;; probably be RPLACDed and so cdr-normal should be used instead.
-(defmacro loop-copylist* (l)
-  #+Genera `(lisp:copy-list ,l nil t)		; arglist = (list &optional area force-dotted)
-  ;;@@@@Explorer??
-  #-Genera `(copy-list ,l)
-  )
-
 
 (defvar *loop-gentemp*
 	nil)
@@ -143,74 +129,66 @@
       (gentemp (string pref))
       (gensym)))
 
-
-
 (defvar *loop-real-data-type* 'real)
 
-
 (defun loop-optimization-quantities (env)
-  ;;@@@@ The ANSI conditionalization here is for those lisps that implement
-  ;; DECLARATION-INFORMATION (from cleanup SYNTACTIC-ENVIRONMENT-ACCESS).
-  ;; It is really commentary on how this code could be written.  I don't
-  ;; actually expect there to be an ANSI #+-conditional -- it should be
-  ;; replaced with the appropriate conditional name for your
-  ;; implementation/dialect.
-  (declare #-ANSI (ignore env)
-	   #+Genera (values speed space safety compilation-speed debug))
-  #+ANSI (let ((stuff (declaration-information 'optimize env)))
+  (let ((stuff (declaration-information 'optimize env)))
 	   (values (or (cdr (assoc 'speed stuff)) 1)
 		   (or (cdr (assoc 'space stuff)) 1)
 		   (or (cdr (assoc 'safety stuff)) 1)
 		   (or (cdr (assoc 'compilation-speed stuff)) 1)
-		   (or (cdr (assoc 'debug stuff)) 1)))
-  #+CLOE-Runtime (values compiler::time compiler::space
-			 compiler::safety compiler::compilation-speed 1)
-  #-(or ANSI CLOE-Runtime) (values 1 1 1 1 1))
+            (or (cdr (assoc 'debug stuff)) 1))))
 
-
-;;;@@@@ The following form takes a list of variables and a form which presumably
-;;; references those variables, and wraps it somehow so that the compiler does not
-;;; consider those variables have been referenced.  The intent of this is that
-;;; iteration variables can be flagged as unused by the compiler, e.g. I in
-;;; (loop for i from 1 to 10 do (print t)), since we will tell it when a usage
-;;; of it is "invisible" or "not to be considered".
-;;;We implicitly assume that a setq does not count as a reference.  That is, the
-;;; kind of form generated for the above loop construct to step I, simplified, is
-;;; `(SETQ I ,(HIDE-VARIABLE-REFERENCES '(I) '(1+ I))).
+;; @@@@ The  following form takes a  list of variables and  a form which
+;; presumably references those  variables, and wraps it  somehow so that
+;; the compiler does not consider  those variables have been referenced.
+;; The intent  of this  is that  iteration variables  can be  flagged as
+;; unused by the compiler, e.g. I in (loop  for i from 1 to 10 do (print
+;; t)), since we will tell it when  a usage of it is "invisible" or "not
+;; to be considered".
+;;
+;; We  implicitly assume  that a  setq does  not count  as a  reference.
+;; That is, the  kind of form generated for the  above loop construct to
+;; step I, simplified, is  `(SETQ I ,(HIDE-VARIABLE-REFERENCES '(I) '(1+
+;; I))).
 (defun hide-variable-references (variable-list form)
   (declare #-Genera (ignore variable-list))
   #+Genera (if variable-list `(compiler:invisible-references ,variable-list ,form) form)
   #-Genera form)
 
-
-;;;@@@@ The following function takes a flag, a variable, and a form which presumably
-;;; references that variable, and wraps it somehow so that the compiler does not
-;;; consider that variable to have been referenced.  The intent of this is that
-;;; iteration variables can be flagged as unused by the compiler, e.g. I in
-;;; (loop for i from 1 to 10 do (print t)), since we will tell it when a usage
-;;; of it is "invisible" or "not to be considered".
-;;;We implicitly assume that a setq does not count as a reference.  That is, the
-;;; kind of form generated for the above loop construct to step I, simplified, is
-;;; `(SETQ I ,(HIDE-VARIABLE-REFERENCES T 'I '(1+ I))).
-;;;Certain cases require that the "invisibility" of the reference be conditional upon
-;;; something.  This occurs in cases of "named" variables (the USING clause).  For instance,
-;;; we want IDX in (LOOP FOR E BEING THE VECTOR-ELEMENTS OF V USING (INDEX IDX) ...)
-;;; to be "invisible" when it is stepped, so that the user gets informed if IDX is
-;;; not referenced.  However, if no USING clause is present, we definitely do not
-;;; want to be informed that some random gensym is not used.
-;;;It is easier for the caller to do this conditionally by passing a flag (which
-;;; happens to be the second value of NAMED-VARIABLE, q.v.) to this function than
-;;; for all callers to contain the conditional invisibility construction.
+;; @@@@ The  following function  takes a  flag, a  variable, and  a form
+;; which presumably  references that variable,  and wraps it  somehow so
+;; that  the compiler  does  not  consider that  variable  to have  been
+;; referenced. The  intent of  this is that  iteration variables  can be
+;; flagged as unused by the compiler, e.g. I in (loop for i from 1 to 10
+;; do  (print  t)),  since we  will  tell  it  when  a usage  of  it  is
+;; "invisible" or "not to be considered".
+;;
+;; We  implicitly assume  that a  setq does  not count  as a  reference.
+;; That is, the  kind of form generated for the  above loop construct to
+;; step I, simplified, is `(SETQ  I ,(HIDE-VARIABLE-REFERENCES T 'I '(1+
+;; I))).
+;;
+;; Certain cases  require that  the "invisibility"  of the  reference be
+;; conditional upon something. This occurs in cases of "named" variables
+;; (the USING  clause). For instance, we  want IDX in (LOOP  FOR E BEING
+;; THE VECTOR-ELEMENTS  OF V  USING (INDEX IDX)  ...) to  be "invisible"
+;; when it  is stepped,  so that the  user gets informed  if IDX  is not
+;; referenced. However, if no USING  clause is present, we definitely do
+;; not want to be informed that some random gensym is not used.
+;;
+;; It  is easier  for the  caller to  do this  conditionally by  passing
+;; a flag (which happens to be the second value of NAMED-VARIABLE, q.v.)
+;; to  this function  than for  all callers  to contain  the conditional
+;; invisibility construction.
 (defun hide-variable-reference (really-hide variable form)
   (declare #-Genera (ignore really-hide variable))
   #+Genera (if (and really-hide variable (atom variable))	;Punt on destructuring patterns
 	       `(compiler:invisible-references (,variable) ,form)
 	       form)
   #-Genera form)
-
 
 ;;;; List Collection Macrology
-
 
 (defmacro with-loop-list-collection-head ((head-var tail-var &optional user-head-var)
 					  &body body)
@@ -218,15 +196,13 @@
     `(let* ((,head-var (list nil)) (,tail-var ,head-var) ,@l)
        ,@body)))
 
-
-(defmacro loop-collect-rplacd ((head-var tail-var &optional user-head-var) form)
-  (declare
-   #+LISPM (ignore head-var user-head-var) ;use locatives, unconditionally update through the tail.
-   )
-  (let ((env jscl::*environment*))
-    (setq form (jscl::!macroexpand form env))
+(defmacro loop-collect-rplacd ((head-var tail-var &optional user-head-var)
+                                                            form
+                               &environment env)
+  (setq form (#+jscl jscl/cl:macroexpand
+                     #-jscl macroexpand form env))
     (flet ((cdr-wrap (form n)
-             #+nil (declare (fixnum n))
+           (declare (fixnum n))
              (do () ((<= n 4) (setq form `(,(case n
                                               (1 'cdr)
                                               (2 'cddr)
@@ -235,15 +211,11 @@
                                             ,form)))
                (setq form `(cddddr ,form) n (- n 4)))))
       (let ((tail-form form) (ncdrs nil))
-        ;;Determine if the form being constructed is a list of known length.
+      ;; Determine  if  the  form  being  constructed  is  a  list  of
+      ;; known length.
         (when (consp form)
           (cond ((eq (car form) 'list)
-                 (setq ncdrs (1- (length (cdr form))))
-                 ;;@@@@ Because the last element is going to be RPLACDed,
-                 ;; we don't want the cdr-coded implementations to use
-                 ;; cdr-nil at the end (which would just force copying
-                 ;; the whole list again).
-                 #+LISPM (setq tail-form `(list* ,@(cdr form) nil)))
+               (setq ncdrs (1- (length (cdr form)))))
                 ((member (car form) '(list* cons))
                  (when (and (cddr form) (member (car (last form)) '(nil 'nil)))
                    (setq ncdrs (- (length (cdr form)) 2))))))
@@ -254,32 +226,31 @@
                      ((< ncdrs 0) (return-from loop-collect-rplacd nil))
                      ((= ncdrs 0)
                       ;;@@@@ Here we have a choice of two idioms:
-                      ;; (rplacd tail (setq tail tail-form))
-                      ;; (setq tail (setf (cdr tail) tail-form)).
-                      ;;Genera and most others I have seen do better with the former.
+                    ;; (rplacd tail (setq  tail tail-form)) (setq tail
+                    ;; (setf (cdr  tail) tail-form)). Genera  and most
+                    ;; others I have seen do better with the former.
                       `(rplacd ,tail-var (setq ,tail-var ,tail-form)))
                      (t `(setq ,tail-var ,(cdr-wrap `(setf (cdr ,tail-var) ,tail-form)
                                                     ncdrs))))))
-          ;;If not using locatives or something similar to update the user's
-          ;; head variable, we've got to set it...  It's harmless to repeatedly set it
-          ;; unconditionally, and probably faster than checking.
-          #-LISPM (when user-head-var
-                    (setq answer `(progn ,answer (setq ,user-head-var (cdr ,head-var)))))
-          answer)))))
-
+        ;; If not using  locatives or something similar  to update the
+        ;; user's head variable, we've got  to set it… It's harmless
+        ;; to repeatedly  set it unconditionally, and  probably faster
+        ;; than checking.
+        (when user-head-var
+          (setq answer `(progn ,answer
+                               (setq ,user-head-var (cdr ,head-var)))))
+        answer))))
 
 (defmacro loop-collect-answer (head-var &optional user-head-var)
   (or user-head-var
       (progn
-	;;If we use locatives to get tail-updating to update the head var,
-	;; then the head var itself contains the answer.  Otherwise we
-	;; have to cdr it.
-	#+LISPM head-var
-	#-LISPM `(cdr ,head-var))))
+        ;; If we use  locatives to get tail-updating to  update the head
+        ;; var,  then   the  head   var  itself  contains   the  answer.
+        ;; Otherwise we have to cdr it.
+        `(cdr ,head-var))))
 
 
 ;;;; Maximization Technology
-
 
 #|
 The basic idea of all this minimax randomness here is that we have to
@@ -292,10 +263,9 @@ and (2) know that a MAXIMIZE and MINIMIZE are not being combined.
 SO, we have a datastructure which we annotate with all sorts of things,
 incrementally updating it as we generate loop body code, and then use
 a wrapper and internal macros to do the coding when the loop has been
-constructed.
-|#
+constructed. |#
 
-(jscl::def!struct (loop-minimax
+(defstruct (loop-minimax
 	     (:constructor make-loop-minimax-internal)
 	     (:copier nil)
 	     (:predicate nil))
@@ -306,35 +276,25 @@ constructed.
   operations
   infinity-data)
 
-
 (defvar *loop-minimax-type-infinities-alist*
-	;;@@@@ This is the sort of value this should take on for a Lisp that has
-	;; "eminently usable" infinities.  n.b. there are neither constants nor
-	;; printed representations for infinities defined by CL.
-	;;@@@@ This grotesque read-from-string below is to help implementations
-	;; which croak on the infinity character when it appears in a token, even
-	;; conditionalized out.
-  '((fixnum most-positive-fixnum most-negative-fixnum)))
-
+  ;; @@@@ This is the sort of value  this should take on for a Lisp that
+  ;; has "eminently usable" infinities. n.b. there are neither constants
+  ;; nor printed representations for infinities defined by CL.
+  '((fixnum most-positive-fixnum most-negative-fixnum)
+    (float long-float-negative-infinity long-float-positive-infinity)))
 
 (defun make-loop-minimax (answer-variable type)
   (let ((infinity-data
-         ;; FIXME: The original code relies relied on subtypep, but
-         ;; JSCL still doesn't have a proper implementation of the
-         ;; type system.
-         #+nil (cdr (assoc type *loop-minimax-type-infinities-alist* :test #'subtypep))
-         ;;
-         ;; so we just inline the value in here
-         '(most-positive-fixnum most-negative-fixnum)))
-
+         (cdr (assoc type *loop-minimax-type-infinities-alist*
+                     :test #'subtypep))))
     (make-loop-minimax-internal
       :answer-variable answer-variable
       :type type
       :temp-variable (loop-gentemp 'loop-maxmin-temp-)
-      :flag-variable (and (not infinity-data) (loop-gentemp 'loop-maxmin-flag-))
+     :flag-variable (and (not infinity-data)
+                         (loop-gentemp 'loop-maxmin-flag-))
       :operations nil
       :infinity-data infinity-data)))
-
 
 (defun loop-note-minimax-operation (operation minimax)
   (pushnew (the symbol operation) (loop-minimax-operations minimax))
@@ -342,7 +302,6 @@ constructed.
              (not (loop-minimax-flag-variable minimax)))
     (setf (loop-minimax-flag-variable minimax) (loop-gentemp 'loop-maxmin-flag-)))
   operation)
-
 
 (defmacro with-minimax-value (lm &body body)
   (let ((init (loop-typed-init (loop-minimax-type lm)))
@@ -361,7 +320,6 @@ constructed.
            (declare (type ,type ,answer-var ,temp-var))
            ,@body))))
 
-
 (defmacro loop-accumulate-minimax-value (lm operation form)
   (let* ((answer-var (loop-minimax-answer-variable lm))
 	 (temp-var (loop-minimax-temp-variable lm))
@@ -379,10 +337,7 @@ constructed.
 	 (setq ,@(and flag-var `(,flag-var t))
 	       ,answer-var ,temp-var)))))
 
-
-
 ;;;; Loop Keyword Tables
-
 
 #|
 LOOP keyword tables are hash tables string keys and a test of EQUAL.
@@ -393,39 +348,31 @@ that we can provide a non-extensible ANSI-compatible loop environment,
 an extensible ANSI-superset loop environment, and (for such environments
 as CLOE) one which is "sufficiently close" to the old Genera-vintage
 LOOP for use by old user programs without requiring all of the old LOOP
-code to be loaded.
-|#
-
+code to be loaded. |#
 
 ;;;; Token Hackery
 
-
-;;;Compare two "tokens".  The first is the frob out of *LOOP-SOURCE-CODE*,
-;;; the second a symbol to check against.
 (defun loop-tequal (x1 x2)
+  "Compare   two   "tokens".   The   first    is   the   frob   out   of
+*LOOP-SOURCE-CODE*, the second a symbol to check against."
   (and (symbolp x1) (string= x1 x2)))
-
 
 (defun loop-tassoc (kwd alist)
   (and (symbolp kwd) (assoc kwd alist :test #'string=)))
 
-
 (defun loop-tmember (kwd list)
   (and (symbolp kwd) (member kwd list :test #'string=)))
-
 
 (defun loop-lookup-keyword (loop-token table)
   (and (symbolp loop-token)
        (values (gethash (symbol-name loop-token) table))))
 
-
 (defmacro loop-store-table-data (symbol table datum)
   `(setf (gethash (symbol-name ,symbol) ,table) ,datum))
 
-
-(jscl::def!struct (loop-universe
+(defstruct (loop-universe
               ;; FIXME: Implement me in JSCL!
-              ;; (:print-function print-loop-universe)
+              (:print-function print-loop-universe)
               (:copier nil)
               (:predicate nil))
   keywords					;hash table, value = (fn-name . extra-data).
@@ -438,7 +385,6 @@ code to be loaded.
   implicit-for-required				;see loop-hack-iteration
   )
 
-
 (defun print-loop-universe (u stream level)
   (declare (ignore level))
   (let ((str (case (loop-universe-ansi u)
@@ -446,26 +392,17 @@ code to be loaded.
 	       ((t) "ANSI")
 	       (:extended "Extended-ANSI")
 	       (t (loop-universe-ansi u)))))
-    ;;Cloe could be done with the above except for bootstrap lossage...
-    #+CLOE
-    (format stream "#<~S ~A ~X>" (type-of u) str (sys::address-of u))
-    #+Genera					;@@@@ This is reallly the ANSI definition.
     (print-unreadable-object (u stream :type t :identity t)
-      (princ str stream))
-    #-(or Genera CLOE)
-    (format stream "#<~S ~A>" (type-of u) str)
-    ))
+      (princ str stream))))
 
-
-;;;This is the "current" loop context in use when we are expanding a
-;;;loop.  It gets bound on each invocation of LOOP.
+;; This  is the  "current" loop  context in  use when  we are  expanding
+;; a loop. It gets bound on each invocation of LOOP.
 (defvar *loop-universe*)
 
-
-(defun make-standard-loop-universe (&key keywords for-keywords iteration-keywords path-keywords
-				    type-keywords type-symbols ansi)
-  #-(and CLOE Source-Bootstrap)
-  ;; (check-type ansi (member nil t :extended))
+(defun make-standard-loop-universe
+    (&key keywords for-keywords iteration-keywords
+          path-keywords type-keywords type-symbols ansi)
+  (check-type ansi (member nil t :extended))
   (flet ((maketable (entries)
 	   (let* ((size (length entries))
 		  (ht (make-hash-table :size (if (< size 10) 10 size) :test #'equal)))
@@ -485,15 +422,12 @@ code to be loaded.
 			(if (atom x) (setf (gethash x ht) x) (setf (gethash (car x) ht) (cadr x))))
 		      ht)))) 
 
-
-;;;; Setq Hackery
-
+;;;; SetQ Hackery
 
 (defvar *loop-destructuring-hooks*
 	nil
   "If not NIL, this must be a list of two things:
 a LET-like macro, and a SETQ-like macro, which perform LOOP-style destructuring.")
-
 
 (defun loop-make-psetq (frobs)
   (and frobs
@@ -503,7 +437,6 @@ a LET-like macro, and a SETQ-like macro, which perform LOOP-style destructuring.
 		   `(prog1 ,(cadr frobs)
 			   ,(loop-make-psetq (cddr frobs))))))))
 
-
 (defun loop-make-desetq (var-val-pairs)
   (if (null var-val-pairs)
       nil
@@ -512,16 +445,14 @@ a LET-like macro, and a SETQ-like macro, which perform LOOP-style destructuring.
 		'loop-really-desetq)
 	    var-val-pairs)))
 
-
 (defvar *loop-desetq-temporary*
   (make-symbol "LOOP-DESETQ-TEMP"))
 
-
-(defmacro loop-really-desetq (&rest var-val-pairs)
-  (let ((env jscl::*environment*))
+(defmacro loop-really-desetq (&rest var-val-pairs
+                              &environment env)
     (labels ((find-non-null (var)
-               ;; see if there's any non-null thing here
-               ;; recurse if the list element is itself a list
+             ;; see if there's any non-null  thing here recurse if the
+             ;; list element is itself a list
                (do ((tail var)) ((not (consp tail)) tail)
                  (when (find-non-null (pop tail)) (return t))))
              (loop-desetq-internal (var val &optional temp)
@@ -533,12 +464,14 @@ a LET-like macro, and a SETQ-like macro, which perform LOOP-style destructuring.
                      (if (eq (car val) 'prog1)
                          ;; these can come from psetq or desetq below.
                          ;; throw away the value, keep the side-effects.
-                         ;;Special case is for handling an expanded POP.
-                         (mapcan #'(lambda (x)
+                       ;; Special    case   is    for   handling    an
+                       ;; expanded POP.
+                       (mapcan (lambda (x)
                                      (and (consp x)
                                           (or (not (eq (car x) 'car))
                                               (not (symbolp (cadr x)))
-                                              (not (symbolp (setq x (jscl::!macroexpand x env)))))
+                                          (not (symbolp (setq x (#-jscl macroexpand
+                                                                        #+jscl jscl/cl:macroexpand x env)))))
                                           (cons x nil)))
                                  (cdr val))
                          `(,val))))
@@ -547,24 +480,22 @@ a LET-like macro, and a SETQ-like macro, which perform LOOP-style destructuring.
                           (cdr (cdr var))
                           (car-non-null (find-non-null car))
                           (cdr-non-null (find-non-null cdr)))
-                     (when (or car-non-null cdr-non-null)
-                       (if cdr-non-null
+                   (cond
+                     (cdr-non-null
                            (let* ((temp-p temp)
                                   (temp (or temp *loop-desetq-temporary*))
-                                  (body #+LOOP-Prefer-POP `(,@(loop-desetq-internal
+                             (body  `(,@(loop-desetq-internal
                                                                  car
                                                                    `(prog1 (car ,temp)
                                                                       (setq ,temp (cdr ,temp))))
-                                                              ,@(loop-desetq-internal cdr temp temp))
-                                        #-LOOP-Prefer-POP `(,@(loop-desetq-internal car `(car ,temp))
-                                                              (setq ,temp (cdr ,temp))
                                                               ,@(loop-desetq-internal cdr temp temp))))
                              (if temp-p
                                  `(,@(unless (eq temp val)
                                        `((setq ,temp ,val)))
                                      ,@body)
                                  `((let ((,temp ,val))
-                                     ,@body))))
+                                ,@body)))))
+                     (car-non-null
                            ;; no cdring to do
                            (loop-desetq-internal car `(car ,val) temp)))))
                   (otherwise
@@ -575,187 +506,156 @@ a LET-like macro, and a SETQ-like macro, which perform LOOP-style destructuring.
            (if (null (cdr actions)) (car actions) `(progn ,@(nreverse actions))))
         (setq actions (revappend
                        (loop-desetq-internal (pop var-val-pairs) (pop var-val-pairs))
-                       actions))))))
-
+                     actions)))))
 
 ;;;; LOOP-local variables
 
-;;;This is the "current" pointer into the LOOP source code.
+;; This is the "current" pointer into the LOOP source code.
 (defvar *loop-source-code*)
 
-
-;;;This is the pointer to the original, for things like NAMED that
-;;;insist on being in a particular position
+;; This  is the  pointer to  the original,  for things  like NAMED  that
+;; insist on being in a particular position
 (defvar *loop-original-source-code*)
 
-
-;;;This is *loop-source-code* as of the "last" clause.  It is used
-;;;primarily for generating error messages (see loop-error, loop-warn).
+;; This  is *loop-source-code*  as  of  the "last"  clause.  It is  used
+;; primarily for generating error messages (see loop-error, loop-warn).
 (defvar *loop-source-context*)
 
-
-;;;List of names for the LOOP, supplied by the NAMED clause.
+;; List of names for the LOOP, supplied by the NAMED clause.
 (defvar *loop-names*)
 
-;;;The macroexpansion environment given to the macro.
+;; The macroexpansion environment given to the macro.
 (defvar *loop-macro-environment*)
 
-;;;This holds variable names specified with the USING clause.
-;;; See LOOP-NAMED-VARIABLE.
+;; This  holds   variable  names   specified  with  the   USING  clause.
+;; See LOOP-NAMED-VARIABLE.
 (defvar *loop-named-variables*)
 
-;;; LETlist-like list being accumulated for one group of parallel bindings.
+;; LETlist-like   list    being   accumulated    for   one    group   of
+;; parallel bindings.
 (defvar *loop-variables*)
 
-;;;List of declarations being accumulated in parallel with
-;;;*loop-variables*.
+;; List   of   declarations   being   accumulated   in   parallel   with
+;; *loop-variables*.
 (defvar *loop-declarations*)
 
-;;;Used by LOOP for destructuring binding, if it is doing that itself.
-;;; See loop-make-variable.
+;; Used by LOOP  for destructuring binding, if it is  doing that itself.
+;; See loop-make-variable.
 (defvar *loop-desetq-crocks*)
 
-;;; List of wrapping forms, innermost first, which go immediately inside
-;;; the current set of parallel bindings being accumulated in
-;;; *loop-variables*.  The wrappers are appended onto a body.  E.g.,
-;;; this list could conceivably has as its value ((with-open-file (g0001
-;;; g0002 ...))), with g0002 being one of the bindings in
-;;; *loop-variables* (this is why the wrappers go inside of the variable
-;;; bindings).
+;; List of wrapping forms, innermost  first, which go immediately inside
+;; the   current  set   of  parallel   bindings  being   accumulated  in
+;; *loop-variables*. The wrappers  are appended onto a  body. E.g., this
+;; list could conceivably has as its value ((with-open-file (g0001 g0002
+;; ...))),  with g0002  being one  of the  bindings in  *loop-variables*
+;; (this is why the wrappers go inside of the variable bindings).
 (defvar *loop-wrappers*)
 
-;;;This accumulates lists of previous values of *loop-variables* and the
-;;;other lists  above, for each new nesting of bindings.  See
-;;;loop-bind-block.
+;; This accumulates lists of previous values of *loop-variables* and the
+;; other   lists   above,   for    each   new   nesting   of   bindings.
+;; See loop-bind-block.
 (defvar *loop-bind-stack*)
 
-;;;This is a LOOP-global variable for the (obsolete) NODECLARE clause
-;;;which inhibits  LOOP from actually outputting a type declaration for
-;;;an iteration (or any) variable.
+;; This is  a LOOP-global variable  for the (obsolete)  NODECLARE clause
+;; which inhibits LOOP  from actually outputting a  type declaration for
+;; an iteration (or any) variable.
 (defvar *loop-nodeclare*)
 
-;;;This is simply a list of LOOP iteration variables, used for checking
-;;;for duplications.
+;; This is simply a list of  LOOP iteration variables, used for checking
+;; for duplications.
 (defvar *loop-iteration-variables*)
 
-
-;;;List of prologue forms of the loop, accumulated in reverse order.
+;; List of prologue forms of the loop, accumulated in reverse order.
 (defvar *loop-prologue*)
 
 (defvar *loop-before-loop*)
 (defvar *loop-body*)
 (defvar *loop-after-body*)
 
-;;;This is T if we have emitted any body code, so that iteration driving
-;;;clauses can be disallowed.   This is not strictly the same as
-;;;checking *loop-body*, because we permit some clauses  such as RETURN
-;;;to not be considered "real" body (so as to permit the user to "code"
-;;;an  abnormal return value "in loop").
+;; This is T if we have emitted any body code, so that iteration driving
+;; clauses can be disallowed. This is  not strictly the same as checking
+;; *loop-body*, because we permit some clauses  such as RETURN to not be
+;; considered  "real" body  (so  as  to permit  the  user  to "code"  an
+;; abnormal return value "in loop").
 (defvar *loop-emitted-body*)
 
-
-;;;List of epilogue forms (supplied by FINALLY generally), accumulated
-;;; in reverse order.
+;; List of  epilogue forms (supplied by  FINALLY generally), accumulated
+;;in reverse order.
 (defvar *loop-epilogue*)
 
-;;;List of epilogue forms which are supplied after the above "user"
-;;;epilogue.  "normal" termination return values are provide by putting
-;;;the return form in here.  Normally this is done using
-;;;loop-emit-final-value, q.v.
+;; List  of epilogue  forms which  are supplied  after the  above "user"
+;; epilogue. "normal"  termination return values are  provide by putting
+;; the   return   form   in   here.  Normally   this   is   done   using
+;; loop-emit-final-value, q.v.
 (defvar *loop-after-epilogue*)
 
-;;;The "culprit" responsible for supplying a final value from the loop.
-;;;This  is so loop-emit-final-value can moan about multiple return
-;;;values being supplied.
+;; The "culprit" responsible for supplying  a final value from the loop.
+;; This  is  so loop-emit-final-value  can  moan  about multiple  return
+;; values being supplied.
 (defvar *loop-final-value-culprit*)
 
-;;;If not NIL, we are in some branch of a conditional.  Some clauses may
-;;;be disallowed.
+;; If not NIL, we are in some  branch of a conditional. Some clauses may
+;; be disallowed.
 (defvar *loop-inside-conditional*)
 
-;;;If not NIL, this is a temporary bound around the loop for holding the
-;;;temporary  value for "it" in things like "when (f) collect it".  It
-;;;may be used as a supertemporary by some other things.
+;; If not NIL, this is a temporary bound around the loop for holding the
+;; temporary value for "it" in things like "when (f) collect it". It may
+;; be used as a supertemporary by some other things.
 (defvar *loop-when-it-variable*)
 
-;;;Sometimes we decide we need to fold together parts of the loop, but
-;;;some part of the generated iteration  code is different for the first
-;;;and remaining iterations.  This variable will be the temporary which 
-;;;is the flag used in the loop to tell whether we are in the first or
-;;;remaining iterations.
+;; Sometimes we decide  we need to fold together parts  of the loop, but
+;; some part of the generated iteration  code is different for the first
+;; and remaining iterations.  This variable will be  the temporary which
+;; is the flag used  in the loop to tell whether we are  in the first or
+;; remaining iterations.
 (defvar *loop-never-stepped-variable*)
 
-;;;List of all the value-accumulation descriptor structures in the loop.
-;;; See loop-get-collection-info.
+;; List of all the value-accumulation descriptor structures in the loop.
+;; See loop-get-collection-info.
 (defvar *loop-collection-cruft*)		; for multiple COLLECTs (etc)
 
-
 ;;;; Code Analysis Stuff
 
-
 (defun loop-constant-fold-if-possible (form &optional expected-type)
-  #+Genera (declare (values new-form constantp constant-value))
-  (let ((new-form form) (constantp nil) (constant-value nil))
-    #+Genera (setq new-form (compiler:optimize-form form *loop-macro-environment*
-						    :repeat t
-						    :do-macro-expansion t
-						    :do-named-constants t
-						    :do-inline-forms t
-						    :do-optimizers t
-						    :do-constant-folding t
-						    :do-function-args t)
-		   constantp (constantp new-form *loop-macro-environment*)
-		   constant-value (and constantp (lt:evaluate-constant new-form *loop-macro-environment*)))
-    #-Genera (when (setq constantp (constantp new-form))
+  (let ((new-form form) constantp constant-value)
+    (when (setq constantp (constantp new-form))
 	       (setq constant-value (eval new-form)))
     (when (and constantp expected-type)
-      ;; FIXME: The warning are useful but we do not have a type system yet.
-      #+nil
       (unless (typep constant-value expected-type)
         (loop-warn "The form ~S evaluated to ~S, which was not of the anticipated type ~S."
 		   form constant-value expected-type)
         (setq constantp nil constant-value nil)))
     (values new-form constantp constant-value)))
 
-
 (defun loop-constantp (form)
-  #+Genera (constantp form *loop-macro-environment*)
-  #-Genera (constantp form))
-
+  (constantp form *loop-macro-environment*))
 
 ;;;; LOOP Iteration Optimization
 
 (defvar *loop-duplicate-code*
 	nil)
 
-
 (defvar *loop-iteration-flag-variable*
 	(make-symbol "LOOP-NOT-FIRST-TIME"))
-
 
 (defun loop-code-duplication-threshold (env)
   (multiple-value-bind (speed space) (loop-optimization-quantities env)
     (+ 40 (* (- speed space) 10))))
 
-
-(defmacro loop-body (
-		     prologue
+(defmacro loop-body (prologue
 		     before-loop
 		     main-body
 		     after-loop
-		     epilogue)
-
-  ;; FIXME: JSCL doesn't support &environment keyword in macro
-  ;; lambda-lists or &aux variables.
-  (let ((env jscl::*environment*)
-        rbefore
-        rafter
+                     epilogue
+                     &environment env)
+  (let ((rbefore (reverse before-loop))
+        (rafter (reverse after-loop))
         flagvar)
     
     (unless (= (length before-loop) (length after-loop))
       (error "LOOP-BODY called with non-synched before- and after-loop lists."))
-    ;;All our work is done from these copies, working backwards from the end:
-    (setq rbefore (reverse before-loop) rafter (reverse after-loop))
+    ;; All our  work is done  from these copies, working  backwards from
+    ;; the end:
     (labels ((psimp (l)
                (let ((ans nil))
                  (dolist (x l)
@@ -775,25 +675,28 @@ a LET-like macro, and a SETQ-like macro, which perform LOOP-style destructuring.
                  (if flagvar `(let ((,flagvar nil)) ,form) form))))
       (when (or *loop-duplicate-code* (not rbefore))
         (return-from loop-body (makebody)))
-      ;; This outer loop iterates once for each not-first-time flag test generated
-      ;; plus once more for the forms that don't need a flag test
+      ;; This outer loop iterates once for each not-first-time flag test
+      ;; generated plus once  more for the forms that don't  need a flag
+      ;; test
       (do ((threshold (loop-code-duplication-threshold env))) (nil)
-        #+nil (declare (fixnum threshold))
-        ;; Go backwards from the ends of before-loop and after-loop merging all the equivalent
-        ;; forms into the body.
-        (do () ((or (null rbefore) (not (equal (car rbefore) (car rafter)))))
+        (declare (fixnum threshold))
+        ;; Go  backwards from  the  ends of  before-loop and  after-loop
+        ;; merging all the equivalent forms into the body.
+        (do () ((or (null rbefore)
+                    (not (equal (car rbefore) (car rafter)))))
           (push (pop rbefore) main-body)
           (pop rafter))
         (unless rbefore (return (makebody)))
-        ;; The first forms in rbefore & rafter (which are the chronologically
-        ;; last forms in the list) differ, therefore they cannot be moved
-        ;; into the main body.  If everything that chronologically precedes
-        ;; them either differs or is equal but is okay to duplicate, we can
-        ;; just put all of rbefore in the prologue and all of rafter after
-        ;; the body.  Otherwise, there is something that is not okay to
-        ;; duplicate, so it and everything chronologically after it in
-        ;; rbefore and rafter must go into the body, with a flag test to
-        ;; distinguish the first time around the loop from later times.
+        ;; The  first  forms   in  rbefore  &  rafter   (which  are  the
+        ;; chronologically  last forms  in the  list) differ,  therefore
+        ;; they cannot be  moved into the main body.  If everything that
+        ;; chronologically precedes them either  differs or is equal but
+        ;; is okay to  duplicate, we can just put all  of rbefore in the
+        ;; prologue and all  of rafter after the  body. Otherwise, there
+        ;; is  something  that is  not  okay  to  duplicate, so  it  and
+        ;; everything  chronologically after  it in  rbefore and  rafter
+        ;; must go  into the body, with  a flag test to  distinguish the
+        ;; first   time    around   the    loop   from    later   times.
         ;; What chronologically precedes the non-duplicatable form will
         ;; be handled the next time around the outer loop.
         (do ((bb rbefore (cdr bb)) (aa rafter (cdr aa)) (lastdiff nil) (count 0) (inc nil))
@@ -801,10 +704,11 @@ a LET-like macro, and a SETQ-like macro, which perform LOOP-style destructuring.
           (cond ((not (equal (car bb) (car aa))) (setq lastdiff bb count 0))
                 ((or (not (setq inc (estimate-code-size (car bb) env)))
                      (> (incf count inc) threshold))
-                 ;; Ok, we have found a non-duplicatable piece of code.  Everything
-                 ;; chronologically after it must be in the central body.
-                 ;; Everything chronologically at and after lastdiff goes into the
-                 ;; central body under a flag test.
+                 ;; Ok, we have found  a non-duplicatable piece of code.
+                 ;; Everything chronologically  after it must be  in the
+                 ;; central  body.  Everything  chronologically  at  and
+                 ;; after  lastdiff goes  into  the  central body  under
+                 ;; a flag test.
                  (let ((then nil) (else nil))
                    (do () (nil)
                      (push (pop rbefore) else)
@@ -814,25 +718,24 @@ a LET-like macro, and a SETQ-like macro, which perform LOOP-style destructuring.
                      (push `(setq ,(setq flagvar *loop-iteration-flag-variable*) t) else))
                    (push `(if ,flagvar ,(pify (psimp then)) ,(pify (psimp else)))
                          main-body))
-                 ;; Everything chronologically before lastdiff until the non-duplicatable form (car bb) 
-                 ;; is the same in rbefore and rafter so just copy it into the body
+                 ;; Everything chronologically before lastdiff until the
+                 ;; non-duplicatable  form  (car  bb)  is  the  same  in
+                 ;; rbefore and rafter so just copy it into the body
                  (do () (nil)
                    (pop rafter)
                    (push (pop rbefore) main-body)
                    (when (eq rbefore (cdr bb)) (return)))
                  (return))))))))
 
-
-
+;;;;
 (defun duplicatable-code-p (expr env)
   (if (null expr) 0
       (let ((ans (estimate-code-size expr env)))
-	#+nil (declare (fixnum ans))
-	;;@@@@ Use (DECLARATION-INFORMATION 'OPTIMIZE ENV) here to get an alist of
-	;; optimize quantities back to help quantify how much code we are willing to
-	;; duplicate.
+        (declare (fixnum ans))
+        ;; TODO: Use (DECLARATION-INFORMATION 'OPTIMIZE ENV) here to get
+        ;; an alist  of optimize  quantities back  to help  quantify how
+        ;; much code we are willing to duplicate.
 	ans)))
-
 
 (defvar *special-code-sizes*
 	'((return 0) (progn 0)
@@ -844,7 +747,6 @@ a LET-like macro, and a SETQ-like macro, which perform LOOP-style destructuring.
 	  (cadaar 4) (cadadr 4) (caddar 4) (cadddr 4)
 	  (cdaaar 4) (cdaadr 4) (cdadar 4) (cdaddr 4)
 	  (cddaar 4) (cddadr 4) (cdddar 4) (cddddr 4)))
-
 
 (defvar *estimate-code-size-punt*
 	'(block
@@ -858,31 +760,31 @@ a LET-like macro, and a SETQ-like macro, which perform LOOP-style destructuring.
 	   unwind-protect
 	   with-open-file))
 
-
 (defun destructuring-size (x)
   (do ((x x (cdr x)) (n 0 (+ (destructuring-size (car x)) n)))
       ((atom x) (+ n (if (null x) 0 1)))))
-
 
 (defun estimate-code-size (x env)
   (catch 'estimate-code-size
     (estimate-code-size-1 x env)))
 
-
 (defun estimate-code-size-1 (x env)
   (flet ((list-size (l)
+           (declare (type list l))
 	   (let ((n 0))
-	     #+nil (declare (fixnum n))
+             (declare (fixnum n))
 	     (dolist (x l n) (incf n (estimate-code-size-1 x env))))))
-    ;;@@@@ ???? (declare (function list-size (list) fixnum))
-    (cond ((constantp x #+Genera env) 1)
-	  ((symbolp x) (multiple-value-bind (new-form expanded-p) (jscl::!macroexpand-1 x env)
+    (declare (ftype (function (list) fixnum) list-size))
+    (cond ((constantp x env) 1)
+          ((symbolp x) (multiple-value-bind (new-form expanded-p)
+                           (#-jscl macroexpand-1
+                                   #+jscl jscl/cl:macroexpand-1 x env)
 			 (if expanded-p (estimate-code-size-1 new-form env) 1)))
 	  ((atom x) 1)				;??? self-evaluating???
 	  ((symbolp (car x))
 	   (let ((fn (car x)) (tem nil) (n 0))
          ;; FIXME: JSCL doen't support declarations at this context
-	     #+nil (declare (symbol fn) (fixnum n))
+             (declare (type symbol fn) (type fixnum n))
 	     (macrolet ((f (overhead &optional (args nil args-p))
 			  `(the fixnum (+ (the fixnum ,overhead)
 					  (the fixnum (list-size ,(if args-p args '(cdr x))))))))
@@ -903,8 +805,9 @@ a LET-like macro, and a SETQ-like macro, which perform LOOP-style destructuring.
 			(setq n (+ n (estimate-code-size-1 (cadr l) env) 1))))
 		     ((eq fn 'go) 1)
 		     ((eq fn 'function)
-		      ;;This skirts the issue of implementationally-defined lambda macros
-		      ;; by recognizing CL function names and nothing else.
+                      ;;This       skirts       the       issue       of
+                      ;; implementationally-defined  lambda   macros  by
+                      ;; recognizing CL function names and nothing else.
 		      (if (or (symbolp (cadr x))
 			      (and (consp (cadr x)) (eq (caadr x) 'setf)))
 			  1
@@ -913,39 +816,29 @@ a LET-like macro, and a SETQ-like macro, which perform LOOP-style destructuring.
 		     ((eq fn 'return-from) (1+ (estimate-code-size-1 (third x) env)))
 		     ((or (special-operator-p fn) (member fn *estimate-code-size-punt*))
 		      (throw 'estimate-code-size nil))
-		     (t (multiple-value-bind (new-form expanded-p) (jscl::!macroexpand-1 x env)
+                     (t (multiple-value-bind (new-form expanded-p) (jscl/cl:macroexpand-1 x env)
 			  (if expanded-p
 			      (estimate-code-size-1 new-form env)
 			      (f 3))))))))
 	  (t (throw 'estimate-code-size nil)))))
 
-
 ;;;; Loop Errors
-
 
 (defun loop-context ()
   (do ((l *loop-source-context* (cdr l)) (new nil (cons (car l) new)))
       ((eq l (cdr *loop-source-code*)) (nreverse new))))
 
-
 (defun loop-error (format-string &rest format-args)
-  #+(or Genera CLOE) (declare (dbg:error-reporter))
-  #+Genera (setq format-args (copy-list format-args))	;Don't ask.
   (error "~?~%Current LOOP context:~{ ~S~}." format-string format-args (loop-context)))
-
 
 (defun loop-warn (format-string &rest format-args)
   (warn "~?~%Current LOOP context:~{ ~S~}." format-string format-args (loop-context)))
-
 
 (defun loop-check-data-type (specified-type required-type
                              &optional (default-type required-type))
   (if (null specified-type)
       default-type
       (multiple-value-bind (a b) (subtypep specified-type required-type)
-        ;; FIXME: Uncomment when we have implemented type system and
-        ;; jscl can understand this.
-        #+nil
         (cond ((not b)
                (loop-warn "LOOP couldn't verify that ~S is a subtype of the required type ~S."
                   specified-type required-type))
@@ -965,7 +858,6 @@ collected result will be returned as the value of the LOOP."
 
 
 
-
 (defun loop-translate (loop-source-code loop-macro-environment loop-universe)
   ;; FIXME: Originally, these variables were bound in the arguments
   ;; directly, but as the time of writing, JSCL does not support
@@ -1028,7 +920,6 @@ collected result will be returned as the value of the LOOP."
                                       forms)))))))
         answer))))
 
-
 (defun loop-iteration-driver ()
   (do () ((null *loop-source-code*))
     (let ((keyword (car *loop-source-code*)) (tem nil))
@@ -1047,13 +938,11 @@ collected result will be returned as the value of the LOOP."
 				  keyword (car *loop-source-code*) (cadr *loop-source-code*)))
 		     (t (loop-error "~S is an unknown keyword in LOOP macro." keyword))))))))
 
-
-
+;;;;
 (defun loop-pop-source ()
   (if *loop-source-code*
       (pop *loop-source-code*)
       (loop-error "LOOP source code ran out when another token was expected.")))
-
 
 (defun loop-get-progn ()
   (do ((forms (list (loop-pop-source)) (cons (loop-pop-source) forms))
@@ -1061,16 +950,13 @@ collected result will be returned as the value of the LOOP."
       ((atom nextform)
        (if (null (cdr forms)) (car forms) (cons 'progn (nreverse forms))))))
 
-
 (defun loop-get-form ()
   (if *loop-source-code*
       (loop-pop-source)
       (loop-error "LOOP code ran out where a form was expected.")))
 
-
 (defun loop-construct-return (form)
   `(return-from ,(car *loop-names*) ,form))
-
 
 (defun loop-pseudo-body (form)
   (cond ((or *loop-emitted-body* *loop-inside-conditional*) (push form *loop-body*))
@@ -1088,22 +974,18 @@ collected result will be returned as the value of the LOOP."
 	       *loop-final-value-culprit*))
   (setq *loop-final-value-culprit* (car *loop-source-context*)))
 
-
 (defun loop-disallow-conditional (&optional kwd)
   #+(or Genera CLOE) (declare (dbg:error-reporter))
   (when *loop-inside-conditional*
     (loop-error "~:[This LOOP~;The LOOP ~:*~S~] clause is not permitted inside a conditional." kwd)))
 
-
 ;;;; Loop Types
-
 
 (defun loop-typed-init (data-type)
   (when (and data-type (subtypep data-type 'number))
     (if (or (subtypep data-type 'float) (subtypep data-type '(complex float)))
 	(coerce 0 data-type)
 	0)))
-
 
 (defun loop-optional-type (&optional variable)
   ;;No variable specified implies that no destructuring is permissible.
@@ -1155,10 +1037,7 @@ collected result will be returned as the value of the LOOP."
 			   (if (atom v) typ (cons (replicate typ (car v)) (replicate typ (cdr v))))))
 		  (translate z variable)))))))
 
-
-
 ;;;; Loop Variables
-
 
 (defun loop-bind-block ()
   (when (or *loop-variables* *loop-declarations* *loop-wrappers*)
@@ -1168,7 +1047,6 @@ collected result will be returned as the value of the LOOP."
 	  *loop-declarations* nil
 	  *loop-desetq-crocks* nil
 	  *loop-wrappers* nil)))
-
 
 (defun loop-make-variable (name initialization dtype &optional iteration-variable-p)
   (cond ((null name)
@@ -1209,10 +1087,8 @@ collected result will be returned as the value of the LOOP."
 	     (loop-make-variable (cdr name) nil tcdr iteration-variable-p))))
   name)
 
-
 (defun loop-make-iteration-variable (name initialization dtype)
   (loop-make-variable name initialization dtype t))
-
 
 (defun loop-declare-variable (name dtype)
   (cond ((or (null name) (null dtype) (eq dtype t)) nil)
@@ -1227,14 +1103,12 @@ collected result will be returned as the value of the LOOP."
 		  (loop-declare-variable (cdr name) dtype))))
 	(t (error "Invalid LOOP variable passed in: ~S." name))))
 
-
 (defun loop-maybe-bind-form (form data-type)
   (if (loop-constantp form)
       form
       (loop-make-variable (loop-gentemp 'loop-bind-) form data-type)))
 
-
-
+;;;; IF, INITIALLY, FINALLY, DO, NAMED, RETURN
 (defun loop-do-if (for negatep)
   (let ((form (loop-get-form)) (*loop-inside-conditional* t) (it-p nil))
     (flet ((get-clause (for)
@@ -1273,7 +1147,6 @@ collected result will be returned as the value of the LOOP."
 	       ,then
 	       ,@else))))))
 
-
 (defun loop-do-initially ()
   (loop-disallow-conditional :initially)
   (push (loop-get-progn) *loop-prologue*))
@@ -1299,11 +1172,9 @@ collected result will be returned as the value of the LOOP."
 (defun loop-do-return ()
   (loop-pseudo-body (loop-construct-return (loop-get-form))))
 
-
 ;;;; Value Accumulation: List
 
-
-(jscl::def!struct (loop-collector
+(defstruct (loop-collector
 	     (:copier nil)
 	     (:predicate nil))
   name
@@ -1312,7 +1183,6 @@ collected result will be returned as the value of the LOOP."
   (tempvars nil)
   dtype
   (data nil))						;collector-specific data
-
 
 (defun loop-get-collection-info (collector class default-type)
   (let ((form (loop-get-form))
@@ -1346,7 +1216,6 @@ collected result will be returned as the value of the LOOP."
 	       (push collector (loop-collector-history cruft))))
       (values cruft form))))
 
-
 (defun loop-list-collection (specifically)	;NCONC, LIST, or APPEND
   (multiple-value-bind (lc form) (loop-get-collection-info specifically 'list 'list)
     (let ((tempvars (loop-collector-tempvars lc)))
@@ -1363,13 +1232,10 @@ collected result will be returned as the value of the LOOP."
 	(list (setq form `(list ,form)))
 	(nconc nil)
 	(append (unless (and (consp form) (eq (car form) 'list))
-		  (setq form `(loop-copylist* ,form)))))
+                  (setq form `(copy-list ,form)))))
       (loop-emit-body `(loop-collect-rplacd ,tempvars ,form)))))
 
-
 ;;;; Value Accumulation: max, min, sum, count.
-
-
 
 (defun loop-sum-collection (specifically required-type default-type)	;SUM, COUNT
   (multiple-value-bind (lc form)
@@ -1393,8 +1259,6 @@ collected result will be returned as the value of the LOOP."
 		   (+ ,(hide-variable-reference t (car tempvars) (car tempvars))
 		      ,form)))))))
 
-
-
 (defun loop-maxmin-collection (specifically)
   (multiple-value-bind (lc form)
       (loop-get-collection-info specifically 'maxmin *loop-real-data-type*)
@@ -1409,14 +1273,12 @@ collected result will be returned as the value of the LOOP."
 	  (loop-emit-final-value (loop-minimax-answer-variable data))))
       (loop-note-minimax-operation specifically data)
       (push `(with-minimax-value ,data) *loop-wrappers*)
-      (loop-emit-body `(loop-accumulate-minimax-value ,data ,specifically ,form))
-      )))
-
+      (loop-emit-body `(loop-accumulate-minimax-value ,data ,specifically ,form)))))
 
 ;;;; Value Accumulation:  Aggregate Booleans
 
-;;;ALWAYS and NEVER.
-;;; Under ANSI these are not permitted to appear under conditionalization.
+;; ALWAYS  and NEVER.  Under  ANSI  these are  not  permitted to  appear
+;; under conditionalization.
 (defun loop-do-always (restrictive negate)
   (let ((form (loop-get-form)))
     (when restrictive (loop-disallow-conditional))
@@ -1425,20 +1287,18 @@ collected result will be returned as the value of the LOOP."
     (loop-emit-final-value t)))
 
 
-
-;;;THERIS.
-;;; Under ANSI this is not permitted to appear under conditionalization.
+;; THEREIS.   Under    ANSI   this   is   not    permitted   to   appear
+;; under conditionalization.
 (defun loop-do-thereis (restrictive)
   (when restrictive (loop-disallow-conditional))
   (loop-emit-body `(when (setq ,(loop-when-it-variable) ,(loop-get-form))
 		     ,(loop-construct-return *loop-when-it-variable*))))
 
-
+;;;; Do-While and Do-With
 (defun loop-do-while (negate kwd)
   (let ((form (loop-get-form)))
     (loop-disallow-conditional kwd)
     (loop-pseudo-body `(,(if negate 'when 'unless) ,form (go end-loop)))))
-
 
 (defun loop-do-with ()
   (loop-disallow-conditional :with)
@@ -1454,7 +1314,6 @@ collected result will be returned as the value of the LOOP."
 	(loop-pop-source)
 	(return (loop-bind-block)))))
 
-
 ;;;; The iteration driver
 
 (defun loop-hack-iteration (entry)
@@ -1479,17 +1338,17 @@ collected result will be returned as the value of the LOOP."
       ;; order.  MAKE-ENDTEST does the nreverse for us.
       (setq tem (setq data (apply (symbol-function (first entry)) (rest entry))))
       (and (car tem) (push (car tem) pre-step-tests))
-      (setq steps (nconc steps (loop-copylist* (car (setq tem (cdr tem))))))
+      (setq steps (nconc steps (copy-list (car (setq tem (cdr tem))))))
       (and (car (setq tem (cdr tem))) (push (car tem) post-step-tests))
-      (setq pseudo-steps (nconc pseudo-steps (loop-copylist* (car (setq tem (cdr tem))))))
+      (setq pseudo-steps (nconc pseudo-steps (copy-list (car (setq tem (cdr tem))))))
       (setq tem (cdr tem))
       (when *loop-emitted-body*
 	(loop-error "Iteration in LOOP follows body code."))
       (unless tem (setq tem data))
       (when (car tem) (push (car tem) pre-loop-pre-step-tests))
-      (setq pre-loop-steps (nconc pre-loop-steps (loop-copylist* (car (setq tem (cdr tem))))))
+      (setq pre-loop-steps (nconc pre-loop-steps (copy-list (car (setq tem (cdr tem))))))
       (when (car (setq tem (cdr tem))) (push (car tem) pre-loop-post-step-tests))
-      (setq pre-loop-pseudo-steps (nconc pre-loop-pseudo-steps (loop-copylist* (cadr tem))))
+      (setq pre-loop-pseudo-steps (nconc pre-loop-pseudo-steps (copy-list (cadr tem))))
       (unless (loop-tequal (car *loop-source-code*) :and)
 	(setq *loop-before-loop* (list* (loop-make-desetq pre-loop-pseudo-steps)
 					(make-endtest pre-loop-post-step-tests)
@@ -1512,11 +1371,9 @@ collected result will be returned as the value of the LOOP."
 	(loop-pop-source)
 	(setq entry tem)))))
 
-
 ;;;; Main Iteration Drivers
 
-
-;FOR variable keyword ..args..
+;;FOR variable keyword ..args..
 (defun loop-do-for ()
   (let* ((var (loop-pop-source))
 	 (data-type (loop-optional-type var))
@@ -1531,7 +1388,6 @@ collected result will be returned as the value of the LOOP."
       (loop-error "~S is an unknown keyword in FOR or AS clause in LOOP." keyword))
     (apply (car tem) var first-arg data-type (cdr tem))))
 
-
 (defun loop-do-repeat ()
   (let ((form (loop-get-form))
 	(type (loop-check-data-type (loop-optional-type) *loop-real-data-type*)))
@@ -1545,21 +1401,19 @@ collected result will be returned as the value of the LOOP."
 		     `((not (plusp (setq ,var (1- ,var)))) () () () () () () ())
 		     `((minusp (setq ,var (1- ,var))) () () ()))))))))
 
-
 (defun loop-when-it-variable ()
   (or *loop-when-it-variable*
       (setq *loop-when-it-variable*
 	    (loop-make-variable (loop-gentemp 'loop-it-) nil nil))))
 
-
 ;;;; Various FOR/AS Subdispatches
 
-
-;;;ANSI "FOR x = y [THEN z]" is sort of like the old Genera one when the THEN
-;;; is omitted (other than being more stringent in its placement), and like
-;;; the old "FOR x FIRST y THEN z" when the THEN is present.  I.e., the first
-;;; initialization occurs in the loop body (first-step), not in the variable binding
-;;; phase.
+;;;ANSI "FOR x = y [THEN z]" is sort of like the old Genera one when the
+;;;THEN
+;;is omitted  (other than  being more stringent  in its  placement), and
+;;like the old  "FOR x FIRST y  THEN z" when the THEN  is present. I.e.,
+;;the first initialization occurs in  the loop body (first-step), not in
+;;the variable binding phase.
 (defun loop-ansi-for-equals (var val data-type)
   (loop-make-iteration-variable var nil data-type)
   (cond ((loop-tequal (car *loop-source-code*) :then)
@@ -1569,7 +1423,6 @@ collected result will be returned as the value of the LOOP."
 	   () (,var ,val) () ()))
 	(t ;;We are the same as "FOR x = y".
 	 `(() (,var ,val) () ()))))
-
 
 (defun loop-for-across (var val data-type)
   (loop-make-iteration-variable var nil data-type)
@@ -1602,16 +1455,13 @@ collected result will be returned as the value of the LOOP."
 	`(,other-test ,step () ,pstep
 	  ,@(and (not (eq first-test other-test)) `(,first-test ,step () ,pstep)))))))
 
-
-
 ;;;; List Iteration
 
-
 (defun loop-list-step (listvar)
-  ;;We are not equipped to analyze whether 'FOO is the same as #'FOO here in any
-  ;; sensible fashion, so let's give an obnoxious warning whenever 'FOO is used
-  ;; as the stepping function.
-  ;;While a Discerning Compiler may deal intelligently with (funcall 'foo ...), not
+  ;;We are  not equipped to  analyze whether 'FOO  is the same  as #'FOO
+  ;; here in  any sensible fashion,  so let's give an  obnoxious warning
+  ;; whenever 'FOO is used as  the stepping function. While a Discerning
+  ;; Compiler  may  deal  intelligently  with (funcall  'foo  ...),  not
   ;; recognizing FOO may defeat some LOOP optimizations.
   (let ((stepper (cond ((loop-tequal (car *loop-source-code*) :by)
 			(loop-pop-source)
@@ -1625,7 +1475,6 @@ collected result will be returned as the value of the LOOP."
 	  (t (values `(funcall ,(loop-make-variable (loop-gentemp 'loop-fn-) stepper 'function)
 			       ,listvar)
 		     nil)))))
-
 
 (defun loop-for-on (var val data-type)
   (multiple-value-bind (list constantp list-value) (loop-constant-fold-if-possible val)
@@ -1657,13 +1506,12 @@ collected result will be returned as the value of the LOOP."
 			(and n (do ((l var (cdr l)) (i 0 (1+ i)))
 				   ((atom l) (and (null l) (= i n)))
 				 (declare (fixnum i))))))
-		 (let ((step (mapcan #'(lambda (x) (list x `(pop ,listvar))) var)))
+                 (let ((step (mapcan (lambda (x) (list x `(pop ,listvar))) var)))
 		   `(,other-endtest () () ,step ,first-endtest () () ,step)))
 		(t (let ((step `(,var ,listvar)) (pseudo `(,listvar ,list-step)))
 		     `(,other-endtest ,step () ,pseudo
 		       ,@(and (not (eq first-endtest other-endtest))
 			      `(,first-endtest ,step () ,pseudo)))))))))))
-
 
 (defun loop-for-in (var val data-type)
   (multiple-value-bind (list constantp list-value) (loop-constant-fold-if-possible val)
@@ -1684,11 +1532,9 @@ collected result will be returned as the value of the LOOP."
 	    ,@(and (not (eq first-endtest other-endtest))
 		   `(,first-endtest ,step () ,pseudo-step))))))))
 
-
 ;;;; Iteration Paths
 
-
-(jscl::def!struct (loop-path
+(defstruct (loop-path
 	     (:copier nil)
 	     (:predicate nil))
   names
@@ -1697,28 +1543,26 @@ collected result will be returned as the value of the LOOP."
   function
   user-data)
 
-
 (defun add-loop-path (names function universe &key preposition-groups inclusive-permitted user-data)
   (unless (listp names) (setq names (list names)))
-  ;; Can't do this due to CLOS bootstrapping problems.
-  ;; #-(or Genera (and CLOE Source-Bootstrap))
-  ;; (check-type universe loop-universe)
+  ;; Can't do this due to CLOS bootstrapping problems. #-(or Genera (and
+  ;; CLOE Source-Bootstrap)) (check-type universe loop-universe)
   (let ((ht (loop-universe-path-keywords universe))
 	(lp (make-loop-path
 	      :names (mapcar #'symbol-name names)
 	      :function function
 	      :user-data user-data
-	      :preposition-groups (mapcar #'(lambda (x) (if (listp x) x (list x))) preposition-groups)
+             :preposition-groups (mapcar (lambda (x) (if (listp x) x (list x))) preposition-groups)
 	      :inclusive-permitted inclusive-permitted)))
     (dolist (name names) (setf (gethash (symbol-name name) ht) lp))
     lp))
 
-
-;;; Note:  path functions are allowed to use loop-make-variable, hack
-;;; the prologue, etc.
+;;Note: path functions  are allowed to use  loop-make-variable, hack the
+;;prologue, etc.
 (defun loop-for-being (var val data-type)
   ;; FOR var BEING each/the pathname prep-phrases using-stuff...
-  ;; each/the = EACH or THE.  Not clear if it is optional, so I guess we'll warn.
+  ;; each/the =  EACH or THE.  Not clear if it  is optional, so  I guess
+  ;; we'll warn.
   (let ((path nil)
 	(data nil)
 	(inclusive nil)
@@ -1751,8 +1595,8 @@ collected result will be returned as the value of the LOOP."
 		      (apply fun var data-type preps user-data))))
     (when *loop-named-variables*
       (loop-error "Unused USING variables: ~S." *loop-named-variables*))
-    ;; STUFF is now (bindings prologue-forms . stuff-to-pass-back).  Protect the system from the user
-    ;; and the user from himself.
+    ;; STUFF  is  now  (bindings prologue-forms  .  stuff-to-pass-back).
+    ;; Protect the system from the user and the user from himself.
     (unless (member (length stuff) '(6 10))
       (loop-error "Value passed back by LOOP iteration path function for path ~S has invalid length."
 		  path))
@@ -1763,10 +1607,8 @@ collected result will be returned as the value of the LOOP."
     (setq *loop-prologue* (nconc (reverse (cadr stuff)) *loop-prologue*))
     (cddr stuff)))
 
-
-
-;;;INTERFACE:  Lucid, exported.
-;;; i.e., this is part of our extended ansi-loop interface.
+;; INTERFACE:  Lucid,  exported. i.e.,  this  is  part of  our  extended
+;; ansi-loop interface.
 (defun named-variable (name)
   (let ((tem (loop-tassoc name *loop-named-variables*)))
     (declare (list tem))
@@ -1774,22 +1616,22 @@ collected result will be returned as the value of the LOOP."
 	  (t (setq *loop-named-variables* (delete tem *loop-named-variables*))
 	     (values (cdr tem) t)))))
 
-
-(defun loop-collect-prepositional-phrases (preposition-groups &optional USING-allowed initial-phrases)
+(defun loop-collect-prepositional-phrases (preposition-groups
+                                           &optional USING-allowed initial-phrases)
   (flet ((in-group-p (x group) (car (loop-tmember x group))))
     (do ((token nil)
 	 (prepositional-phrases initial-phrases)
 	 (this-group nil nil)
 	 (this-prep nil nil)
 	 (disallowed-prepositions
-	   (mapcan #'(lambda (x)
-		       (loop-copylist*
+          (mapcan (lambda (x)
+                    (copy-list
 			 (find (car x) preposition-groups :test #'in-group-p)))
 		   initial-phrases))
 	 (used-prepositions (mapcar #'car initial-phrases)))
 	((null *loop-source-code*) (nreverse prepositional-phrases))
       ;; FIXME: JSCL doen't support declarations at this context
-      #+nil (declare (symbol this-prep))
+      (declare (symbol this-prep))
       (setq token (car *loop-source-code*))
       (dolist (group preposition-groups)
 	(when (setq this-prep (in-group-p token group))
@@ -1826,9 +1668,7 @@ collected result will be returned as the value of the LOOP."
 		 (return nil))))
 	    (t (return (nreverse prepositional-phrases)))))))
 
-
 ;;;; Master Sequencer Function
-
 
 (defun loop-sequencer (indexv indexv-type indexv-user-specified-p
 			  variable variable-type
@@ -1924,10 +1764,7 @@ collected result will be returned as the value of the LOOP."
        `(() (,indexv ,(hide-variable-reference t indexv step)) ,remaining-tests ,step-hack
 	 () () ,first-test ,step-hack))))
 
-
 ;;;; Interfaces to the Master Sequencer
-
-
 
 (defun loop-for-arithmetic (var val data-type kwd)
   (loop-sequencer
@@ -1937,17 +1774,10 @@ collected result will be returned as the value of the LOOP."
       '((:from :upfrom :downfrom) (:to :upto :downto :above :below) (:by))
       nil (list (list kwd val)))))
 
-
 (defun loop-sequence-elements-path (variable data-type prep-phrases
 				    &key fetch-function size-function sequence-type element-type)
   (multiple-value-bind (indexv indexv-user-specified-p) (named-variable 'index)
     (let ((sequencev (named-variable 'sequence)))
-      #+Genera (when (and sequencev
-			  (symbolp sequencev)
-			  sequence-type
-			  (subtypep sequence-type 'vector)
-			  (not (member (the symbol sequencev) *loop-nodeclare*)))
-		 (push `(sys:array-register ,sequencev) *loop-declarations*))
       (list* nil nil				; dummy bindings and prologue
 	     (loop-sequencer
 	       indexv 'fixnum indexv-user-specified-p
@@ -1956,9 +1786,7 @@ collected result will be returned as the value of the LOOP."
 	       `(,fetch-function ,sequencev ,indexv) `(,size-function ,sequencev)
 	       prep-phrases)))))
 
-
 ;;;; Builtin LOOP Iteration Paths
-
 
 #||
 (loop for v being the hash-values of ht do (print v))
@@ -1968,7 +1796,7 @@ collected result will be returned as the value of the LOOP."
 ||#
 
 (defun loop-hash-table-iteration-path (variable data-type prep-phrases &key which)
-  ;; (check-type which (member hash-key hash-value))
+  (check-type which (member hash-key hash-value))
   (cond ((or (cdr prep-phrases) (not (member (caar prep-phrases) '(:in :of))))
 	 (loop-error "Too many prepositions!"))
 	((null prep-phrases) (loop-error "Missing OF or IN in ~S iteration path.")))
@@ -1978,12 +1806,12 @@ collected result will be returned as the value of the LOOP."
 	(post-steps nil))
     (multiple-value-bind (other-var other-p)
 	(named-variable (if (eq which 'hash-key) 'hash-value 'hash-key))
-      ;;@@@@ named-variable returns a second value of T if the name was actually
-      ;; specified, so clever code can throw away the gensym'ed up variable if
-      ;; it isn't really needed.
-      ;;The following is for those implementations in which we cannot put dummy NILs
-      ;; into multiple-value-setq variable lists.
-      #-Genera (setq other-p t
+      ;;@@@@ named-variable returns a second value  of T if the name was
+      ;; actually specified, so clever code can throw away the gensym'ed
+      ;; up variable  if it  isn't really needed.  The following  is for
+      ;; those implementations  in which we  cannot put dummy  NILs into
+      ;; multiple-value-setq variable lists.
+      (setq other-p t
 		     dummy-predicate-var (loop-when-it-variable))
       (let ((key-var nil)
 	    (val-var nil)
@@ -2009,7 +1837,6 @@ collected result will be returned as the value of the LOOP."
 	  (not (multiple-value-setq (,dummy-predicate-var ,key-var ,val-var) (,next-fn)))	;post-test
 	  ,post-steps)))))
 
-
 (defun loop-package-symbols-iteration-path (variable data-type prep-phrases &key symbol-types)
   (cond ((or (cdr prep-phrases) (not (member (caar prep-phrases) '(:in :of))))
 	 (loop-error "Too many prepositions!"))
@@ -2024,8 +1851,10 @@ collected result will be returned as the value of the LOOP."
       ()
       ()
       (not (multiple-value-setq (,(progn
-				    ;;@@@@ If an implementation can get away without actually
-				    ;; using a variable here, so much the better.
+                                    ;; @@@@ If an implementation can get
+                                    ;; away   without   actually   using
+                                    ;; a   variable    here,   so   much
+                                    ;; the better.
 				    #+Genera NIL
 				    #-Genera (loop-when-it-variable))
 				 ,variable)
@@ -2113,7 +1942,6 @@ collected result will be returned as the value of the LOOP."
 		   :user-data '(:symbol-types (:internal)))
     w))
 
-
 (defparameter *loop-ansi-universe*
   (make-ansi-loop-universe nil))
 
@@ -2127,28 +1955,15 @@ collected result will be returned as the value of the LOOP."
               (progn ,@keywords-and-forms)
               (go ,tag))))))
 
-
 ;; INTERFACE: ANSI
 (defmacro !loop (&rest keywords-and-forms)
   #+Genera (declare (compiler:do-not-record-macroexpansions)
 		    (zwei:indentation . zwei:indent-loop))
-  (loop-standard-expansion keywords-and-forms jscl::*environment* *loop-ansi-universe*))
-
-#+jscl
-(defmacro loop (&rest keywords-and-forms)
-  `(!loop ,@keywords-and-forms))
-
-#+allegro
-(defun excl::complex-loop-expander (body env)
-  (loop-standard-expansion body env *loop-ansi-universe*))
+  (loop-standard-expansion keywords-and-forms
+     jscl::*environment* *loop-ansi-universe*))
 
 
-;;; FIXME: Somehow the pacakge is not being bound properly in
-;;; !compile-file.
-#+jscl
-(progn
-  (in-package :cl)
-  (defmacro loop (&rest keywords-and-forms)
+(defmacro jscl/cl:loop (&rest keywords-and-forms)
     `(jscl/loop::!loop ,@keywords-and-forms))
-  (defmacro loop-finish ()
-    `(jscl/loop::!loop-finish)))
+(defmacro jscl/cl:loop-finish ()
+  `(jscl/loop::!loop-finish))

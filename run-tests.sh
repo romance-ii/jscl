@@ -1,5 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 RUNJS=${RUNJS:-node}
-$RUNJS  "$(dirname $0)/tests.js"
-
+exec $RUNJS "$(dirname $0)/tests.js"

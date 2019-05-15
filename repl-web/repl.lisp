@@ -1,23 +1,22 @@
-;; JSCL is free software: you can redistribute it and/or
-;; modify it under the terms of the GNU General Public License as
-;; published by the Free Software Foundation, either version 3 of the
-;; License, or (at your option) any later version.
+;; JSCL is free software: you can redistribute it and/or modify it under
+;; the terms of the GNU General  Public License as published by the Free
+;; Software Foundation,  either version  3 of the  License, or  (at your
+;; option) any later version.
 ;;
-;; JSCL is distributed in the hope that it will be useful, but
-;; WITHOUT ANY WARRANTY; without even the implied warranty of
-;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-;; General Public License for more details.
+;; JSCL is distributed  in the hope that it will  be useful, but WITHOUT
+;; ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+;; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+;; for more details.
 ;;
 ;; You should have received a copy of the GNU General Public License
 ;; along with JSCL.  If not, see <http://www.gnu.org/licenses/>.
+(in-package :repl-web)
+(read-#j)
 
-(/debug "loading repl-web/repl.lisp!")
 
 (defun %write-string (string &optional (escape t))
     (if #j:jqconsole
-        (if escape
-            (#j:jqconsole:Write string "jqconsole-output")
-            (#j:jqconsole:Write string "jqconsole-output" ""))
+      (#j:jqconsole:Write string "jqconsole-output" "" escape)
         (#j:console:log string)))
 
 (defun load-history ()
@@ -31,12 +30,13 @@
 
 ;;; Decides wheater the input the user has entered is completed or we
 ;;; should accept one more line.
-(defun %sexpr-complete (string)
+(defun indent-level (string)
     (let ((i 0)
           (stringp nil)
           (comments nil)
           (s (length string))
           (depth 0))
+
         (while (< i s)
             (cond
               (comments 
@@ -47,7 +47,7 @@
                (case (char string i)
                  (#\\
                   (incf i))
-                 (#\"
+           (#\quotation_mark
                   (setq stringp nil)
                   (decf depth))))
               (t
@@ -60,12 +60,21 @@
                   (incf depth)
                   (setq stringp t)))))
             (incf i))
+
+    (if (and (zerop depth))
+        nil
+        ;; We  should use  something based  on  DEPTH in  order to  make
+        ;; edition   nice,   but   the   behaviour  is   a   bit   weird
+        ;; with jqconsole.
+        0)))
+
         (if (<= depth 0)
             nil
             0)))
 
 (defun toplevel ()
-  (#j:jqconsole:RegisterMatching "(" ")" "parents")
+  (#j:jqconsole:RegisterMatching "(" ")" "parens")
+
   (let ((prompt (format nil "~a> " (package-name *package*))))
     (#j:jqconsole:Write prompt "jqconsole-prompt"))
   (flet ((process-input (input)
@@ -88,7 +97,7 @@
             
             (catch (err)
               (#j:console:log err)
-              (let ((message (or (oget err "message") err)))
+              (let ((message (or (jscl/ffi:oget err "message") err)))
                 (#j:jqconsole:Write (format nil "ERROR[!]: ~a~%" message) "jqconsole-error"))))
            
            (save-history)
