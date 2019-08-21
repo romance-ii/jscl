@@ -29,11 +29,6 @@
   (defun concat (&rest strs)
     (apply #'concatenate 'string strs)))
 
-(defun format *trace-output* (x)
-  (declare (ignorable x))
-  ;; (write-line x)
-  )
-
 (defun j-reader (stream subchar arg)
   (declare (ignorable subchar arg))
   (assert (char= #\: (read-char stream nil :eof)) nil "FFI descriptor must start with a semicolon.")
