@@ -37,11 +37,6 @@
     "Shorthand for `CONCATENATE' 'STRING"
     (apply #'concatenate 'string strs)))
 
-(defun format *trace-output* (message)
-  "Print a trace message."
-  (format *trace-output* "~&DEBUG: ~a" message))
-
-
 ;;; Defined later, in read.lisp
 (declaim (ftype (function (character) t) terminalp)
          (ftype (function (stream (function (character) t)) t) read-until))
