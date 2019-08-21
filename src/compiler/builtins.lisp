@@ -313,9 +313,6 @@
 
 
 
-(define-builtin format *trace-output* (x)
-  `(jscl/js::method-call |console| "log" (jscl/js::call-internal |xstring| ,x)))
-
 (define-builtin /log (x)
   `(jscl/js::method-call |console| "log" ,x))
 
