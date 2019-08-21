@@ -18,7 +18,7 @@
 ;;; - all modification marked with tag @vlad-km
 ;;;
 
-(/debug "loading std-generic")
+(format *trace-output* "loading std-generic")
 
 ;;; @vlad-km note: its artefact from original
 ;;;not used in jscl release

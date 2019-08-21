@@ -8,7 +8,7 @@
 ;;;
 ;;; note: it works ? don't touch it!!!
 
-(/debug "build standard mop hierarhy")
+(format *trace-output* "build standard mop hierarhy")
 
 ;;; timestamp. todo: remove it
 (defvar *boot-stage-timestamp* (get-internal-real-time))
@@ -183,7 +183,7 @@
 (boot-stage-2)
 
 ;;; timestamp. todo: remove it
-(/debug (concat "            elapsed time:"
+(format *trace-output* (concat "            elapsed time:"
                 (/ (- (get-internal-real-time) *boot-stage-timestamp*) internal-time-units-per-second 1.0) " sec."))
 
 ;; Voila! The class hierarchy is in place.

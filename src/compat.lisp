@@ -29,7 +29,7 @@
   (defun concat (&rest strs)
     (apply #'concatenate 'string strs)))
 
-(defun /debug (x)
+(defun format *trace-output* (x)
   (declare (ignorable x))
   ;; (write-line x)
   )

@@ -37,7 +37,7 @@
     "Shorthand for `CONCATENATE' 'STRING"
     (apply #'concatenate 'string strs)))
 
-(defun /debug (message)
+(defun format *trace-output* (message)
   "Print a trace message."
   (format *trace-output* "~&DEBUG: ~a" message))
 

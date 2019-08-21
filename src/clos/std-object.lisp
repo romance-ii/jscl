@@ -20,7 +20,7 @@
 ;;; - Macro DEFCLASS moved to macros.lisp
 ;;;
 
-(/debug "loading std-object")
+(format *trace-output* "loading std-object")
 
 
 ;;; @vlad-km
@@ -137,10 +137,10 @@
            (setq pos (gethash slot-name hash-slots))
            (unless pos
              ;; debug for boot stage when *standard-output* undef
-             (/debug (format nil "The slot ~S is not an instance slot in the class " slot-name))
+             (format *trace-output* (format nil "The slot ~S is not an instance slot in the class " slot-name))
              (error "The slot ~S is not an instance slot in the class ~S." slot-name class)))
           (t
-           (/debug (format nil "The class has not slots table for ~a" slot-name) )
+           (format *trace-output* (format nil "The class has not slots table for ~a" slot-name) )
            (error "The class ~a has not slots table" class)))
     pos))
 

@@ -18,7 +18,7 @@
 
 
 
-(/debug "loading std-method")
+(format *trace-output* "loading std-method")
 
 
 (defun canonicalize-specializers (specializers)

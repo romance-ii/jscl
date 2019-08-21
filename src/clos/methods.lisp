@@ -7,7 +7,7 @@
 ;;; JSCL compilation mode - :target
 ;;;
 
-(/debug "compile standard clos methods!")
+(format *trace-output* "compile standard clos methods!")
 
 ;;; timestamp. todo: remove it
 (defvar *mop-awake-time* (get-internal-real-time))
@@ -320,7 +320,7 @@
 
 
 ;;; timestamp. todo: remove it
-(/debug (concat "             elapsed time:" (/ (- (get-internal-real-time) *mop-awake-time*) internal-time-units-per-second 1.0) " sec."))
+(format *trace-output* (concat "             elapsed time:" (/ (- (get-internal-real-time) *mop-awake-time*) internal-time-units-per-second 1.0) " sec."))
 
 
 ;;; ancient as a mammoth shit
