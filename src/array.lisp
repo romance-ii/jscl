@@ -74,10 +74,10 @@
   (and (storage-vector-p x)
        (subtypep (storage-vector-kind x) 'array)))
 
-(defun adjustable-array-p (array)
+(defun jscl/cl::adjustable-array-p (array)
   (unless (arrayp array)
     (error "~S is not an array." array))
-  t)
+  (fourth (storage-vector-kind array)))
 
 (defun jscl/cl::array-element-type (array)
   (check-type array jscl/cl::array)
