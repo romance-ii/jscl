@@ -9,6 +9,8 @@
 
 (format *trace-output* "compile standard clos methods!")
 
+(in-package :jscl/impl)
+
 ;;; timestamp. todo: remove it
 (defvar *mop-awake-time* (get-internal-real-time))
 
@@ -31,16 +33,16 @@
   (setf (gethash symbol *class-table*) new-value))
 
 ;;; print-object
-(defgeneric print-object (instance &optional stream))
+(defgeneric jscl/cl::print-object (instance &optional stream))
 
-(defmethod print-object ((instance standard-object) &optional (stream *standard-output*))
+(defmethod jscl/cl::print-object ((instance standard-object) &optional (stream *standard-output*))
   (print-unreadable-object (instance stream :identity t)
     (format stream "(~S)"
             (class-name (class-of instance))))
   instance)
 
 
-(defmethod print-object ((instance standard-object) &optional (stream *standard-output*))
+(defmethod jscl/cl::print-object ((instance standard-object) &optional (stream *standard-output*))
   (if (built-in-class-of instance)
       (print-unreadable-object (instance stream :identity t)
         (format stream "(~S) ~a"
@@ -95,45 +97,45 @@
 
 
 ;;; Instance creation and initialization
-(defgeneric allocate-instance (class))
+(defgeneric jscl/cl::allocate-instance (class))
 
-(defmethod allocate-instance ((class standard-class))
+(defmethod jscl/cl::allocate-instance ((class standard-class))
   (std-allocate-instance class))
 
 
 
 ;;;@vlad-km
-(defgeneric make-instance (class &key))
+(defgeneric jscl/cl::make-instance (class &key))
 
-(defmethod make-instance ((class standard-class) &rest initargs)
+(defmethod jscl/cl::make-instance ((class standard-class) &rest initargs)
   (let ((instance (allocate-instance class)))
-    (apply #'initialize-instance instance initargs)
+    (apply #'jscl/cl::initialize-instance instance initargs)
     instance))
 
-(defmethod make-instance ((class symbol) &rest initargs)
-  (apply #'make-instance (find-class class) initargs))
+(defmethod jscl/cl::make-instance ((class symbol) &rest initargs)
+  (apply #'jscl/cl::make-instance (find-class class) initargs))
 
 
 ;;; initialize-instance
-(defgeneric initialize-instance (instance &key))
+(defgeneric jscl/cl::initialize-instance (instance &key))
 
-(defmethod initialize-instance ((instance standard-object) &rest initargs)
-  (apply #'shared-initialize instance t initargs))
+(defmethod jscl/cl::initialize-instance ((instance standard-object) &rest initargs)
+  (apply #'jscl/cl::shared-initialize instance t initargs))
 
-(defmethod initialize-instance :after ((class standard-class) &rest args)
+(defmethod jscl/cl::initialize-instance :after ((class standard-class) &rest args)
   (apply #'std-after-initialization-for-classes class args))
 
 
-(defgeneric reinitialize-instance (instance &key))
+(defgeneric jscl/cl::reinitialize-instance (instance &key))
 
-(defmethod reinitialize-instance ((instance standard-object) &rest initargs)
-  (apply #'shared-initialize instance () initargs))
+(defmethod jscl/cl::reinitialize-instance ((instance standard-object) &rest initargs)
+  (apply #'jscl/cl::shared-initialize instance () initargs))
 
 
 ;;; shared-initialize
-(defgeneric shared-initialize (instance slot-names &key))
+(defgeneric jscl/cl::shared-initialize (instance slot-names &key))
 
-(defmethod shared-initialize ((instance standard-object) slot-names &rest all-keys)
+(defmethod jscl/cl::shared-initialize ((instance standard-object) slot-names &rest all-keys)
   (dolist (slot (class-slots (class-of instance)))
     (let ((slot-name (slot-definition-name slot)))
       (multiple-value-bind (init-key init-value foundp)
@@ -151,11 +153,12 @@
   instance)
 
 ;;; change-class
-(defgeneric change-class (instance new-class &key))
+(defgeneric jscl/cl::change-class (instance new-class &key))
 
-(defmethod change-class ((old-instance standard-object) (new-class standard-class) &rest initargs)
+(defmethod jscl/cl::change-class ((old-instance standard-object)
+                                  (new-class standard-class) &rest initargs)
   (let ((new-instance (allocate-instance new-class)))
-    (dolist (slot-name (mapcar #'slot-definition-name
+    (dolist (slot-name (mapcar #'jscl/cl::slot-definition-name
                                (class-slots new-class)))
       (when (and (slot-exists-p old-instance slot-name)
                  (slot-boundp old-instance slot-name))
@@ -165,33 +168,34 @@
               (std-instance-slots old-instance))
     (!rotatef (std-instance-class new-instance)
               (std-instance-class old-instance))
-    (apply #'update-instance-for-different-class
+    (apply #'jscl/cl::update-instance-for-different-class
            new-instance old-instance initargs)
     old-instance))
 
-(defmethod change-class ((instance standard-object) (new-class symbol) &rest initargs)
-  (apply #'change-class instance (find-class new-class) initargs))
+(defmethod jscl/cl::change-class ((instance standard-object) (new-class symbol) &rest initargs)
+  (apply #'jscl/cl::change-class instance (find-class new-class) initargs))
 
 
 ;;; update instance
-(defgeneric update-instance-for-different-class (old new &key))
+(defgeneric jscl/cl::update-instance-for-different-class (old new &key))
 
 
-(defmethod update-instance-for-different-class ((old standard-object)
-                                                (new standard-object)
-                                                &rest initargs)
+(defmethod jscl/cl::update-instance-for-different-class ((old standard-object)
+                                                         (new standard-object)
+                                                         &rest initargs)
   (let ((added-slots
-          (remove-if #'(lambda (slot-name)
-                         (slot-exists-p old slot-name))
-                     (mapcar #'slot-definition-name
-                             (class-slots (class-of new))))))
-    (apply #'shared-initialize new added-slots initargs)))
+         (remove-if #'(lambda (slot-name)
+                        (slot-exists-p old slot-name))
+                    (mapcar #'jscl/cl::slot-definition-name
+                            (class-slots (class-of new))))))
+    (apply #'jscl/cl::shared-initialize new added-slots initargs)))
 
 ;;;
 ;;;  Methods having to do with class metaobjects.
 ;;;
 
-(defmethod print-object ((class standard-class) &optional (stream *standard-output*))
+(defmethod jscl/cl::print-object ((class standard-class)
+                                  &optional (stream *standard-output*))
   (print-unreadable-object (class stream :identity t)
     (format stream "(~S) ~S"
             (class-name (class-of class))
@@ -200,37 +204,38 @@
 
 
 ;;; Finalize inheritance
-(defgeneric finalize-inheritance (class &rest))
+(defgeneric jscl/cl::finalize-inheritance (class &rest))
 
-(defmethod finalize-inheritance ((class standard-class) &rest all-keys)
+(defmethod jscl/cl::finalize-inheritance ((class standard-class) &rest all-keys)
   (std-finalize-inheritance class all-keys)
   (values))
 
 
 ;;; Class precedence lists
-(defgeneric compute-class-precedence-list (class))
+(defgeneric jscl/cl::compute-class-precedence-list (class))
 
-(defmethod compute-class-precedence-list ((class standard-class))
+(defmethod jscl/cl::compute-class-precedence-list ((class standard-class))
   (std-compute-class-precedence-list class))
 
 
 ;;; Slot inheritance
-(defgeneric compute-slots (class))
+(defgeneric jscl/cl::compute-slots (class))
 
-(defmethod compute-slots ((class standard-class))
+(defmethod jscl/cl::compute-slots ((class standard-class))
   (std-compute-slots class))
 
 
-(defgeneric compute-effective-slot-definition (class direct-slots))
+(defgeneric jscl/cl::compute-effective-slot-definition (class direct-slots))
 
-(defmethod compute-effective-slot-definition ((class standard-class) direct-slots)
+(defmethod jscl/cl::compute-effective-slot-definition ((class standard-class) direct-slots)
   (std-compute-effective-slot-definition class direct-slots))
 
 
 ;;;
 ;;; Methods having to do with generic function metaobjects.
 ;;;
-(defmethod print-object ((gf standard-generic-function)  &optional (stream *standard-output*))
+(defmethod jscl/cl::print-object ((gf standard-generic-function) 
+                                  &optional (stream *standard-output*))
   (print-unreadable-object (gf stream :identity t)
     (format stream "(~S) ~S"
             (class-name (class-of gf))
@@ -239,14 +244,16 @@
 
 ;;; initialize-instance
 ;;; mvk change &key to &rest args
-(defmethod initialize-instance :after ((gf standard-generic-function) &rest args)
+(defmethod jscl/cl::initialize-instance :after ((gf standard-generic-function)
+                                                &rest args)
   (finalize-generic-function gf))
 
 
 ;;;
 ;;; Methods having to do with method metaobjects.
 ;;;
-(defmethod print-object ((method standard-method) &optional (stream *standard-output*))
+(defmethod jscl/cl::print-object ((method standard-method) 
+                                  &optional (stream *standard-output*))
   (print-unreadable-object (method stream :identity t)
     (format stream "(~S) ~S ~S  ~S"
             (class-name (class-of method))
@@ -258,7 +265,9 @@
   method)
 
 ;;; @vlad-km. added &rest
-(defmethod initialize-instance :after ((method standard-method) &rest args)
+(defmethod jscl/cl::initialize-instance :after ((method standard-method)
+                                                &rest args)
+  (declare (ignore args))
   (setf (method-function method) (compute-method-function method)))
 
 
@@ -314,15 +323,8 @@
   (format stream "~%")
   (values))
 
-(defmethod describe-object ((object t) &optional (stream *standard-output*))
+(defmethod jscl/cl::describe-object ((object t) 
+                                     &optional (stream *standard-output*))
   (describe object)
   (values))
 
-
-;;; timestamp. todo: remove it
-(format *trace-output* (concat "             elapsed time:" (/ (- (get-internal-real-time) *mop-awake-time*) internal-time-units-per-second 1.0) " sec."))
-
-
-;;; ancient as a mammoth shit
-
-;;; EOF

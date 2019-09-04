@@ -22,11 +22,12 @@
 
 (format *trace-output* "loading std-object")
 
+(in-package :jscl/impl)
 
 ;;; @vlad-km
 ;;; add hash/cn slots
-(def!struct (std-instance (:constructor allocate-std-instance (class slots hash cn))
-                          (:predicate std-instance-p))
+(defstruct (std-instance (:constructor allocate-std-instance (class slots hash cn))
+                         (:predicate std-instance-p))
   class
   slots
   hash
@@ -52,12 +53,12 @@
    :cn nil)
   #+jscl
   (let ((instance
-          (allocate-std-instance
-           :class class
-           :slots (allocate-slot-storage (count-if #'instance-slot-p (class-slots class))
-                                         *secret-unbound-value*)
-           :hash nil
-           :cn nil )))
+         (allocate-std-instance
+          :class class
+          :slots (allocate-slot-storage (count-if #'instance-slot-p (class-slots class))
+                                        *secret-unbound-value*)
+          :hash nil
+          :cn nil )))
     (setf (oget instance "tagName") :mop-object)
     instance ))
 

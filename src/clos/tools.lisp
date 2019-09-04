@@ -1,6 +1,6 @@
 ;;; -*- mode:lisp; coding:utf-8 -*-
 
-
+(in-package :jscl/impl)
 
 ;;; debug tools
 ;;; From closette-test.lisp

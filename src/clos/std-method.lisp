@@ -20,6 +20,8 @@
 
 (format *trace-output* "loading std-method")
 
+(in-package :jscl/impl)
+
 
 (defun canonicalize-specializers (specializers)
   (if specializers

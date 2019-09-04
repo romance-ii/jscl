@@ -6,6 +6,8 @@
 ;;; JSCL compilation mode :both
 ;;;
 
+(in-package :jscl/impl)
+
 (defun mop-class-name (class)
   (std-slot-value class 'name))
 

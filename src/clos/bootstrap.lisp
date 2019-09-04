@@ -10,6 +10,8 @@
 
 (format *trace-output* "build standard mop hierarhy")
 
+(in-package :jscl/impl)
+
 ;;; timestamp. todo: remove it
 (defvar *boot-stage-timestamp* (get-internal-real-time))
 

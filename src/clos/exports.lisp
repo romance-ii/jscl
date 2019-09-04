@@ -9,6 +9,8 @@
 ;;; todo: compare with var exports from original closette.lisp
 ;;;       the export list uncomplite
 
+(in-package :jscl/cl)
+
 (export
  '(find-class  class-of
    call-next-method  next-method-p

@@ -2,6 +2,8 @@
 ;;; MOP Utilities & kludges
 ;;;
 
+(in-package :jscl/impl)
+
 
 ;;; kludge for (defun (setf name) ...) syntax
 (defun setf-function-symbol (spec)

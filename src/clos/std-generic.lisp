@@ -20,22 +20,10 @@
 
 (format *trace-output* "loading std-generic")
 
+(in-package :jscl/impl)
+
 ;;; @vlad-km note: its artefact from original
 ;;;not used in jscl release
-#+nil
-(defparameter *the-defclass-standard-generic-function*
-  '(!defclass standard-generic-function ()
-    ((name :initarg :name)      ; :accessor generic-function-name
-     (lambda-list               ; :accessor generic-function-lambda-list
-      :initarg :lambda-list)
-     (methods :initform ())     ; :accessor generic-function-methods
-     (method-class              ; :accessor generic-function-method-class
-      :initarg :method-class)
-     (discriminating-function)  ; :accessor generic-function-
-                                        ;    -discriminating-function
-     (classes-to-emf-table      ; :accessor classes-to-emf-table
-      :initform (make-hash-table :test #'equal)))))
-
 
 (defvar *the-class-standard-gf*) ;standard-generic-function's class metaobject
 
@@ -122,7 +110,7 @@
 
 
 ;;; method-lambda-list
-(defun method-lambda-list (method)
+(defun jscl/mop::method-lambda-list (method)
   (!slot-value method 'lambda-list))
 
 ;;; @vlad-km
