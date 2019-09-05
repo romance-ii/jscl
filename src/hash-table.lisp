@@ -135,7 +135,7 @@
                        (storage-vector-ref hash-table 0))
   nil)
 
-(defun hash-table-test (obj)
+(defun jscl/cl::hash-table-test (obj)
   (cond ((hash-table-p obj)
          (let ((test (cadr obj)))
            (cond ((eq test #'eq-hash) 'eq)
