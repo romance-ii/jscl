@@ -406,6 +406,7 @@ permissions on FILENAME, if we  know how in the current implementation."
      ("compat-sv"	:host)
      ("compat-ffi"	:host)
      ("compat-js"	:host))
+
     ("boot"          :both)
     ("early-char" 	:both)
     ("setf"          :both)
@@ -436,6 +437,7 @@ permissions on FILENAME, if we  know how in the current implementation."
      ("compiler"     :both)
      ("special-operators"	:both)
      ("compile-file"	:both))
+
     ("documentation" :both)
     ("misc"          :both)
     ("worker"        :target)
@@ -449,7 +451,10 @@ permissions on FILENAME, if we  know how in the current implementation."
        ("tools"         :target)
        ("macros"        :target)
        ("exports"       :target)
-       ("methods"       :target))
+       ("methods"       :target)
+       ("describe"      :target))
+
+    ("load"             :target)
     ("toplevel" 	:both))
   "List of  all the source files  that need to be  compiled, and whether
 they are  to be compiled  just by  the host, by  the target JSCL,  or by

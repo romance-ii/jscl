@@ -181,13 +181,13 @@
 
 
 (defmethod jscl/cl::update-instance-for-different-class ((old standard-object)
-                                                         (new standard-object)
-                                                         &rest initargs)
+                                                (new standard-object)
+                                                &rest initargs)
   (let ((added-slots
-         (remove-if #'(lambda (slot-name)
-                        (slot-exists-p old slot-name))
+          (remove-if #'(lambda (slot-name)
+                         (slot-exists-p old slot-name))
                     (mapcar #'jscl/cl::slot-definition-name
-                            (class-slots (class-of new))))))
+                             (class-slots (class-of new))))))
     (apply #'jscl/cl::shared-initialize new added-slots initargs)))
 
 ;;;

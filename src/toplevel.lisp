@@ -22,8 +22,9 @@
 
 (defun jscl/cl::eval (x)
   #+jscl
-  (js-eval (with-compilation-environment
-               (compile-toplevel x t t)))
+  (let ((js-code (with-compilation-environment
+             (compile-toplevel x t t))))
+     (js-eval js-code))
   #-jscl
   (eval x))
 
@@ -143,14 +144,15 @@ warranty. For details, type: (:COPYING)⮰.
           #.(jscl/bootstrap::romance-ii-fork-p) (lisp-implementation-version)
           #.(jscl/bootstrap::git-commit)
           (lisp-implementation-type)
+          (lisp-implementation-version)
           (compilation-notice))
   (if (jscl/bootstrap::romance-ii-fork-p)
 
       (if (find :node *features*)
           (format t "For more information, visit the project page at ~
-https://github.com/romance-ii/jscl.~%~%")
+https://github.com/adventuring/jscl.~%~%")
           (format t "For more information, visit the project page on ~
- <a href=\"https://github.com/romance-ii/jscl\">GitHub</a>.~%~%"))
+ <a href=\"https://github.com/adventuring/jscl\">GitHub</a>.~%~%"))
 
       (if (find :node *features*)
           (format t "For more information, visit the project page at ~
@@ -158,14 +160,26 @@ https://github.com/jscl-project/jscl.~%~%")
           (format t "For more information, visit the project page on ~
  <a href=\"https://github.com/jscl-project/jscl\">GitHub</a>.~%~%"))))
 
-;;; Basic *standard-output*  stream. This  will usually be  overriden by
+;;; Basic *standard-output* stream. This will usually be overriden by
 ;;; web or node REPL.
-(setq jscl/cl::*standard-output* (make-web-console-output-stream))
+;;;
+;;; TODO: Cache character operation so they result in a single call to
+;;; console.log.
+;;;
+(setq *standard-output*
+      (make-stream
+       :write-fn (lambda (string)
+                   (#j:console:log string))))
 
-#+jscl
-(if (find :node *features*)
-    (setq jscl/ffi:*root* (jscl/js::%js-vref "global"))
-    (setq jscl/ffi:*root* (jscl/js::%js-vref "window")))
+(cond
+  ((find :node *features*)
+   (setq *root* (%js-vref "global"))
+   (setf #j:Fs (funcall (%js-vref "require") "fs")) 
+   (setf #j:FsPath (funcall (%js-vref "require") "path")))
+  ((string/= (%js-typeof |window|) "undefined")
+   (setq *root* (%js-vref "window")))
+  (t
+   (setq *root* (%js-vref "self"))))
 
 (defun node-require (name)
  ;;; NOTE renamed  from just  “require” because that's  a CLtL  (but not
@@ -175,3 +189,8 @@ https://github.com/jscl-project/jscl.~%~%")
  ;;; is a URI would be a bit of awesomeness.
   (if (find :node *features*)
       (funcall (jscl/js::%js-vref "require") name)))
+
+
+(when (jscl::web-worker-p)
+  (jscl::initialize-web-worker))
+

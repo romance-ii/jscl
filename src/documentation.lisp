@@ -1,8 +1,6 @@
 ;;; documentation.lisp — Accessing DOCUMENTATION
 
-(in-package #-jscl :jscl #+jscl :jscl/impl)
-
-
+(in-package :jscl/impl)
 
 ;;; Documentation.
 (defun jscl/cl::documentation (x type)
@@ -45,9 +43,16 @@ or FUNCTION."
    (lambda (symbol)
      (format t "~S" symbol)
      (when (boundp symbol)
-       (format t " (bound)"))
-     (when (fboundp symbol)
-       (format t " (fbound)"))
+       (format t " (bound: ~s)" (symbol-value symbol)))
+     (when (jscl/cl::fboundp symbol)
+       (format t " (fbound: ~a)"
+               (cond ((jscl/cl::find-generic-function symbol)
+                      "generic function")
+                     ((jscl/cl::special-operator-p symbol)
+                      "special operator")
+                     ((jscl/cl::macro-function symbol)
+                      "macro")
+                     (t "function"))))
      (terpri))
    (string string) package external-only))
 

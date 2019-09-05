@@ -39,7 +39,7 @@
 
   (jscl/cl::make-package "JSCL/IMPL" :use (list :common-lisp)
                          'jscl::if-exists :ignore))
-
+    
 (progn .
        #.(mapcar
           (lambda (symbol)
@@ -552,7 +552,7 @@
 ;;; DECLAIM
 
 (defmacro jscl/cl::declaim (&rest decls)
-                    `(eval-when (:compile-toplevel :execute)
+  `(eval-when (:compile-toplevel :execute)
      ,@(mapcar (lambda (decl) `(proclaim ',decl)) decls)))
 
     
@@ -961,8 +961,23 @@ macro cache is so aggressive that it cannot be redefined."
        ,@form)))
 
 
+;;; mop predicate
+(defun mop-object-p (obj)
+    (and (consp obj)
+         (eq (oget obj "tagName") :mop-object)
+         (= (length obj) 5)   ;; 3
+         (eq (car obj) 'std-instance)) )
 ;;; Function names/values
 
+;;; js-object predicate
+(defun js-object-p (obj)
+  (if (or (sequencep obj)
+          (numberp obj)
+          (symbolp obj)
+          (functionp obj)
+          (packagep obj))
+      nil
+      t))
 (defun fdefinition-soft (name)
   "Like `FDEFINITION' but returns NULL rather than signaling an error."
        (cond
@@ -1066,6 +1081,22 @@ This is SETF'able."
     (t
      nil)))
 
+;;; print-unreadable-object
+(defmacro jscl/cl::print-unreadable-object ((object stream &key type identity) &body body)
+  (let ((g!stream (gensym))
+        (g!object (gensym)))
+    `(let ((,g!stream ,stream)
+           (,g!object ,object))
+       (format ,g!stream "#<")
+       ,(when type
+          `(format ,g!stream "~S" (type-of g!object)))
+       ,(when (and type (or body identity))
+          `(format ,g!stream " "))
+       ,@body
+       ,(when (and identity body)
+          `(format ,g!stream " "))
+       (simple-format ,g!stream ">")
+       nil)))
 
 ;;; “environment” variables around READ/PRINT
 

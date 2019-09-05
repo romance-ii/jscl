@@ -299,6 +299,8 @@ format control string ~S." fmt))))
     (package
      (simple-format stream "#<PACKAGE ~a>" (package-name form)))
     ;; Others
+    (js-object 
+     (simple-format stream "#<JS-OBJECT ~a>" (js-object-signature form)))
     (otherwise
      (simple-format stream "#<JS-OBJECT ~a>"
                     (funcall (JSCL/FFI:OGET* JSCL/FFI:*ROOT* "String")

@@ -15,12 +15,33 @@
 
 ;;;; Compiler
 
-(in-package #-jscl :jscl #+jscl :jscl/impl)
+(in-package :jscl/impl)
 
 ;; Translates the Lisp code to Javascript. This will compile the special
 ;; forms. Some  primitive functions are  compiled as special  forms too.
 ;; The respective  real functions are defined  in the target as  well as
 ;; some primitive functions.
+
+(define-js-macro selfcall (&body body)
+  `(call (function () ,@body)))
+
+(define-js-macro method-call (x method &rest args)
+  `(call (get ,x ,method) ,@args))
+
+(define-js-macro nargs ()
+  `(- (get |arguments| |length|) 1))
+
+(define-js-macro arg (n)
+  `(property |arguments| (+ ,n 1)))
+
+;;; Runtime
+
+(define-js-macro internal (x)
+  `(get |internals| ,x))
+
+(define-js-macro call-internal (name &rest args)
+  `(method-call |internals| ,name ,@args))
+
 
 (defun convert-to-bool (expr)
   `(if ,expr ,(convert t) ,(convert nil)))
